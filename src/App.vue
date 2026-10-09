@@ -51,6 +51,8 @@ const daily = useDailyStore()
 const player = usePlayerStore()
 const session = useSessionStore()
 const ready = ref(false)
+/** Çapa düzenleyici açıkken menü gizlenir; kanvasa dokunulabilsin. */
+const anchorEditing = ref(false)
 
 /** Açılıştan sonra ilk ekran: takma ad → eğitim → menü. */
 function routeAfterSplash() {
@@ -91,6 +93,7 @@ function wireBus() {
   bus.on('game:over', (r) => void onGameOver(r))
   bus.on('tutorial:finished', () => void onTutorialFinished())
   bus.on('daily:finished', (r) => void onDailyFinished(r))
+  bus.on('dev:anchors', (on) => (anchorEditing.value = on))
   bus.on('app:background', () => {
     if (app.screen === 'game' && !app.modal) pauseGame()
   })
@@ -139,7 +142,7 @@ onMounted(async () => {
   <Transition name="screen" mode="out-in">
     <Splash v-if="app.screen === 'splash'" key="splash" />
     <Onboarding v-else-if="app.screen === 'onboarding'" key="onboarding" @done="onOnboarded" />
-    <MainMenu v-else-if="app.screen === 'menu'" key="menu" @daily="startDaily" @dev-tap="devTap" />
+    <MainMenu v-else-if="app.screen === 'menu' && !anchorEditing" key="menu" @daily="startDaily" @dev-tap="devTap" />
     <GameOver v-else-if="app.screen === 'gameover'" key="gameover" />
     <Settings v-else-if="app.screen === 'settings'" key="settings" />
     <Market v-else-if="app.screen === 'market'" key="market" :initial-tab="app.marketTab" />

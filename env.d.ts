@@ -4,8 +4,6 @@ interface ImportMetaEnv {
   readonly VITE_FORCE_MOCK_ADS?: string
   readonly VITE_FORCE_MOCK_IAP?: string
   readonly VITE_LEADERBOARD_MODE?: string
-  readonly VITE_ADMOB_APP_ID_ANDROID?: string
-  readonly VITE_ADMOB_APP_ID_IOS?: string
   readonly VITE_ADMOB_REWARDED_ANDROID?: string
   readonly VITE_ADMOB_REWARDED_IOS?: string
   readonly VITE_ADMOB_INTERSTITIAL_ANDROID?: string

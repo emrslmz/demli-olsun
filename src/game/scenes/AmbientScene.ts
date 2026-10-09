@@ -4,13 +4,14 @@
  */
 
 import * as Phaser from 'phaser'
-import type { CosmeticPreview } from '@/bus'
+import { bus, type CosmeticPreview } from '@/bus'
 import { glassSkin } from '@/data/cosmetics'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSettingsStore } from '@/stores/settings'
 import { bgId, ensureTextures, potIds } from '../assets'
 import { Steam } from '../fx/Steam'
 import type { Layout } from '../layout'
+import { AnchorEditor } from '../objects/AnchorEditor'
 import { Background } from '../objects/Background'
 import { GlassView } from '../objects/GlassView'
 import { ThemeFx } from '../objects/ThemeFx'
@@ -28,6 +29,7 @@ export class AmbientScene extends BaseScene {
   private kettleSteam!: Steam
   private mode: 'menu' | 'preview' = 'menu'
   private shown = { glass: 'klasik', pot: 'celik', venue: 'mahalle' }
+  private anchorEditor: AnchorEditor | null = null
 
   constructor() {
     super('Ambient')
@@ -67,6 +69,7 @@ export class AmbientScene extends BaseScene {
     this.onBus('ambient:mode', (m) => this.setMode(m))
     this.onBus('cosmetic:preview', (p) => void this.preview(p))
     this.onBus('cosmetic:equipped', () => void this.preview(null))
+    this.onBus('dev:anchors', (on) => this.setAnchorEditor(on))
   }
 
   private previewScroll(L: Layout): number {
@@ -153,11 +156,25 @@ export class AmbientScene extends BaseScene {
     this.kettleSteam.setPosition(c.x - c.displayWidth * 0.46, c.y - c.displayHeight * 0.6)
   }
 
+  /** Geliştirici çapa düzenleyicisi (yalnızca menü modunda, kamera kaymadan). */
+  private setAnchorEditor(on: boolean): void {
+    this.anchorEditor?.destroy()
+    this.anchorEditor = null
+    if (!on) return
+    this.setMode('menu')
+    this.cameras.main.setScroll(0, 0)
+    this.anchorEditor = new AnchorEditor(this, [this.demlik, this.caydanlik], this.bg.image, this.L.u)
+    this.anchorEditor.onClose = () => bus.emit('dev:anchors', false)
+  }
+
   protected onResize(L: Layout): void {
     this.layoutAll(L)
+    if (this.anchorEditor) this.setAnchorEditor(true)
   }
 
   protected onShutdown(): void {
+    this.anchorEditor?.destroy()
+    this.anchorEditor = null
     this.glass?.destroy()
     this.steam?.destroy()
     this.kettleSteam?.destroy()
