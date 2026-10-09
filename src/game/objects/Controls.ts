@@ -51,7 +51,7 @@ export class ChunkyButton {
       fontStyle: '900',
       fontSize: '32px',
       color: opts.textColor ?? '#FFF6E6',
-      stroke: '#3B2416',
+      stroke: opts.textColor === '#3B2416' ? '#FFF6E6' : '#3B2416',
       strokeThickness: 6,
     })
     this.label.setOrigin(0.5)
@@ -93,7 +93,7 @@ export class ChunkyButton {
     this.container.setPosition(r.x + r.w / 2, r.y + r.h / 2)
     const fs = Math.min(r.h * 0.26, r.w * 0.2)
     this.label.setFontSize(Math.round(fs))
-    this.label.setStroke('#3B2416', Math.max(3, fs * 0.2))
+    this.label.setStroke(this.label.style.color === '#3B2416' ? '#FFF6E6' : '#3B2416', Math.max(3, fs * 0.2))
     if (this.icon) {
       const s = Math.min(r.h * 0.48, r.w * 0.42)
       this.icon.setDisplaySize(s, s)

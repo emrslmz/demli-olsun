@@ -51,6 +51,17 @@ export function paletteToInt(p: Palette): PaletteInt {
   }
 }
 
+/** Zemin rengine göre okunaklı yazı rengi (açık zeminde koyu mürekkep). */
+export function onColor(hex: string): string {
+  const n = hexToInt(hex)
+  const lin = (c: number) => {
+    const v = c / 255
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }
+  const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255)
+  return L > 0.42 ? '#3B2416' : '#FFF6E6'
+}
+
 const assetBase = (theme: ThemeId): string => `${import.meta.env.BASE_URL}assets/themes/${theme}/`
 
 class ThemeServiceImpl {
@@ -119,6 +130,10 @@ class ThemeServiceImpl {
     root.style.setProperty('--c-metal', p.metal)
     root.style.setProperty('--c-dark', p.dark)
     root.style.setProperty('--c-light', p.light)
+    root.style.setProperty('--c-on-primary', onColor(p.primary))
+    root.style.setProperty('--c-on-accent', onColor(p.accent))
+    root.style.setProperty('--c-on-warm', onColor(p.warm))
+    root.style.setProperty('--c-on-metal', onColor(p.metal))
     root.dataset.theme = this.state.active
   }
 

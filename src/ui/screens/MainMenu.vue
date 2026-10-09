@@ -46,6 +46,18 @@ const dailyLabel = computed(() => {
   return fmt(tr.menu.dailyDone, { time: duration(msUntilNextIstanbulMidnight(new Date(now.value))) })
 })
 
+const titlePct = computed(() => {
+  const next = progress.nextTitle
+  if (!next) return 100
+  const from = progress.title.minServed
+  return Math.round(((progress.totalServed - from) / Math.max(1, next.minServed - from)) * 100)
+})
+const nextTitleText = computed(() =>
+  progress.nextTitle
+    ? fmt(tr.menu.nextTitle, { title: progress.nextTitle.name, n: progress.nextTitle.minServed - progress.totalServed })
+    : '',
+)
+
 const hasBoosters = computed(() => Object.values(inv.boosters).some((n) => n > 0))
 
 function start() {
@@ -73,10 +85,13 @@ function logoTap() {
       <div class="who">
         <span class="who__name">{{ player.nickname || 'Çırak' }}</span>
         <span class="who__title">{{ progress.title.name }} · {{ num(progress.totalServed) }} servis</span>
+        <div v-if="progress.nextTitle" class="who__bar" :title="nextTitleText">
+          <i :style="{ width: `${titlePct}%` }" />
+        </div>
       </div>
       <div class="menu__top-right">
-        <GameButton v-if="!app.noAds" size="small" variant="ghost" @click="app.go('market')">{{ tr.menu.removeAds }}</GameButton>
         <CoinCounter :value="econ.tips" />
+        <GameButton v-if="!app.noAds" size="small" variant="metal" @click="app.go('market')">{{ tr.menu.removeAds }}</GameButton>
       </div>
     </header>
 
@@ -88,15 +103,12 @@ function logoTap() {
 
     <nav class="menu__actions">
       <GameButton variant="primary" size="big" icon="icon_serve" @click="start">{{ tr.menu.startShift }}</GameButton>
-      <GameButton variant="accent" icon="icon_clock" @click="emit('daily')">{{ dailyLabel }}</GameButton>
       <div class="menu__row">
-        <GameButton variant="metal" icon="icon_shop" @click="app.go('market')">{{ tr.menu.market }}</GameButton>
-        <GameButton variant="blue" icon="icon_trophy" @click="app.go('leaderboard')">{{ tr.menu.leaderboard }}</GameButton>
-        <GameButton size="icon" icon="icon_settings" aria-label="Ayarlar" @click="app.go('settings')" />
+        <GameButton class="daily" variant="accent" icon="icon_clock" @click="emit('daily')">{{ dailyLabel }}</GameButton>
+        <GameButton size="icon" variant="metal" icon="icon_shop" :aria-label="tr.menu.market" @click="app.go('market')" />
+        <GameButton size="icon" variant="blue" icon="icon_trophy" :aria-label="tr.menu.leaderboard" @click="app.go('leaderboard')" />
+        <GameButton size="icon" icon="icon_settings" :aria-label="tr.menu.settings" @click="app.go('settings')" />
       </div>
-      <p v-if="progress.nextTitle" class="next">
-        {{ fmt(tr.menu.nextTitle, { title: progress.nextTitle.name, n: progress.nextTitle.minServed - progress.totalServed }) }}
-      </p>
     </nav>
   </div>
 </template>
@@ -117,8 +129,23 @@ function logoTap() {
 }
 .menu__top-right {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
+  align-items: flex-end;
+}
+.who__bar {
+  margin-top: 5px;
+  height: 7px;
+  width: 140px;
+  border-radius: 99px;
+  background: rgba(255, 246, 230, 0.2);
+  overflow: hidden;
+}
+.who__bar i {
+  display: block;
+  height: 100%;
+  background: var(--c-metal);
+  border-radius: 99px;
 }
 .who {
   display: flex;
@@ -176,17 +203,15 @@ function logoTap() {
   gap: 12px;
 }
 .menu__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  display: flex;
   gap: 10px;
 }
-.next {
-  margin: 0;
-  text-align: center;
-  font-family: var(--f-chalk);
-  font-weight: 700;
-  color: #fff6e6;
-  text-shadow: 0 2px 0 var(--c-dark);
+.menu__row .daily {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 @keyframes bob {
   50% {

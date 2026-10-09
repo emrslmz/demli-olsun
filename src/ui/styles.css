@@ -115,19 +115,19 @@ input {
 }
 .btn--primary {
   background: var(--c-warm);
-  color: #fff6e6;
+  color: var(--c-on-warm, #fff6e6);
 }
 .btn--accent {
   background: var(--c-accent);
-  color: #fff;
+  color: var(--c-on-accent, #fff);
 }
 .btn--blue {
   background: var(--c-primary);
-  color: #fff;
+  color: var(--c-on-primary, #fff);
 }
 .btn--metal {
   background: var(--c-metal);
-  color: var(--c-ink);
+  color: var(--c-on-metal, var(--c-ink));
 }
 .btn--ghost {
   background: rgba(255, 246, 230, 0.15);

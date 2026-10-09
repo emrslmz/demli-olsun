@@ -4,13 +4,14 @@
  */
 
 import * as Phaser from 'phaser'
-import type { GaugeMode } from '@/config/gameplay'
+import { DEV, type GaugeMode } from '@/config/gameplay'
 import type { GlassProfileId } from '@/core/glassModel'
 import { glassSkin } from '@/data/cosmetics'
 import type { CustomerId } from '@/data/customers'
 import { BUCKET_EMOJI, pickLine, type LineBucket } from '@/data/lines'
 import { AudioService } from '@/services/audio/AudioService'
 import { useInventoryStore } from '@/stores/inventory'
+import { saveNow } from '@/stores/persist'
 import { useSettingsStore } from '@/stores/settings'
 import { CoinBurst } from '../fx/CoinBurst'
 import { FloatTexts, SpeechBubble, StarsPop } from '../fx/Popups'
@@ -39,11 +40,17 @@ export abstract class PlayScene extends BaseScene {
   protected paused = false
   /** Async akışlar sahne kapandıktan sonra çalışmasın diye nesil sayacı. */
   protected gen = 0
+  private fpsT = 0
+  private fpsFrames = 0
+  private fpsChecked = false
 
   protected createPlay(cfg: { glass: GlassProfileId; gauge: GaugeMode; flowScale?: { dem: number; su: number }; seedRand?: () => number }): void {
     this.setupBase()
     this.gen++
     this.paused = false
+    this.fpsT = 0
+    this.fpsFrames = 0
+    this.fpsChecked = runtime.lowQuality || new URLSearchParams(location.search).has('hq')
     const L = this.L
     const inv = useInventoryStore()
     const settings = useSettingsStore()
@@ -145,10 +152,25 @@ export abstract class PlayScene extends BaseScene {
   update(_t: number, deltaMs: number): void {
     if (this.paused) return
     const dt = Math.min(0.05, deltaMs / 1000)
+    this.checkFps(deltaMs)
     this.station.update(dt)
     this.themeFx.update(dt)
     this.tick(dt)
     this.debug.update(dt, this, this.station, this.debugExtra())
+  }
+
+  /** İlk 5 sn'de ortalama FPS 50'nin altındaysa otomatik düşük kalite (DPR 1.5, yarı partikül). */
+  private checkFps(deltaMs: number): void {
+    if (this.fpsChecked || deltaMs > 250) return
+    this.fpsT += deltaMs / 1000
+    this.fpsFrames++
+    if (this.fpsT < DEV.lowFpsWindow) return
+    this.fpsChecked = true
+    const fps = this.fpsFrames / this.fpsT
+    if (fps < DEV.lowFpsThreshold) {
+      useSettingsStore().update({ lowQuality: true })
+      void saveNow()
+    }
   }
 
   protected debugExtra(): string {

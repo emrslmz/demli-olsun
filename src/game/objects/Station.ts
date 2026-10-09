@@ -12,7 +12,7 @@ import type { GlassSkin } from '@/data/cosmetics'
 import { tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
-import { ThemeService } from '@/services/theme/ThemeService'
+import { onColor, ThemeService } from '@/services/theme/ThemeService'
 import { potIds } from '../assets'
 import type { Layout } from '../layout'
 import { ChunkyButton } from './Controls'
@@ -20,6 +20,7 @@ import { DemGauge, FillGauge } from './Gauges'
 import { GlassView } from './GlassView'
 import { PourStream, type StreamStyle } from './PourStream'
 import { Teapot } from './Teapot'
+import { Steam } from '../fx/Steam'
 
 export interface StationConfig {
   glass: GlassProfileId
@@ -57,6 +58,9 @@ export class Station {
   private readonly dropPool: Phaser.GameObjects.Image[] = []
   private readonly cubePool: Phaser.GameObjects.Image[] = []
   private readonly spoon: Phaser.GameObjects.Image
+  private readonly glassSteam: Steam
+  private readonly kettleSteam: Steam
+  private readonly bubbles: Phaser.GameObjects.Particles.ParticleEmitter
   private readonly puddle: Phaser.GameObjects.Image
   private hasOrder = true
   private L!: Layout
@@ -118,14 +122,28 @@ export class Station {
     })
     this.splash.setDepth(26)
 
+    this.glassSteam = new Steam(scene, L.u, { rate: cfg.reducedMotion ? 0.5 : 1, depth: 24 })
+    this.kettleSteam = new Steam(scene, L.u, { rate: 0.45, strength: 0.6, depth: 31 })
+    this.kettleSteam.setActive(true)
+    this.bubbles = scene.add.particles(0, 0, 'ca_ring', {
+      emitting: false,
+      lifespan: { min: 260, max: 620 },
+      speedY: { min: -40, max: -10 },
+      speedX: { min: -30, max: 30 },
+      scale: { start: 0.14, end: 0.02 },
+      alpha: { start: 0.8, end: 0 },
+    })
+    this.bubbles.setDepth(23)
+
     this.fillGauge = new FillGauge(scene)
     this.demGauge = new DemGauge(scene)
     this.fillGauge.setDepth(35)
     this.demGauge.setDepth(35)
 
     const pal = ThemeService.paletteInt
-    this.demPad = new ChunkyButton(scene, { color: pal.warm, icon: 'icon_dem', label: tr.game.dem, hold: true })
-    this.suPad = new ChunkyButton(scene, { color: pal.accent, icon: 'icon_water', label: tr.game.water, hold: true })
+    const P = ThemeService.palette
+    this.demPad = new ChunkyButton(scene, { color: pal.warm, icon: 'icon_dem', label: tr.game.dem, hold: true, textColor: onColor(P.warm) })
+    this.suPad = new ChunkyButton(scene, { color: pal.accent, icon: 'icon_water', label: tr.game.water, hold: true, textColor: onColor(P.accent) })
     this.serveBtn = new ChunkyButton(scene, {
       color: pal.metal,
       icon: 'icon_serve',
@@ -357,6 +375,14 @@ export class Station {
     this.drawStream(dt, 'dem')
     this.drawStream(dt, 'su')
 
+    // Buhar: bardakta çay varsa; çaydanlık ağzından hep hafif buhar
+    const g = this.glass
+    this.glassSteam.setActive(this.volume > 0.05 && g.container.visible)
+    this.glassSteam.setPosition(g.container.x, g.surfaceWorldY() - 6 * this.L.u)
+    const sp = this.caydanlik.spoutWorld(this.v1)
+    this.kettleSteam.setPosition(sp.x, sp.y)
+    this.kettleSteam.setActive(!this.chSu.streaming)
+
     // Ses ve titreşim
     const loud = this.chDem.ratio >= this.chSu.ratio ? 'dem' : 'su'
     const ch = loud === 'dem' ? this.chDem : this.chSu
@@ -410,10 +436,15 @@ export class Station {
     const style = src === 'dem' ? DEM_STREAM : SU_STREAM
     const sized = { ...style, width: style.width * this.L.u * 1.4 }
     stream.draw(dt, from, dir, to, ch.ratio * Math.min(1, 0.3 + pot.tiltRatio), ch.held, sized)
-    // Temas noktasında sıçrama
-    if (ch.ratio > 0.15 && Math.random() < ch.ratio * 0.9) {
+    // Temas noktasında sıçrama ve yüzeyde kabarcıklar
+    const density = this.reduced ? 0.4 : 1
+    if (ch.ratio > 0.15 && Math.random() < ch.ratio * 0.9 * density) {
       this.splash.setParticleTint(style.color)
       this.splash.emitParticleAt(to.x, to.y, 1)
+    }
+    if (this.volume > 0.04 && Math.random() < ch.ratio * 0.5 * density) {
+      const r = this.glass.worldRadiusAt(this.glass.levelH()) * 0.7
+      this.bubbles.emitParticleAt(to.x + (Math.random() - 0.5) * r, to.y + (Math.random() - 0.3) * r * 0.2, 1)
     }
   }
 
@@ -544,6 +575,9 @@ export class Station {
     this.saucer.setPosition(L.saucer.cx, L.saucer.y).setDisplaySize(L.saucer.w, L.saucer.w)
     // Tabak görselinde tabak dikey merkezde; bardak tabağın üst yüzeyine oturur.
     this.glass.place(L.glassCx, L.glassBaseY, L.glassUnit)
+    this.glassSteam.setZone(this.glass.worldRadiusAt(1) * 1.2)
+    this.kettleSteam.setZone(14 * L.u)
+    this.bubbles.setScale(L.u * 1.4)
     this.demlik.layout(L.spoutTarget.dem, L.potWidth.demlik)
     this.caydanlik.layout(L.spoutTarget.su, L.potWidth.caydanlik)
     const bs = L.sugarBowl.size
@@ -559,6 +593,9 @@ export class Station {
     this.events.removeAllListeners()
     for (const o of [this.demlik, this.caydanlik, this.streamDem, this.streamSu, this.glass]) o.destroy()
     for (const o of [this.fillGauge, this.demGauge, this.demPad, this.suPad, this.serveBtn]) o.destroy()
+    this.glassSteam.destroy()
+    this.kettleSteam.destroy()
+    this.bubbles.destroy()
     this.saucer.destroy()
     this.puddle.destroy()
     this.spoon.destroy()

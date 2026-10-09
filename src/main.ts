@@ -9,7 +9,9 @@ app.mount('#app')
 
 // Geliştirme kolaylığı: otomasyon testleri ve konsol için bus'a erişim (yalnızca dev build).
 if (import.meta.env.DEV) {
-  void import('./bus').then(({ bus }) => {
-    ;(window as unknown as { __bus: typeof bus }).__bus = bus
+  void Promise.all([import('./bus'), import('./services/theme/ThemeService')]).then(([{ bus }, { ThemeService }]) => {
+    const w = window as unknown as { __bus: typeof bus; __theme: typeof ThemeService }
+    w.__bus = bus
+    w.__theme = ThemeService
   })
 }

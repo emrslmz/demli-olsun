@@ -1,0 +1,6 @@
+{
+  "_not": "Ses dosyası yuvaları. Dosya yoksa oyun sessizce devam eder. CC0 kaynak önerileri SETUP.md'de. Biçim: m4a (AAC) ya da mp3, küçük boyut.",
+  "music": ["music_kahvehane.m4a"],
+  "ambient": ["amb_kahvehane_ugultu.m4a"],
+  "oneShots": ["amb_tavla_zar.m4a", "amb_caycii.m4a"]
+}
