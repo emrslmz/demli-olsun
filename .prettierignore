@@ -1,0 +1,8 @@
+dist
+node_modules
+android
+ios
+public
+coverage
+assets-work
+*.md

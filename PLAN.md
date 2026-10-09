@@ -1,0 +1,61 @@
+# Demli Olsun — Geliştirme Planı
+
+Bu dosya `demli-olsun-prompt.md` tanımına göre hazırlanmıştır. Fazlar sırayla uygulanır; her faz ayrı bir commit olarak durur.
+
+## Paket sürümleri (kurulum anında doğrulandı)
+
+| Paket | Sürüm | Not |
+|---|---|---|
+| Node | 22 LTS (`.nvmrc`) | |
+| Capacitor (`core`, `cli`, `android`, `ios`) | 8.5.x | |
+| `@capacitor/app`, `haptics`, `preferences`, `share`, `filesystem`, `status-bar`, `splash-screen`, `local-notifications` | 8.x | Hepsi `@capacitor/core >=8` ister |
+| `@capacitor-community/admob` | 8.2.x | Capacitor 8 uyumlu ana sürüm |
+| `@revenuecat/purchases-capacitor` | 13.7.x | peer: `@capacitor/core >=8` |
+| Vue | 3.5.x | |
+| Pinia | 4.0.x | |
+| Vite | 8.3.x | Rolldown tabanlı; `manualChunks` yerine `codeSplitting.groups` |
+| Phaser | 4.2.x | WebGL; v3'ten farklar aşağıda |
+| mitt | 3.0.x | |
+| zzfx | 1.4.x | |
+| Vitest | 5.0.x | |
+| TypeScript | 5.9.x | 7.x (native) henüz `vue-tsc`/`typescript-eslint` ile uyumlu değil |
+| `@capacitor/assets` (dev) | 3.0.x | İkon/splash üretimi |
+
+## Fazlar
+
+1. **İskelet** — Vite + Vue + TS + Pinia + Phaser + Capacitor, `PhaserHost`, tipli bus, servis arayüzleri ve mock'ları, layout + safe area, dikey kilit, boş sahneler, `ThemeService` + manifest + yer tutucu görseller.
+2. **Çekirdek mekanik** — `glassModel`, `pour` (rampa + artık akış + damlalar), `teaColor`, servis, `scoring`, göstergeler, debug katmanı, Vitest testleri.
+3. **Mesai** — sipariş tablosu, müşteriler, replikler, sabır, can, zorluk, şeker, bardak tipleri, yoğun saat, HUD, oyun sonu.
+4. **His** — Bölüm 14 animasyonları, `AudioService` (+ `pourSynth`, ZzFX), `HapticsService`, tema dekor katmanı ve partikülleri.
+5. **Meta** — `SaveService` (sürümlü), ekonomi, Çarşı (Kese hariç), ayarlar, takma ad, eğitim, günlük giriş ödülü, unvanlar.
+6. **Günün Siparişi** — seed, tek hak, seri, sonuç ekranı, metin + PNG paylaşım.
+7. **Liderlik** — mock servis, haftalık lig, günlük tablo, oyun sonunda sıra değişimi.
+8. **Reklamlar** — AdMob, UMP + ATT, yerleşimler, `adPolicy`, test kimlikleri.
+9. **Satın alma** — RevenueCat, Kese, başlangıç teklifi, geri yükleme, (opsiyonel) bildirim.
+10. **Cila** — performans, tablet, ikon/splash, izin denetimi, kabul kriterleri, `SETUP.md`.
+
+## Varsayımlar ve kararlar
+
+- **Görseller:** Gemini/Cowork süreci bu oturumda yok. Kullanıcı "görselleri internetten bul ya da kendin oluştur" dediği için tüm görseller `tools/art/` altındaki kod ile **SVG olarak çizilir** ve Chromium (Playwright) ile görsel dokümanındaki adlar ve boyutlarla PNG/JPG'ye dönüştürülür. Stil bloğundaki kurallar (kalın koyu kahve kontur `#3B2416`, düz renk + tek yumuşak parlama, İznik paleti, yazı yok) uygulanır. Gemini görselleri geldiğinde aynı adlarla üzerine yazılabilir; oyun kodu değişmez. İnternetten görsel alınmadı (lisans/stil tutarlılığı riski).
+- **Ölçekleme:** `Scale.RESIZE` kanvası CSS pikseliyle (DPR 1) çizer ve yüksek DPR'li telefonlarda bulanık görünür. Bu yüzden Phaser `Scale.NONE` modunda tutulur; `PhaserHost` ebeveyn boyutunu `ResizeObserver` ile izler, kanvası `css × DPR` (en fazla 2) piksele `scale.resize()` ile ayarlar ve `setZoom(1/DPR)` uygular. Sonuç RESIZE ile aynıdır (letterbox yok, her oranda tam ekran) ama keskindir. Tüm yerleşim `layout.ts` içinde cihaz pikseliyle hesaplanır.
+- **Phaser 4 farkları:** `setTintFill` yok (`setTint().setTintMode(FILL)`), maskeler filtre oldu. Sıvı ve bardak için maske yerine **kırpma (crop)** kullanılır: bardağın iç silüeti bir kez doku olarak üretilir, seviye değiştikçe `setCrop` ile kesilir; yüzey dalgası 20 noktalı küçük bir poligondur. Bardak desenleri (decal) açılışta Canvas 2D ile bardak silüetine kırpılarak dokuya işlenir; çalışma anında maske gerekmez.
+- **Renk modeli:** "Beer–Lambert benzeri": dem oranı önce ışık yolu ile ölçeklenmiş optik yoğunluğa çevrilir (`d' = 1 − (1 − d)^L`, kupa için `L > 1`), sonra dokümandaki renk duraklarından doğrusal ışık uzayında monoton bir eğriyle renk ve opaklık elde edilir. Tema rengi çaya asla etki etmez.
+- **Kombo:** "1 + 0.1 × seri" ifadesinde seri, mevcut servis dahil art arda gelen ≥85 isabet sayısıdır (ilk iyi servis ×1.1).
+- **Bekleyen kartların sabrı:** Kuyrukta 3 kart varken arkadakiler çok beklediği için aktif olmayan kartların sabrı %35 hızla azalır (`config/gameplay.ts`).
+- **Muhtar "taşmaya ekstra kızar":** taşmada can kaybına ek olarak 100 puan cezası ve kombo sıfırlanır.
+- **Rıza Amca "3 yıldızın altını beğenmez":** 3 yıldızın altında bahşiş vermez ve homurdanan bir replik söyler (can kaybı yalnızca <50'de).
+- **Tepsi siparişi (Esnaf):** Tek kartta aynı tarifte 3–4 bardak; her bardak ayrı servis edilip puanlanır, kart son bardakta kapanır. Sabır bardak sayısıyla ölçeklenir.
+- **Tablette 4 kart:** Kart alanı genişliğe göre 3 ya da 4 kart sığdırır. Yoğun saatte kuyruk +1 olur ve tablet bu 4. kartı gösterebilir; normal akışta zorluk tablosu aynen uygulanır.
+- **Devam modalı:** Ödüllü reklamla (mesai başına 1) ya da bahşişle (150) devam edilir; bahşiş yetmezse tek satırlık "Kese'ye git" bağlantısı görünür.
+- **Günlük gün numarası:** Çıkış tarihi `2026-10-01` (Europe/Istanbul) kabul edildi (`config/economy.ts` → `LAUNCH_DATE`).
+- **Bot puanları:** Her bot hafta boyunca seed'den türetilen zamanlarda "oturum" oynar; haftalık puan, o ana kadar oynanan oturumların toplamıdır. Böylece puan monoton artar, deterministiktir ve tablo hafta boyunca canlıdır.
+- **Fontlar:** Tahta/fiş için **Kalam** (el yazısı/tebeşir karakterli), arayüz için **Nunito** (yuvarlak, okunaklı sans). İkisi de SIL OFL 1.1; Türkçe glifler (ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü ve ₺) `fontTools` ile doğrulandı, Latin + Latin Extended-A alt kümesiyle woff2 olarak `src/assets/fonts/` altında paketlendi (toplam ~100 KB, internetsiz çalışır).
+- **Ses dosyaları:** Ortam ve müzik için `public/audio/manifest.json` yuvaları tanımlı; dosya yoksa sessiz geçilir. Efektler ZzFX ile prosedürel.
+- **Android/iOS derlemesi:** Bu ortamda Android SDK indirilemiyor (dl.google.com erişimi yok) ve Xcode yok; native projeler `cap add` ile üretildi ve yapılandırıldı (dikey kilit, izinler, AdMob meta-data, `Info.plist` anahtarları), ancak cihazda çalıştırma `SETUP.md`'deki adımlarla senin makinende yapılmalı.
+- **`npm audit`:** Uyarılar `@capacitor/assets` (yalnızca geliştirme aracı) bağımlılıklarından geliyor; uygulama paketine girmiyor.
+
+## Belirsiz / açık noktalar
+
+- Bundle kimliği `com.demliolsun.app` olarak varsayıldı; `SETUP.md`'de nasıl değiştirileceği yazılı.
+- Gerçek liderlik backend'i yok; `VITE_LEADERBOARD_MODE=mock` iken liderlikte "Rakipler simülasyondur" notu görünür.
+- Müzik ve ortam sesleri için CC0 dosyaları `SETUP.md`'de önerildi, depoya eklenmedi.

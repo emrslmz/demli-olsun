@@ -1,0 +1,62 @@
+/**
+ * Uygulama açılışı: platform servisleri, kayıt, ayarlar, tema. Phaser bu adımlardan sonra monte edilir.
+ */
+
+import { Capacitor } from '@capacitor/core'
+import { bus } from '@/bus'
+import { ACTIVE_THEME, resolveThemeSetting } from '@/config/theme'
+import { initServiceImplementations, services } from '@/services'
+import { AudioService } from '@/services/audio/AudioService'
+import { initBackButton } from '@/services/platform/backButton'
+import { initLifecycle } from '@/services/platform/lifecycle'
+import { initSafeArea } from '@/services/platform/safeArea'
+import { ThemeService } from '@/services/theme/ThemeService'
+import { hydrateStores, saveNow } from '@/stores/persist'
+import { useSettingsStore } from '@/stores/settings'
+
+export function effectiveThemeSetting(): ReturnType<typeof resolveThemeSetting> {
+  const s = useSettingsStore().data.theme
+  return resolveThemeSetting(s !== 'auto' ? s : ACTIVE_THEME)
+}
+
+export async function bootstrap(): Promise<void> {
+  initSafeArea()
+  await Promise.all([initLifecycle(), initBackButton(), initServiceImplementations()])
+
+  const loaded = await services.save.load()
+  if (loaded.error) console.warn('[boot] Kayıt kurtarıldı:', loaded.source, loaded.error)
+  hydrateStores(loaded.data)
+  useSettingsStore().apply()
+  await ThemeService.setTheme(effectiveThemeSetting(), false)
+
+  // İlk dokunuşta AudioContext.resume().
+  const unlock = () => AudioService.unlock()
+  window.addEventListener('pointerdown', unlock, { passive: true })
+  window.addEventListener('keydown', unlock, { passive: true })
+
+  bus.on('app:background', () => {
+    AudioService.setBackgrounded(true)
+    void saveNow()
+  })
+  bus.on('app:foreground', () => AudioService.setBackgrounded(false))
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { StatusBar, Style } = await import('@capacitor/status-bar')
+      await StatusBar.setStyle({ style: Style.Dark })
+      await StatusBar.setOverlaysWebView({ overlay: true })
+    } catch {
+      /* iOS'ta setOverlaysWebView desteklenmeyebilir */
+    }
+  }
+}
+
+export async function hideNativeSplash(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    const { SplashScreen } = await import('@capacitor/splash-screen')
+    await SplashScreen.hide({ fadeOutDuration: 250 })
+  } catch {
+    /* yok say */
+  }
+}

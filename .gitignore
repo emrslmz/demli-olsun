@@ -1,0 +1,23 @@
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+.env
+.env.*.local
+.DS_Store
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
+# Görsel üretim ara klasörleri
+assets-work/raw/
+assets-work/tmp/
+# Capacitor native build çıktıları
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/

@@ -1,0 +1,22 @@
+/* SIL Open Font License 1.1 — OFL-Kalam.txt, OFL-Nunito.txt. Yerelde paketlenir, internet gerekmez. */
+@font-face {
+  font-family: 'Kalam';
+  src: url('./fonts/Kalam-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Kalam';
+  src: url('./fonts/Kalam-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Nunito';
+  src: url('./fonts/Nunito-Variable.woff2') format('woff2');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: block;
+}

@@ -1,0 +1,421 @@
+{
+  "theme": "default",
+  "version": 1,
+  "palette": {
+    "primary": "#1F4E8C",
+    "accent": "#1E9AA8",
+    "warm": "#8B1E0F",
+    "metal": "#C9A227",
+    "dark": "#3B2416",
+    "light": "#EDEDE4"
+  },
+  "assets": {
+    "bg_mahalle_phone": {
+      "counterY": 0.68,
+      "file": "bg/bg_mahalle_phone.jpg",
+      "w": 1080,
+      "h": 1920
+    },
+    "bg_mahalle_tablet": {
+      "counterY": 0.68,
+      "file": "bg/bg_mahalle_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
+    "bg_sahil_phone": {
+      "counterY": 0.68,
+      "file": "bg/bg_sahil_phone.jpg",
+      "w": 1080,
+      "h": 1920
+    },
+    "bg_sahil_tablet": {
+      "counterY": 0.68,
+      "file": "bg/bg_sahil_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
+    "bg_rize_phone": {
+      "counterY": 0.68,
+      "file": "bg/bg_rize_phone.jpg",
+      "w": 1080,
+      "h": 1920
+    },
+    "bg_rize_tablet": {
+      "counterY": 0.68,
+      "file": "bg/bg_rize_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
+    "bg_bogaz_phone": {
+      "counterY": 0.68,
+      "file": "bg/bg_bogaz_phone.jpg",
+      "w": 1080,
+      "h": 1920
+    },
+    "bg_bogaz_tablet": {
+      "counterY": 0.68,
+      "file": "bg/bg_bogaz_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
+    "char_riza_neutral": {
+      "file": "char/char_riza_neutral.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_riza_happy": {
+      "file": "char/char_riza_happy.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_riza_angry": {
+      "file": "char/char_riza_angry.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_muhtar_neutral": {
+      "file": "char/char_muhtar_neutral.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_muhtar_happy": {
+      "file": "char/char_muhtar_happy.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_muhtar_angry": {
+      "file": "char/char_muhtar_angry.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_taksici_neutral": {
+      "file": "char/char_taksici_neutral.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_taksici_happy": {
+      "file": "char/char_taksici_happy.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_taksici_angry": {
+      "file": "char/char_taksici_angry.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_ogrenci_neutral": {
+      "file": "char/char_ogrenci_neutral.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_ogrenci_happy": {
+      "file": "char/char_ogrenci_happy.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_ogrenci_angry": {
+      "file": "char/char_ogrenci_angry.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_esnaf_neutral": {
+      "file": "char/char_esnaf_neutral.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_esnaf_happy": {
+      "file": "char/char_esnaf_happy.png",
+      "w": 512,
+      "h": 512
+    },
+    "char_esnaf_angry": {
+      "file": "char/char_esnaf_angry.png",
+      "w": 512,
+      "h": 512
+    },
+    "logo_emblem": {
+      "file": "logo/logo_emblem.png",
+      "w": 1024,
+      "h": 1024
+    },
+    "pot_demlik_celik": {
+      "file": "pot/pot_demlik_celik.png",
+      "w": 768,
+      "h": 620
+    },
+    "pot_caydanlik_celik": {
+      "file": "pot/pot_caydanlik_celik.png",
+      "w": 768,
+      "h": 768
+    },
+    "pot_demlik_emaye": {
+      "file": "pot/pot_demlik_emaye.png",
+      "w": 768,
+      "h": 620
+    },
+    "pot_caydanlik_emaye": {
+      "file": "pot/pot_caydanlik_emaye.png",
+      "w": 768,
+      "h": 768
+    },
+    "pot_demlik_porselen": {
+      "file": "pot/pot_demlik_porselen.png",
+      "w": 768,
+      "h": 620
+    },
+    "pot_caydanlik_porselen": {
+      "file": "pot/pot_caydanlik_porselen.png",
+      "w": 768,
+      "h": 768
+    },
+    "pot_demlik_bakir": {
+      "file": "pot/pot_demlik_bakir.png",
+      "w": 768,
+      "h": 620
+    },
+    "pot_caydanlik_bakir": {
+      "file": "pot/pot_caydanlik_bakir.png",
+      "w": 768,
+      "h": 768
+    },
+    "prop_tabak": {
+      "file": "prop/prop_tabak.png",
+      "w": 512,
+      "h": 512
+    },
+    "prop_sekerlik": {
+      "file": "prop/prop_sekerlik.png",
+      "w": 512,
+      "h": 512
+    },
+    "prop_seker": {
+      "file": "prop/prop_seker.png",
+      "w": 128,
+      "h": 128
+    },
+    "prop_kasik": {
+      "file": "prop/prop_kasik.png",
+      "w": 256,
+      "h": 256
+    },
+    "prop_tepsi": {
+      "file": "prop/prop_tepsi.png",
+      "w": 768,
+      "h": 768
+    },
+    "ui_board": {
+      "slice": [
+        0.06,
+        0.06,
+        0.08,
+        0.08
+      ],
+      "file": "ui/ui_board.png",
+      "w": 1536,
+      "h": 640
+    },
+    "ui_card": {
+      "file": "ui/ui_card.png",
+      "w": 512,
+      "h": 640
+    },
+    "ui_panel": {
+      "slice": [
+        0.09,
+        0.09,
+        0.09,
+        0.09
+      ],
+      "file": "ui/ui_panel.png",
+      "w": 1024,
+      "h": 1024
+    },
+    "icon_coin": {
+      "file": "icon/icon_coin.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_life": {
+      "file": "icon/icon_life.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_life_broken": {
+      "file": "icon/icon_life_broken.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_sugar": {
+      "file": "icon/icon_sugar.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_star": {
+      "file": "icon/icon_star.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_star_empty": {
+      "file": "icon/icon_star_empty.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_fire": {
+      "file": "icon/icon_fire.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_gift": {
+      "file": "icon/icon_gift.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_lock": {
+      "file": "icon/icon_lock.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_ad": {
+      "file": "icon/icon_ad.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_trophy": {
+      "file": "icon/icon_trophy.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_share": {
+      "file": "icon/icon_share.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_pause": {
+      "file": "icon/icon_pause.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_settings": {
+      "file": "icon/icon_settings.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_shop": {
+      "file": "icon/icon_shop.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_music": {
+      "file": "icon/icon_music.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_sfx": {
+      "file": "icon/icon_sfx.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_vibration": {
+      "file": "icon/icon_vibration.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_back": {
+      "file": "icon/icon_back.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_close": {
+      "file": "icon/icon_close.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_clock": {
+      "file": "icon/icon_clock.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_dem": {
+      "file": "icon/icon_dem.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_water": {
+      "file": "icon/icon_water.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_serve": {
+      "file": "icon/icon_serve.png",
+      "w": 256,
+      "h": 256
+    },
+    "icon_info": {
+      "file": "icon/icon_info.png",
+      "w": 256,
+      "h": 256
+    },
+    "fx_steam": {
+      "blend": "add",
+      "file": "fx/fx_steam.png",
+      "w": 256,
+      "h": 256
+    },
+    "fx_sparkle": {
+      "blend": "add",
+      "file": "fx/fx_sparkle.png",
+      "w": 128,
+      "h": 128
+    },
+    "decal_yaldiz": {
+      "file": "decal/decal_yaldiz.png",
+      "w": 512,
+      "h": 512
+    },
+    "decal_lale": {
+      "file": "decal/decal_lale.png",
+      "w": 512,
+      "h": 512
+    },
+    "decal_nazar": {
+      "file": "decal/decal_nazar.png",
+      "w": 512,
+      "h": 512
+    },
+    "decal_kristal": {
+      "file": "decal/decal_kristal.png",
+      "w": 512,
+      "h": 512
+    },
+    "decal_baslangic": {
+      "file": "decal/decal_baslangic.png",
+      "w": 512,
+      "h": 512
+    },
+    "badge_mahalle": {
+      "file": "badge/badge_mahalle.png",
+      "w": 512,
+      "h": 512
+    },
+    "badge_ilce": {
+      "file": "badge/badge_ilce.png",
+      "w": 512,
+      "h": 512
+    },
+    "badge_sehir": {
+      "file": "badge/badge_sehir.png",
+      "w": 512,
+      "h": 512
+    },
+    "badge_bolge": {
+      "file": "badge/badge_bolge.png",
+      "w": 512,
+      "h": 512
+    },
+    "badge_turkiye": {
+      "file": "badge/badge_turkiye.png",
+      "w": 512,
+      "h": 512
+    }
+  }
+}
