@@ -168,8 +168,8 @@ export function computeLayout(
 
   const glassTop = glassBaseY - glassUnit * 1.12
   const spoutTarget = {
-    dem: { x: cx - 70 * u, y: glassTop - 50 * u },
-    su: { x: cx + 70 * u, y: glassTop - 50 * u },
+    dem: { x: cx - 64 * u, y: glassTop - 96 * u },
+    su: { x: cx + 64 * u, y: glassTop - 96 * u },
   }
 
   const fillGauge: Rect = { x: cx + 205 * u, y: glassBaseY - glassUnit * 1.1, w: 26 * u, h: glassUnit * 1.1 }

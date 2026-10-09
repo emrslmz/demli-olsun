@@ -7,6 +7,7 @@ import { bus } from '@/bus'
 import { ACTIVE_THEME, resolveThemeSetting } from '@/config/theme'
 import { initServiceImplementations, services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
+import { HapticsService } from '@/services/haptics/HapticsService'
 import { initBackButton } from '@/services/platform/backButton'
 import { initLifecycle } from '@/services/platform/lifecycle'
 import { initSafeArea } from '@/services/platform/safeArea'
@@ -34,6 +35,8 @@ export async function bootstrap(): Promise<void> {
   window.addEventListener('pointerdown', unlock, { passive: true })
   window.addEventListener('keydown', unlock, { passive: true })
 
+  bus.on('audio:sfx', (name) => AudioService.play(name))
+  bus.on('haptic', (e) => HapticsService.trigger(e))
   bus.on('app:background', () => {
     AudioService.setBackgrounded(true)
     void saveNow()

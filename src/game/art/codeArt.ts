@@ -38,4 +38,24 @@ export function generateCodeArt(scene: Phaser.Scene): void {
   })
   canvasTexture(scene, 'ca_dot', 64, 64, (ctx, w, h) => softCircle(ctx, w, h, 0.45))
   canvasTexture(scene, 'ca_glow', 128, 128, (ctx, w, h) => softCircle(ctx, w, h, 0.05))
+  // Damla: sivri üstlü gözyaşı
+  canvasTexture(scene, 'ca_drop', 48, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#fff'
+    ctx.beginPath()
+    ctx.moveTo(w / 2, 2)
+    ctx.bezierCurveTo(w * 0.62, h * 0.3, w - 3, h * 0.5, w - 3, h * 0.66)
+    ctx.arc(w / 2, h * 0.66, w / 2 - 3, 0, Math.PI)
+    ctx.bezierCurveTo(3, h * 0.5, w * 0.38, h * 0.3, w / 2, 2)
+    ctx.fill()
+  })
+  // Kabarcık halkası
+  canvasTexture(scene, 'ca_ring', 64, 64, (ctx, w) => {
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)'
+    ctx.lineWidth = 6
+    ctx.beginPath()
+    ctx.arc(w / 2, w / 2, w / 2 - 5, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'
+    ctx.fill()
+  })
 }
