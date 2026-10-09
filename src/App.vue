@@ -44,7 +44,7 @@ const StarterOfferModal = defineAsyncComponent(() => import('@/ui/modals/Starter
 const DevMenu = defineAsyncComponent(() => import('@/ui/modals/DevMenu.vue'))
 const LeagueResultModal = defineAsyncComponent(() => import('@/ui/modals/LeagueResultModal.vue'))
 
-const DEV_MENU = import.meta.env.DEV || import.meta.env.VITE_DEV_MENU === 'true'
+const DEV_MENU = import.meta.env.DEV || import.meta.env.MODE === 'debug' || import.meta.env.VITE_DEV_MENU === 'true'
 
 const app = useAppStore()
 const daily = useDailyStore()

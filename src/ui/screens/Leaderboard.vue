@@ -15,6 +15,7 @@ import { ThemeService } from '@/services/theme/ThemeService'
 import { useAppStore } from '@/stores/app'
 import { useDailyStore } from '@/stores/daily'
 import { usePlayerStore } from '@/stores/player'
+import { useProgressStore } from '@/stores/progress'
 import GameButton from '@/ui/components/GameButton.vue'
 import TopBar from '@/ui/components/TopBar.vue'
 
@@ -22,6 +23,7 @@ type Tab = 'weekly' | 'daily' | 'allTime'
 const app = useAppStore()
 const daily = useDailyStore()
 const player = usePlayerStore()
+const progress = useProgressStore()
 const tab = ref<Tab>('weekly')
 const weekly = ref<WeeklyBoard | null>(null)
 const dailyRows = ref<DailyRow[] | null>(null)
@@ -54,6 +56,11 @@ async function load(t: Tab) {
   }
   await nextTick()
   list.value?.querySelector('.me')?.scrollIntoView({ block: 'center' })
+}
+
+/** Oyuncu satırında unvan da görünür. */
+function label(r: { name: string; isPlayer: boolean }): string {
+  return r.isPlayer ? `${r.name} · ${progress.title.name}` : r.name
 }
 
 /** Uzun tablolarda ilk 10 + oyuncunun çevresi. */
@@ -126,7 +133,7 @@ onBeforeUnmount(() => {
             </div>
             <div class="row" :class="[zone(r.rank), { me: r.isPlayer }]">
               <span class="rank">{{ r.rank }}</span>
-              <span class="name">{{ r.isPlayer ? `${r.name} (${tr.leaderboard.you})` : r.name }}</span>
+              <span class="name">{{ label(r) }}</span>
               <b class="score">{{ num(r.score) }}</b>
             </div>
           </template>
@@ -144,7 +151,7 @@ onBeforeUnmount(() => {
             <div v-if="!r" class="dots">⋯</div>
             <div v-else class="row" :class="{ me: r.isPlayer, gold: r.rank <= 3 }">
               <span class="rank">{{ r.rank }}</span>
-              <span class="name">{{ r.isPlayer ? `${r.name} (${tr.leaderboard.you})` : r.name }}</span>
+              <span class="name">{{ label(r) }}</span>
               <small class="time">{{ pct1(r.timeSec) }} sn</small>
               <b class="score">%{{ pct1(r.accuracy) }}</b>
             </div>
@@ -158,7 +165,7 @@ onBeforeUnmount(() => {
           <div v-if="!r" class="dots">⋯</div>
           <div v-else class="row" :class="{ me: r.isPlayer, gold: r.rank <= 3 }">
             <span class="rank">{{ r.rank }}</span>
-            <span class="name">{{ r.isPlayer ? `${r.name} (${tr.leaderboard.you})` : r.name }}</span>
+            <span class="name">{{ label(r) }}</span>
             <b class="score">{{ num(r.score) }}</b>
           </div>
         </template>

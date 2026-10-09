@@ -183,14 +183,21 @@ interface ShopRow {
   owned: boolean
 }
 const shopRows = computed<ShopRow[]>(() => {
-  const rows: ShopRow[] = []
+  const rows: ShopRow[] = [{ id: 'remove_ads', name: tr.menu.removeAds, desc: tr.market.removeAdsDesc, icon: 'icon_ad', owned: app.noAds }]
   if (starterActive.value) {
     rows.push({ id: 'starter_pack', name: tr.market.starterPack, desc: tr.market.starterDesc, icon: 'icon_gift', owned: false })
   }
-  rows.push({ id: 'remove_ads', name: tr.menu.removeAds, desc: tr.market.removeAdsDesc, icon: 'icon_ad', owned: app.noAds })
   rows.push({ id: 'bahsis_s', name: 'Küçük kese', desc: '500 bahşiş', icon: 'icon_coin', owned: false })
   rows.push({ id: 'bahsis_m', name: 'Orta kese', desc: '1.500 bahşiş', icon: 'icon_coin', owned: false })
   rows.push({ id: 'bahsis_l', name: 'Büyük kese', desc: '4.000 bahşiş', icon: 'icon_coin', owned: false })
+  rows.push({
+    id: 'theme_rize',
+    name: 'Rize çay bahçesi',
+    desc: 'Premium mekan',
+    icon: 'icon_shop',
+    owned: app.hasEntitlement('theme_rize'),
+  })
+  rows.push({ id: 'theme_bogaz', name: 'Boğaz vapuru', desc: 'Premium mekan', icon: 'icon_shop', owned: app.hasEntitlement('theme_bogaz') })
   return rows
 })
 
@@ -256,7 +263,9 @@ onBeforeUnmount(() => {
             <div class="card__thumb" :class="`thumb--${c.kind}`">
               <GlassThumb v-if="c.kind === 'glass'" :id="c.id" />
               <img v-else :src="thumb(c)" alt="" loading="lazy" />
-              <span v-if="c.product && !c.owned" class="badge">{{ tr.market.premium }}</span>
+              <span v-if="c.product && !c.owned" class="badge"
+                ><img :src="ThemeService.url('icon_lock')" alt="" />{{ tr.market.premium }}</span
+              >
               <img v-if="c.equipped" class="check" :src="ThemeService.url('icon_star')" alt="" />
             </div>
             <div class="card__name">{{ c.name }}</div>
@@ -293,7 +302,7 @@ onBeforeUnmount(() => {
                 :disabled="freeLeft <= 0 || adBusy || !app.rewardedAvailable"
                 @click="freeB(id)"
               >
-                Bedava
+                {{ app.rewardedAvailable ? 'Reklamla +1' : tr.common.adUnavailable }}
               </GameButton>
             </div>
           </div>
@@ -459,17 +468,23 @@ onBeforeUnmount(() => {
 .thumb--glass {
   padding: 6px 14px 2px;
 }
-.thumb--pot img:not(.check) {
+.thumb--pot > img:not(.check) {
   width: 92%;
 }
 .thumb--venue {
   aspect-ratio: 4 / 3;
 }
-.thumb--venue img:not(.check) {
+.thumb--venue > img:not(.check) {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: 50% 62%;
+}
+.badge img {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 3px;
 }
 .badge {
   position: absolute;

@@ -23,8 +23,9 @@ async function watch() {
 }
 
 function goShop() {
+  session.pendingShop = true
   declineContinue()
-  app.showToast('Mesai bitti. Kese Çarşı’da seni bekliyor.')
+  app.showToast('Mesai bitti. Menü’ye dönünce Kese açılacak.')
 }
 </script>
 

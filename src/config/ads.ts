@@ -39,12 +39,13 @@ export interface AdUnitIds {
 
 /**
  * Platforma göre reklam birimi kimliklerini döndürür.
- * Dev build'de daima test kimlikleri; release build'de `.env` değerleri (boşsa yine test kimlikleri).
+ * Yalnızca `vite build` (mode=production) gerçek kimlikleri kullanır; geliştirme sunucusu ve
+ * `npm run build:debug` (mode=debug) daima Google test kimlikleriyle çalışır. `.env` boşsa yine test kimlikleri.
  */
 export function getAdUnitIds(platform: 'android' | 'ios'): AdUnitIds {
   const test = ADMOB_TEST_IDS[platform]
   const env = import.meta.env
-  const isRelease = import.meta.env.PROD
+  const isRelease = import.meta.env.PROD && import.meta.env.MODE === 'production'
   const real =
     platform === 'android'
       ? {

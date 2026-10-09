@@ -12,6 +12,7 @@ import { CUSTOMERS } from '@/data/customers'
 import { tr } from '@/i18n/tr'
 import { now as clockNow } from './clock'
 import { leagueState, resolveLeagueWeek } from './league'
+import { maybeStartStarterOffer } from './market'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
@@ -175,6 +176,12 @@ export async function onGameOver(result: ShiftResult): Promise<void> {
   app.open(null)
   app.go('gameover')
   leaveGameUi()
+  // 3. mesai bittiğinde Başlangıç Paketi teklifi bir kez çıkar (sonra 48 saat Kese'de).
+  if (maybeStartStarterOffer()) {
+    setTimeout(() => {
+      if (app.screen === 'gameover' && !app.modal) app.open('starterOffer')
+    }, 1600)
+  }
 }
 
 export async function doubleTips(): Promise<boolean> {
@@ -229,6 +236,14 @@ export async function playAgain(): Promise<void> {
 }
 
 export async function gameOverToMenu(): Promise<void> {
+  const session = useSessionStore()
+  // Devam penceresinden "Kese'ye git" seçildiyse reklamsız, doğrudan Kese açılır.
+  if (session.pendingShop) {
+    session.pendingShop = false
+    quitToMenu()
+    useAppStore().openMarket('shop')
+    return
+  }
   await maybeInterstitial()
   quitToMenu()
 }

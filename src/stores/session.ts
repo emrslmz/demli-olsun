@@ -26,5 +26,7 @@ export const useSessionStore = defineStore('session', () => {
   const mode = ref<GameMode>('shift')
   /** Gösterilmeyi bekleyen geçen hafta sonucu (ödül zaten verildi). */
   const leagueResult = ref<WeekResolution | null>(null)
-  return { gameOver, continueOffer, dailyResult, dailyPercentile, lastBoosters, mode, leagueResult }
+  /** Devam penceresinden "Kese'ye git": oyun sonundan menüye dönüşte Kese açılır. */
+  const pendingShop = ref(false)
+  return { gameOver, continueOffer, dailyResult, dailyPercentile, lastBoosters, mode, leagueResult, pendingShop }
 })
