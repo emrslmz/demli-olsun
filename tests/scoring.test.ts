@@ -75,9 +75,9 @@ describe('scoring', () => {
     // 100 × 0.9 × 1.2 × 1.5 + 0 = 162
     expect(servePoints({ accuracy: 90, combo: 1.2, gauge: 'none', patienceRatio: 0, accepted: true })).toBe(162)
     // Yoğun saat ×1.5
-    expect(
-      servePoints({ accuracy: 100, combo: 1, gauge: 'marks', patienceRatio: 1, accepted: true, rushMultiplier: 1.5 }),
-    ).toBe(Math.round((120 + 30) * 1.5))
+    expect(servePoints({ accuracy: 100, combo: 1, gauge: 'marks', patienceRatio: 1, accepted: true, rushMultiplier: 1.5 })).toBe(
+      Math.round((120 + 30) * 1.5),
+    )
     expect(servePoints({ accuracy: 40, combo: 2, gauge: 'none', patienceRatio: 1, accepted: false })).toBe(0)
   })
 

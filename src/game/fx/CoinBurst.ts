@@ -19,7 +19,14 @@ export class CoinBurst {
     return c.setActive(true).setVisible(true).setAlpha(1)
   }
 
-  burst(from: { x: number; y: number }, to: { x: number; y: number }, count: number, size: number, onCoin?: (i: number) => void, reduced = false): void {
+  burst(
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    count: number,
+    size: number,
+    onCoin?: (i: number) => void,
+    reduced = false,
+  ): void {
     const n = Math.max(1, Math.min(reduced ? 4 : 10, count))
     for (let i = 0; i < n; i++) {
       const c = this.get().setDisplaySize(size, size).setPosition(from.x, from.y)

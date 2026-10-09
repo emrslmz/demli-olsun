@@ -2,33 +2,19 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import type { MarketTab } from '@/app/market'
 import type { EntitlementId } from '@/config/products'
 import { defaultSave, type SaveData } from '@/services/save/schema'
 
-export type Screen =
-  | 'splash'
-  | 'onboarding'
-  | 'menu'
-  | 'market'
-  | 'leaderboard'
-  | 'settings'
-  | 'game'
-  | 'gameover'
-  | 'dailyResult'
+export type Screen = 'splash' | 'onboarding' | 'menu' | 'market' | 'leaderboard' | 'settings' | 'game' | 'gameover' | 'dailyResult'
 
 export type ModalName =
-  | 'pause'
-  | 'continue'
-  | 'dailyReward'
-  | 'starterOffer'
-  | 'leagueResult'
-  | 'confirm'
-  | 'consentIntro'
-  | 'dev'
-  | 'boosters'
+  'pause' | 'continue' | 'dailyReward' | 'starterOffer' | 'leagueResult' | 'confirm' | 'consentIntro' | 'dev' | 'boosters'
 
 export const useAppStore = defineStore('app', () => {
   const screen = ref<Screen>('splash')
+  /** Çarşı açılırken seçili sekme. */
+  const marketTab = ref<MarketTab>('glasses')
   const modal = ref<ModalName | null>(null)
   const flags = ref<SaveData['flags']>({ ...defaultSave().flags })
   const ads = ref<SaveData['ads']>({ ...defaultSave().ads })
@@ -51,6 +37,11 @@ export const useAppStore = defineStore('app', () => {
 
   function go(s: Screen) {
     screen.value = s
+  }
+
+  function openMarket(tab: MarketTab = 'glasses') {
+    marketTab.value = tab
+    screen.value = 'market'
   }
 
   function open(m: ModalName | null) {
@@ -77,6 +68,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     screen,
+    marketTab,
     modal,
     flags,
     ads,
@@ -92,6 +84,7 @@ export const useAppStore = defineStore('app', () => {
     noAds,
     confirm,
     go,
+    openMarket,
     open,
     showToast,
     hasEntitlement,

@@ -70,11 +70,7 @@ export interface ContinueOffer {
   cost: number
 }
 
-export type CosmeticPreview =
-  | { kind: 'glass'; id: string }
-  | { kind: 'pot'; id: string }
-  | { kind: 'venue'; id: string }
-  | null
+export type CosmeticPreview = { kind: 'glass'; id: string } | { kind: 'pot'; id: string } | { kind: 'venue'; id: string } | null
 
 export type Events = {
   /** Phaser hazır (BootScene bitti). */
@@ -105,7 +101,7 @@ export type Events = {
   /** Ses efekti iste. */
   'audio:sfx': SfxName
   /** Titreşim iste. */
-  'haptic': HapticEvent
+  haptic: HapticEvent
   /** Tema değişti; Phaser texture'ları yeniden yükler. */
   'theme:changed': ThemeId
   /** Kuşanılan kozmetik değişti ya da önizleme istendi. */

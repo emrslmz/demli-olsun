@@ -313,17 +313,34 @@ export class ShiftScene extends PlayScene {
       void this.wait(380).then(() => {
         if (!this.alive(g)) return
         this.floats.float(L.col.cx, glassTop - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 56 * L.u, '#FFF6E6', 70 * L.u, 1100)
-        this.starsPop.show(L.col.cx, glassTop - 120 * L.u, ev.stars, 70 * L.u, (i) => AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }))
-        this.floats.fly(L.col.cx + 120 * L.u, glassTop + 20 * L.u, `+${points}`, 50 * L.u, this.hud.scoreTarget(), () => {
-          this.score += points
-          this.hud.setScore(this.score)
-        }, '#F6C445')
+        this.starsPop.show(L.col.cx, glassTop - 120 * L.u, ev.stars, 70 * L.u, (i) =>
+          AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }),
+        )
+        this.floats.fly(
+          L.col.cx + 120 * L.u,
+          glassTop + 20 * L.u,
+          `+${points}`,
+          50 * L.u,
+          this.hud.scoreTarget(),
+          () => {
+            this.score += points
+            this.hud.setScore(this.score)
+          },
+          '#F6C445',
+        )
         if (tips > 0) {
           const econ = useEconomyStore()
-          this.coins.burst({ x: L.col.cx - 60 * L.u, y: glassTop }, this.hud.coinTarget(), Math.ceil(tips / 2), 48 * L.u, (i) => {
-            AudioService.play('coin', { rate: 1 + (i % 4) * 0.08, volume: 0.6 })
-            this.hud.bumpCoin()
-          }, this.reduced)
+          this.coins.burst(
+            { x: L.col.cx - 60 * L.u, y: glassTop },
+            this.hud.coinTarget(),
+            Math.ceil(tips / 2),
+            48 * L.u,
+            (i) => {
+              AudioService.play('coin', { rate: 1 + (i % 4) * 0.08, volume: 0.6 })
+              this.hud.bumpCoin()
+            },
+            this.reduced,
+          )
           this.hud.setTips(econ.tips + this.tipsEarned)
         }
         if (this.streak >= 2) {
@@ -546,7 +563,11 @@ export class ShiftScene extends PlayScene {
         const side = i % 2 ? 1 : -1
         const x = L.col.cx + side * (L.col.w * (0.22 + 0.13 * Math.floor(i / 2)))
         const s = 300 * L.u
-        const img = this.add.image(x + side * 300 * L.u, L.counterY + 10 * L.u, id).setOrigin(0.5, 1).setDisplaySize(s, s).setDepth(-50)
+        const img = this.add
+          .image(x + side * 300 * L.u, L.counterY + 10 * L.u, id)
+          .setOrigin(0.5, 1)
+          .setDisplaySize(s, s)
+          .setDepth(-50)
         img.setTint(0x6a4a38).setAlpha(0)
         img.setFlipX(side > 0)
         this.crowd.push(img)
@@ -575,4 +596,3 @@ export class ShiftScene extends PlayScene {
     super.onShutdown()
   }
 }
-

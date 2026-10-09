@@ -44,7 +44,12 @@ export abstract class PlayScene extends BaseScene {
   private fpsFrames = 0
   private fpsChecked = false
 
-  protected createPlay(cfg: { glass: GlassProfileId; gauge: GaugeMode; flowScale?: { dem: number; su: number }; seedRand?: () => number }): void {
+  protected createPlay(cfg: {
+    glass: GlassProfileId
+    gauge: GaugeMode
+    flowScale?: { dem: number; su: number }
+    seedRand?: () => number
+  }): void {
     this.setupBase()
     this.gen++
     this.paused = false

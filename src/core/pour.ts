@@ -36,10 +36,7 @@ export class PourChannel {
   private dropTimer = 0
   private readonly out: PourStep = { volume: 0, drops: 0 }
 
-  constructor(
-    params: FlowParams,
-    opts: { rand?: () => number; tail?: PourTailConfig; flowScale?: number } = {},
-  ) {
+  constructor(params: FlowParams, opts: { rand?: () => number; tail?: PourTailConfig; flowScale?: number } = {}) {
     this.params = params
     this.tail = opts.tail ?? POUR_TAIL
     this.rand = opts.rand ?? Math.random

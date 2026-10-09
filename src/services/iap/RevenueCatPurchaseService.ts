@@ -21,10 +21,7 @@ export class RevenueCatPurchaseService implements PurchaseService {
   private readonly listeners = new Listeners<EntitlementId[]>()
 
   async init(appUserId: string): Promise<void> {
-    const key =
-      Capacitor.getPlatform() === 'ios'
-        ? import.meta.env.VITE_REVENUECAT_KEY_IOS
-        : import.meta.env.VITE_REVENUECAT_KEY_ANDROID
+    const key = Capacitor.getPlatform() === 'ios' ? import.meta.env.VITE_REVENUECAT_KEY_IOS : import.meta.env.VITE_REVENUECAT_KEY_ANDROID
     if (!key) {
       console.warn('[iap] RevenueCat anahtarı yok (.env). Satın alma devre dışı.')
       return

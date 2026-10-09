@@ -143,7 +143,13 @@ export class Station {
     const pal = ThemeService.paletteInt
     const P = ThemeService.palette
     this.demPad = new ChunkyButton(scene, { color: pal.warm, icon: 'icon_dem', label: tr.game.dem, hold: true, textColor: onColor(P.warm) })
-    this.suPad = new ChunkyButton(scene, { color: pal.accent, icon: 'icon_water', label: tr.game.water, hold: true, textColor: onColor(P.accent) })
+    this.suPad = new ChunkyButton(scene, {
+      color: pal.accent,
+      icon: 'icon_water',
+      label: tr.game.water,
+      hold: true,
+      textColor: onColor(P.accent),
+    })
     this.serveBtn = new ChunkyButton(scene, {
       color: pal.metal,
       icon: 'icon_serve',
@@ -460,7 +466,13 @@ export class Station {
     if (!this.dropPool.includes(drop)) this.dropPool.push(drop)
     const style = src === 'dem' ? DEM_STREAM : SU_STREAM
     const s = 16 * this.L.u
-    drop.setActive(true).setVisible(true).setPosition(from.x, from.y).setDisplaySize(s * 0.7, s).setTint(style.color).setAlpha(0.95)
+    drop
+      .setActive(true)
+      .setVisible(true)
+      .setPosition(from.x, from.y)
+      .setDisplaySize(s * 0.7, s)
+      .setTint(style.color)
+      .setAlpha(0.95)
     const toX = this.glass.container.x + (src === 'dem' ? -1 : 1) * this.glass.worldRadiusAt(this.glass.levelH()) * 0.2
     this.scene.tweens.add({
       targets: drop,
@@ -486,7 +498,12 @@ export class Station {
     const g = this.glass
     const top = g.topWorldY
     const size = g.worldRadiusAt(1) * 2.4
-    this.spoon.setVisible(true).setDisplaySize(size, size).setPosition(g.container.x + size * 0.12, top - size * 0.05).setAngle(-20).setAlpha(0)
+    this.spoon
+      .setVisible(true)
+      .setDisplaySize(size, size)
+      .setPosition(g.container.x + size * 0.12, top - size * 0.05)
+      .setAngle(-20)
+      .setAlpha(0)
     return new Promise((resolve) => {
       this.scene.tweens.add({ targets: this.spoon, alpha: 1, duration: 80 })
       this.scene.tweens.add({
@@ -502,7 +519,13 @@ export class Station {
           this.glass.agitate(0.9)
         },
         onComplete: () => {
-          this.scene.tweens.add({ targets: this.spoon, alpha: 0, y: top - size * 0.4, duration: 140, onComplete: () => this.spoon.setVisible(false) })
+          this.scene.tweens.add({
+            targets: this.spoon,
+            alpha: 0,
+            y: top - size * 0.4,
+            duration: 140,
+            onComplete: () => this.spoon.setVisible(false),
+          })
           resolve()
         },
       })
@@ -529,7 +552,11 @@ export class Station {
     const targets: Phaser.GameObjects.GameObject[] = [this.glass.container, this.saucer, this.puddle]
     if (withTray) {
       const tw = this.L.saucer.w * 1.5
-      withTray.setVisible(true).setDisplaySize(tw, tw).setPosition(this.saucer.x, this.saucer.y - tw * 0.24).setDepth(9)
+      withTray
+        .setVisible(true)
+        .setDisplaySize(tw, tw)
+        .setPosition(this.saucer.x, this.saucer.y - tw * 0.24)
+        .setDepth(9)
       targets.push(withTray)
     }
     return new Promise((resolve) => {

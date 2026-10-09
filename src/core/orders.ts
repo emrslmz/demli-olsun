@@ -34,9 +34,7 @@ export interface OrderContext {
 }
 
 export function pickCustomer(rng: Rng, ctx: OrderContext): CustomerId {
-  const ids = CUSTOMER_IDS.filter(
-    (id) => CUSTOMERS[id].minStage <= ctx.stage.stage && !(ctx.exclude ?? []).includes(id),
-  )
+  const ids = CUSTOMER_IDS.filter((id) => CUSTOMERS[id].minStage <= ctx.stage.stage && !(ctx.exclude ?? []).includes(id))
   const weights = ids.map((id) => CUSTOMERS[id].weight * (id === ctx.lastCustomer ? 0.3 : 1))
   return rng.weighted(ids, weights)
 }

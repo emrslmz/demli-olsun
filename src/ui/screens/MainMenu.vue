@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Ana Menü: arkada buharı tüten büyük bir bardak çay (Phaser ortam sahnesi). */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { now as clockNow } from '@/app/clock'
 import { startShift } from '@/app/flow'
 import { msUntilNextIstanbulMidnight } from '@/core/daily'
 import { duration, fmt, num, tr } from '@/i18n/tr'
@@ -23,13 +24,13 @@ const progress = useProgressStore()
 const daily = useDailyStore()
 const player = usePlayerStore()
 const inv = useInventoryStore()
-const now = ref(Date.now())
+const now = ref(clockNow().getTime())
 let timer = 0
 let offBack: (() => void) | null = null
 
 onMounted(() => {
   timer = window.setInterval(() => {
-    now.value = Date.now()
+    now.value = clockNow().getTime()
     daily.refreshToday()
   }, 1000)
   offBack = pushBackHandler(() => app.confirm(tr.exitConfirm, () => void exitApp(), tr.common.yes, tr.common.no))
@@ -76,7 +77,6 @@ function logoTap() {
     emit('devTap')
   }
 }
-
 </script>
 
 <template>
@@ -91,7 +91,7 @@ function logoTap() {
       </div>
       <div class="menu__top-right">
         <CoinCounter :value="econ.tips" />
-        <GameButton v-if="!app.noAds" size="small" variant="metal" @click="app.go('market')">{{ tr.menu.removeAds }}</GameButton>
+        <GameButton v-if="!app.noAds" size="small" variant="metal" @click="app.openMarket('shop')">{{ tr.menu.removeAds }}</GameButton>
       </div>
     </header>
 
@@ -105,7 +105,7 @@ function logoTap() {
       <GameButton variant="primary" size="big" icon="icon_serve" @click="start">{{ tr.menu.startShift }}</GameButton>
       <div class="menu__row">
         <GameButton class="daily" variant="accent" icon="icon_clock" @click="emit('daily')">{{ dailyLabel }}</GameButton>
-        <GameButton size="icon" variant="metal" icon="icon_shop" :aria-label="tr.menu.market" @click="app.go('market')" />
+        <GameButton size="icon" variant="metal" icon="icon_shop" :aria-label="tr.menu.market" @click="app.openMarket()" />
         <GameButton size="icon" variant="blue" icon="icon_trophy" :aria-label="tr.menu.leaderboard" @click="app.go('leaderboard')" />
         <GameButton size="icon" icon="icon_settings" :aria-label="tr.menu.settings" @click="app.go('settings')" />
       </div>

@@ -17,6 +17,7 @@ interface ImportMetaEnv {
   readonly VITE_STORE_URL?: string
   readonly VITE_PRIVACY_URL?: string
   readonly VITE_ACTIVE_THEME?: string
+  readonly VITE_DEV_MENU?: string
 }
 
 interface ImportMeta {
@@ -28,3 +29,5 @@ declare module '*.vue' {
   const component: DefineComponent<object, object, unknown>
   export default component
 }
+
+declare const __APP_VERSION__: string

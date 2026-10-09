@@ -44,12 +44,17 @@ const icons: Record<BoosterId, string> = { ustaGozu: 'icon_info', sabirTasi: 'ic
         @click="toggle(b.id)"
       >
         <img :src="ThemeService.url(icons[b.id])" alt="" />
-        <span class="txt"><b>{{ b.name }}</b><small>{{ b.desc }}</small></span>
+        <span class="txt"
+          ><b>{{ b.name }}</b
+          ><small>{{ b.desc }}</small></span
+        >
         <span class="have">{{ fmt(tr.boosters.have, { n: b.have }) }}</span>
       </button>
     </div>
     <div class="col">
-      <GameButton variant="primary" size="big" @click="startShift(picked)">{{ picked.length ? tr.boosters.start : tr.boosters.none }}</GameButton>
+      <GameButton variant="primary" size="big" @click="startShift(picked)">{{
+        picked.length ? tr.boosters.start : tr.boosters.none
+      }}</GameButton>
     </div>
   </Modal>
 </template>

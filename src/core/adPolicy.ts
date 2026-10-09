@@ -17,24 +17,14 @@ export interface AdPolicyState {
 }
 
 export type AdDenyReason =
-  | 'removeAds'
-  | 'purchasedThisSession'
-  | 'tooFewShifts'
-  | 'tooFewShiftsSinceLast'
-  | 'tooSoonSinceLast'
-  | 'recentRewarded'
-  | 'notLoaded'
+  'removeAds' | 'purchasedThisSession' | 'tooFewShifts' | 'tooFewShiftsSinceLast' | 'tooSoonSinceLast' | 'recentRewarded' | 'notLoaded'
 
 export interface AdDecision {
   show: boolean
   reason?: AdDenyReason
 }
 
-export function canShowInterstitial(
-  s: AdPolicyState,
-  now: number,
-  rules: typeof INTERSTITIAL_RULES = INTERSTITIAL_RULES,
-): AdDecision {
+export function canShowInterstitial(s: AdPolicyState, now: number, rules: typeof INTERSTITIAL_RULES = INTERSTITIAL_RULES): AdDecision {
   if (s.removeAds) return { show: false, reason: 'removeAds' }
   if (s.purchasedThisSession) return { show: false, reason: 'purchasedThisSession' }
   if (s.lifetimeShifts < rules.minLifetimeShifts) return { show: false, reason: 'tooFewShifts' }

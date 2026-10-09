@@ -183,9 +183,7 @@ class AudioServiceImpl {
     }
     const base = `${import.meta.env.BASE_URL}audio/`
     const load = async (list: string[] | undefined) =>
-      (await Promise.all((list ?? []).map((f) => this.fetchBuffer(base + f)))).filter(
-        (b): b is AudioBuffer => !!b,
-      )
+      (await Promise.all((list ?? []).map((f) => this.fetchBuffer(base + f)))).filter((b): b is AudioBuffer => !!b)
     this.musicBuffers = await load(manifest.music)
     this.ambientBuffers = await load(manifest.ambient)
     this.oneShotBuffers = await load(manifest.oneShots)

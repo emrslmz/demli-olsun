@@ -73,7 +73,9 @@ export class Hud {
     // Canlar: ortada
     const lifeSize = h * 0.62
     const lx = x + w * 0.6
-    this.lives.forEach((img, i) => img.setPosition(lx + (i - (this.lives.length - 1) / 2) * lifeSize * 0.82, cy).setDisplaySize(lifeSize, lifeSize))
+    this.lives.forEach((img, i) =>
+      img.setPosition(lx + (i - (this.lives.length - 1) / 2) * lifeSize * 0.82, cy).setDisplaySize(lifeSize, lifeSize),
+    )
     // Bahşiş: sağda
     const cs = h * 0.52
     this.tipsText.setStyle(style(38 * u)).setPosition(x + w - 4 * u, cy)
@@ -114,7 +116,14 @@ export class Hud {
       if (!alive && i < prev && animateLoss) {
         // Bardak ikonu çatlar ve söner.
         img.setTexture('icon_life_broken')
-        this.scene.tweens.add({ targets: img, angle: { from: -14, to: 14 }, duration: 60, yoyo: true, repeat: 3, onComplete: () => img.setAngle(0) })
+        this.scene.tweens.add({
+          targets: img,
+          angle: { from: -14, to: 14 },
+          duration: 60,
+          yoyo: true,
+          repeat: 3,
+          onComplete: () => img.setAngle(0),
+        })
         this.scene.tweens.add({ targets: img, alpha: 0.28, duration: 500, delay: 320 })
       } else {
         img.setTexture(alive ? 'icon_life' : 'icon_life_broken').setAlpha(alive ? 1 : 0.28)
@@ -135,7 +144,12 @@ export class Hud {
   }
 
   bumpCoin(): void {
-    this.scene.tweens.add({ targets: this.coin, scale: { from: this.coin.scale * 1.25, to: this.coin.scale }, duration: 200, ease: 'Back.easeOut' })
+    this.scene.tweens.add({
+      targets: this.coin,
+      scale: { from: this.coin.scale * 1.25, to: this.coin.scale },
+      duration: 200,
+      ease: 'Back.easeOut',
+    })
   }
 
   setCombo(mult: number): void {
@@ -167,12 +181,33 @@ export class Hud {
   }
 
   setVisible(v: boolean): void {
-    for (const o of [this.pauseBg, this.pauseIcon, this.scoreLabel, this.scoreText, this.comboText, this.coin, this.tipsText, ...this.lives]) o.setVisible(v)
+    for (const o of [
+      this.pauseBg,
+      this.pauseIcon,
+      this.scoreLabel,
+      this.scoreText,
+      this.comboText,
+      this.coin,
+      this.tipsText,
+      ...this.lives,
+    ])
+      o.setVisible(v)
     if (v) this.pauseZone.setInteractive()
     else this.pauseZone.disableInteractive()
   }
 
   destroy(): void {
-    for (const o of [this.pauseBg, this.pauseIcon, this.pauseZone, this.scoreLabel, this.scoreText, this.comboText, this.coin, this.tipsText, ...this.lives]) o.destroy()
+    for (const o of [
+      this.pauseBg,
+      this.pauseIcon,
+      this.pauseZone,
+      this.scoreLabel,
+      this.scoreText,
+      this.comboText,
+      this.coin,
+      this.tipsText,
+      ...this.lives,
+    ])
+      o.destroy()
   }
 }

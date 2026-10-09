@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { now } from '@/app/clock'
 import { DAILY_LOGIN_REWARDS } from '@/config/economy'
 import { addDays, istanbulDateKey, nextDailyStreak } from '@/core/daily'
 import type { DailyHistoryEntry } from '@/services/save/schema'
@@ -12,13 +13,13 @@ export const useDailyStore = defineStore('daily', () => {
   const loginLastDay = ref<string | null>(null)
   const loginIndex = ref(0)
   /** Saat değişimini izlemek için dışarıdan güncellenen "bugün". */
-  const today = ref(istanbulDateKey(new Date()))
+  const today = ref(istanbulDateKey(now()))
 
   const playedToday = computed(() => lastPlayedDay.value === today.value)
   const todayEntry = computed(() => history.value.find((h) => h.day === today.value) ?? null)
 
   function refreshToday() {
-    today.value = istanbulDateKey(new Date())
+    today.value = istanbulDateKey(now())
   }
 
   function recordPlay(entry: DailyHistoryEntry) {

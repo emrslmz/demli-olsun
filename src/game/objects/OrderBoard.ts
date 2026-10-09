@@ -56,12 +56,15 @@ export class OrderCard {
       scene.add.text(0, 0, '', { fontFamily: FONTS.chalk, fontStyle: '700', fontSize: `${size}px`, color, ...extra })
     this.nameText = chalk(20).setOrigin(0.5, 0)
     this.teaText = chalk(24, INK, { align: 'center' }).setOrigin(0.5, 0)
-    this.glassText = scene.add.text(0, 0, '', { fontFamily: FONTS.ui, fontStyle: '800', fontSize: '16px', color: '#8A5A33' }).setOrigin(0.5, 0)
+    this.glassText = scene.add
+      .text(0, 0, '', { fontFamily: FONTS.ui, fontStyle: '800', fontSize: '16px', color: '#8A5A33' })
+      .setOrigin(0.5, 0)
     this.demText = chalk(28).setOrigin(0, 0.5)
     this.fillText = chalk(28).setOrigin(0, 0.5)
     for (let i = 0; i < order.sugar; i++) this.sugarIcons.push(scene.add.image(0, 0, 'icon_sugar').setAlpha(0.35))
     this.trayText = chalk(22, RED).setOrigin(1, 0.5)
-    for (let i = 0; order.trayCount > 1 && i < order.trayCount; i++) this.trayDots.push(scene.add.circle(0, 0, 5, 0xd9c7a2).setStrokeStyle(2, 0x3b2416))
+    for (let i = 0; order.trayCount > 1 && i < order.trayCount; i++)
+      this.trayDots.push(scene.add.circle(0, 0, 5, 0xd9c7a2).setStrokeStyle(2, 0x3b2416))
     this.barBg = scene.add.graphics()
     this.bar = scene.add.rectangle(0, 0, 10, 10, 0x4e9a3a).setOrigin(0, 0.5)
     this.xMark = scene.add.graphics().setAlpha(0)
@@ -105,7 +108,10 @@ export class OrderCard {
     this.portrait.setDisplaySize(p, p).setPosition(left + cw * 0.08 + p / 2, top + ch * 0.12 + p / 2)
     this.nameText.setFontSize(Math.round(cw * 0.085)).setPosition(this.portrait.x, top + ch * 0.12 + p - cw * 0.02)
     const rc = left + cw * 0.76
-    this.teaText.setFontSize(Math.round(cw * 0.115)).setWordWrapWidth(cw * 0.44).setPosition(rc, top + ch * 0.14)
+    this.teaText
+      .setFontSize(Math.round(cw * 0.115))
+      .setWordWrapWidth(cw * 0.44)
+      .setPosition(rc, top + ch * 0.14)
     this.teaText.setLineSpacing(-cw * 0.02)
     this.glassText.setFontSize(Math.round(cw * 0.068)).setPosition(rc, this.teaText.y + this.teaText.height + ch * 0.01)
     this.demText.setFontSize(Math.round(cw * 0.15)).setPosition(left + cw * 0.1, top + ch * 0.6)
@@ -123,7 +129,11 @@ export class OrderCard {
     this.barBg.fillStyle(0xd9c7a2, 1).fillRoundedRect(bx, by - bh / 2, bw, bh, bh / 2)
     this.bar.setPosition(bx, by).setSize(bw * this.ratio, bh)
     this.bar.setData('w', bw)
-    if (this.corner) this.corner.setDisplaySize(cw * 0.3, cw * 0.3).setPosition(left + cw * 0.86, top + ch * 0.1).setAngle(12)
+    if (this.corner)
+      this.corner
+        .setDisplaySize(cw * 0.3, cw * 0.3)
+        .setPosition(left + cw * 0.86, top + ch * 0.1)
+        .setAngle(12)
     this.xMark.clear()
     this.xMark.lineStyle(cw * 0.06, 0xc0392b, 1)
     this.xMark.lineBetween(-cw * 0.3, -ch * 0.25, cw * 0.3, ch * 0.25)
@@ -169,7 +179,12 @@ export class OrderCard {
   setExpression(e: Expression): void {
     this.expression = e
     this.portrait.setTexture(customerImageId(this.order.customer, e))
-    this.scene.tweens.add({ targets: this.portrait, scale: { from: this.portrait.scale * 1.15, to: this.portrait.scale }, duration: 260, ease: 'Back.easeOut' })
+    this.scene.tweens.add({
+      targets: this.portrait,
+      scale: { from: this.portrait.scale * 1.15, to: this.portrait.scale },
+      duration: 260,
+      ease: 'Back.easeOut',
+    })
   }
 
   setSugarGiven(n: number): void {
@@ -235,7 +250,9 @@ export class OrderBoard {
     const meta = ThemeService.meta('ui_board')
     const tex = scene.textures.get('ui_board').getSourceImage() as { width: number; height: number }
     const sl = meta?.slice ?? [0.06, 0.06, 0.08, 0.08]
-    this.board = scene.add.nineslice(0, 0, 'ui_board', undefined, 400, 200, sl[0] * tex.width, sl[1] * tex.width, sl[2] * tex.height, sl[3] * tex.height).setDepth(45)
+    this.board = scene.add
+      .nineslice(0, 0, 'ui_board', undefined, 400, 200, sl[0] * tex.width, sl[1] * tex.width, sl[2] * tex.height, sl[3] * tex.height)
+      .setDepth(45)
     this.title = scene.add
       .text(0, 0, tr.game.orders, { fontFamily: FONTS.chalk, fontStyle: '700', fontSize: '28px', color: '#EDEDE4' })
       .setDepth(46)
@@ -244,7 +261,14 @@ export class OrderBoard {
       this.deco = scene.add.image(0, 0, 'deco_board_top').setDepth(47)
     }
     this.rushText = scene.add
-      .text(0, 0, '', { fontFamily: FONTS.chalk, fontStyle: '700', fontSize: '30px', color: '#FFF6E6', stroke: '#8B1E0F', strokeThickness: 6 })
+      .text(0, 0, '', {
+        fontFamily: FONTS.chalk,
+        fontStyle: '700',
+        fontSize: '30px',
+        color: '#FFF6E6',
+        stroke: '#8B1E0F',
+        strokeThickness: 6,
+      })
       .setOrigin(0.5)
     this.rushBar = scene.add.rectangle(0, 0, 10, 6, 0xf6c445).setOrigin(0, 0.5)
     const ribbon = scene.add.graphics()
@@ -299,7 +323,10 @@ export class OrderBoard {
     ribbon.fillStyle(0xc0392b, 1).fillRoundedRect(-rw / 2, -rh / 2, rw, rh, 12 * u)
     ribbon.fillStyle(0xffffff, 0.15).fillRoundedRect(-rw / 2 + 6 * u, -rh / 2 + 5 * u, rw - 12 * u, rh * 0.35, 10 * u)
     this.rushBanner.setPosition(b.x + b.w / 2, b.y + b.h - 4 * u)
-    this.rushText.setFontSize(Math.round(36 * u)).setStroke('#8B1E0F', 6 * u).setPosition(0, -6 * u)
+    this.rushText
+      .setFontSize(Math.round(36 * u))
+      .setStroke('#8B1E0F', 6 * u)
+      .setPosition(0, -6 * u)
     this.rushBar.setPosition(-rw / 2 + 14 * u, rh / 2 - 9 * u).setSize(rw - 28 * u, 7 * u)
     this.rushBar.setData('w', rw - 28 * u)
   }
@@ -318,7 +345,10 @@ export class OrderBoard {
     this.cards.push(card)
     card.setSize(this.slotW, this.slotH)
     const x = this.slotX(i)
-    card.container.setPosition(x, this.slotY - 90 * this.L.u).setAlpha(0).setAngle(-8)
+    card.container
+      .setPosition(x, this.slotY - 90 * this.L.u)
+      .setAlpha(0)
+      .setAngle(-8)
     this.scene.tweens.add({
       targets: card.container,
       y: this.slotY,
@@ -366,12 +396,24 @@ export class OrderBoard {
   }
 
   hideRush(): void {
-    this.scene.tweens.add({ targets: this.rushBanner, scale: 0.6, alpha: 0, duration: 260, onComplete: () => this.rushBanner.setVisible(false) })
+    this.scene.tweens.add({
+      targets: this.rushBanner,
+      scale: 0.6,
+      alpha: 0,
+      duration: 260,
+      onComplete: () => this.rushBanner.setVisible(false),
+    })
   }
 
   shake(): void {
     if (this.reduced) return
-    this.scene.tweens.add({ targets: this.board, x: { from: this.board.x - 6 * this.L.u, to: this.board.x }, duration: 60, yoyo: true, repeat: 2 })
+    this.scene.tweens.add({
+      targets: this.board,
+      x: { from: this.board.x - 6 * this.L.u, to: this.board.x },
+      duration: 60,
+      yoyo: true,
+      repeat: 2,
+    })
   }
 
   destroy(): void {

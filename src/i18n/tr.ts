@@ -199,8 +199,8 @@ export const tr = {
   },
   tutorial: {
     skip: 'Eğitimi atla',
-    step1a: 'Önce dem: DEM alanına basılı tut.',
-    step1b: 'Şimdi su: SU alanına basılı tut.',
+    step1a: 'Önce dem: DEM’e basılı tut. Bardağın üçte biri kadar yeter.',
+    step1b: 'Şimdi su: SU’ya basılı tut, kırmızı çizgiye kadar doldur.',
     step1c: 'Hedefe yaklaştın. Servis et!',
     step2a: 'Bıraktıktan sonra birkaç damla daha düşer. Çizgiden biraz önce bırak!',
     step2b: 'Gördün mü? Artık akış devam etti. Servis et.',

@@ -8,9 +8,20 @@ type Lines = Record<LineBucket, string[]>
 
 export const LINES: Record<CustomerId, Lines> = {
   riza: {
-    p95: ['Ohh, eline sağlık evladım.', 'Mis gibi! Tam benim çayım.', 'Mahallenin çaycısı sensin.', 'İşte tavşan kanı böyle olur!', 'Babana rahmet, ne güzel demlemişsin.'],
+    p95: [
+      'Ohh, eline sağlık evladım.',
+      'Mis gibi! Tam benim çayım.',
+      'Mahallenin çaycısı sensin.',
+      'İşte tavşan kanı böyle olur!',
+      'Babana rahmet, ne güzel demlemişsin.',
+    ],
     p85: ['İçilir, içilir.', 'Fena değil, fena değil.', 'Hı, olmuş sayılır.', 'Eskisi gibi değil ama güzel.'],
-    p70: ['Biraz açık olmuş ama idare eder.', 'Bizim zamanımızda daha iyiydi.', 'Eh işte… içeriz artık.', 'Bir dahakine dikkat et evladım.'],
+    p70: [
+      'Biraz açık olmuş ama idare eder.',
+      'Bizim zamanımızda daha iyiydi.',
+      'Eh işte… içeriz artık.',
+      'Bir dahakine dikkat et evladım.',
+    ],
     p50: ['Bu ne, su mu bu?', 'Hiç beğenmedim evladım.', 'Tavla zarı bile daha demli.', 'Gözlüğüm mü bozuk, çay mı?'],
     reject: ['Geri götür bunu!', 'Bunu ben içmem evladım.', 'Yok yok, olmamış bu.', 'Çaycı başka yere mi gitti?'],
     overflow: ['Masayı yüzdürdün be!', 'Tavla tahtam ıslandı!', 'Aman evladım, dikkat!', 'Pantolonum gitti!'],
@@ -18,7 +29,12 @@ export const LINES: Record<CustomerId, Lines> = {
     left: ['Ben gidiyorum, sen demle dur.', 'Yaşlı adamı beklettin.', 'Evde içerim ben.', 'Hadi hayırlısı.'],
   },
   muhtar: {
-    p95: ['Mahallenin çaycısı sensin.', 'Muhtarlıkta bile böylesi yok!', 'Eline sağlık, gönlüne sağlık.', 'Seni bir sonraki toplantıya çağıracağım.'],
+    p95: [
+      'Mahallenin çaycısı sensin.',
+      'Muhtarlıkta bile böylesi yok!',
+      'Eline sağlık, gönlüne sağlık.',
+      'Seni bir sonraki toplantıya çağıracağım.',
+    ],
     p85: ['Fena değil, fena değil.', 'İçilir, içilir.', 'Muhtar onaylıyor.', 'Güzel olmuş, aferin.'],
     p70: ['Biraz açık olmuş ama idare eder.', 'Daha demli isterdim.', 'Not alıyorum, bir dahakine.', 'Olur, olur… ama tam değil.'],
     p50: ['Bu ne, su mu bu?', 'Bunu mahalleliye anlatamam.', 'Böyle çay olmaz kardeşim.', 'Toplantıda bundan bahsederim.'],

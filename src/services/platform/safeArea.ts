@@ -26,12 +26,7 @@ function measure(): void {
     bottom: parseFloat(cs.paddingBottom) || 0,
     left: parseFloat(cs.paddingLeft) || 0,
   }
-  if (
-    next.top !== safeArea.top ||
-    next.right !== safeArea.right ||
-    next.bottom !== safeArea.bottom ||
-    next.left !== safeArea.left
-  ) {
+  if (next.top !== safeArea.top || next.right !== safeArea.right || next.bottom !== safeArea.bottom || next.left !== safeArea.left) {
     Object.assign(safeArea, next)
     for (const fn of listeners) fn({ ...safeArea })
   }

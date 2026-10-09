@@ -57,10 +57,7 @@ export class GlassView {
     const oy = g.yBase / g.texH
     this.back = this.scene.add.image(0, 0, keys.back).setOrigin(ox, oy)
     this.liquid = this.scene.add.image(0, 0, keys.liquid).setOrigin(ox, oy)
-    this.glow = this.scene.add
-      .image(0, 0, 'ca_glow')
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setAlpha(0)
+    this.glow = this.scene.add.image(0, 0, 'ca_glow').setBlendMode(Phaser.BlendModes.ADD).setAlpha(0)
     this.surface = this.scene.add.graphics()
     for (let i = 0; i < SWIRL_DOTS; i++) {
       this.swirl.push(this.scene.add.image(0, 0, 'ca_dot').setAlpha(0))

@@ -48,6 +48,56 @@ export function generateCodeArt(scene: Phaser.Scene): void {
     ctx.bezierCurveTo(3, h * 0.5, w * 0.38, h * 0.3, w / 2, 2)
     ctx.fill()
   })
+  // Eğitim için işaret eden el (beyaz eldiven, kalın kahve kontur)
+  canvasTexture(scene, 'ca_hand', 128, 168, (ctx) => {
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+    const path = () => {
+      ctx.beginPath()
+      // İşaret parmağı (yukarı)
+      ctx.moveTo(52, 92)
+      ctx.lineTo(52, 22)
+      ctx.quadraticCurveTo(52, 6, 66, 6)
+      ctx.quadraticCurveTo(80, 6, 80, 22)
+      ctx.lineTo(80, 74)
+      // Diğer parmaklar (kıvrık)
+      ctx.quadraticCurveTo(84, 62, 96, 66)
+      ctx.quadraticCurveTo(106, 70, 104, 84)
+      ctx.quadraticCurveTo(114, 78, 120, 92)
+      ctx.lineTo(120, 118)
+      ctx.quadraticCurveTo(120, 150, 92, 160)
+      ctx.lineTo(56, 160)
+      ctx.quadraticCurveTo(26, 150, 18, 120)
+      ctx.lineTo(10, 100)
+      ctx.quadraticCurveTo(6, 84, 22, 84)
+      ctx.quadraticCurveTo(34, 86, 40, 100)
+      ctx.lineTo(52, 112)
+      ctx.closePath()
+    }
+    path()
+    ctx.fillStyle = '#FFFDF7'
+    ctx.fill()
+    ctx.lineWidth = 8
+    ctx.strokeStyle = '#3B2416'
+    ctx.stroke()
+    // Gölge ve parmak çizgileri
+    ctx.save()
+    path()
+    ctx.clip()
+    ctx.fillStyle = 'rgba(160,150,140,0.35)'
+    ctx.fillRect(90, 60, 40, 110)
+    ctx.restore()
+    ctx.lineWidth = 5
+    ctx.beginPath()
+    ctx.moveTo(84, 92)
+    ctx.quadraticCurveTo(92, 96, 98, 90)
+    ctx.moveTo(98, 106)
+    ctx.quadraticCurveTo(106, 110, 114, 104)
+    ctx.stroke()
+    ctx.fillStyle = '#E2B33C'
+    ctx.fillRect(40, 146, 72, 14)
+    ctx.strokeRect(40, 146, 72, 14)
+  })
   // Kabarcık halkası
   canvasTexture(scene, 'ca_ring', 64, 64, (ctx, w) => {
     ctx.strokeStyle = 'rgba(255,255,255,0.95)'

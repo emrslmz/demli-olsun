@@ -13,7 +13,10 @@ export class Background {
     this.scene = scene
     this.venue = venue
     const key = bgId(venue, L.bg.variant)
-    this.image = scene.add.image(0, 0, scene.textures.exists(key) ? key : '__DEFAULT').setOrigin(0, 0).setDepth(-100)
+    this.image = scene.add
+      .image(0, 0, scene.textures.exists(key) ? key : '__DEFAULT')
+      .setOrigin(0, 0)
+      .setDepth(-100)
     this.layout(L)
   }
 

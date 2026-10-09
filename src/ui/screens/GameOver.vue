@@ -63,16 +63,30 @@ const rankText = computed(() => {
         <div v-if="info.newRecord" class="badge">{{ tr.gameOver.newRecord }}</div>
         <div class="score">{{ num(shownScore) }}</div>
         <div class="stats">
-          <div><span>{{ tr.gameOver.served }}</span><b>{{ info.result.served }}</b></div>
-          <div><span>{{ tr.gameOver.avgAccuracy }}</span><b>%{{ pct1(info.result.avgAccuracy) }}</b></div>
-          <div><span>{{ tr.gameOver.bestCombo }}</span><b>{{ info.result.bestCombo }}</b></div>
+          <div>
+            <span>{{ tr.gameOver.served }}</span
+            ><b>{{ info.result.served }}</b>
+          </div>
+          <div>
+            <span>{{ tr.gameOver.avgAccuracy }}</span
+            ><b>%{{ pct1(info.result.avgAccuracy) }}</b>
+          </div>
+          <div>
+            <span>{{ tr.gameOver.bestCombo }}</span
+            ><b>{{ info.result.bestCombo }}</b>
+          </div>
           <div>
             <span>{{ tr.gameOver.tipsEarned }}</span>
             <b class="tips"><img :src="ThemeService.url('icon_coin')" alt="" />{{ num(info.tipsAwarded * (info.doubled ? 2 : 1)) }}</b>
           </div>
-          <div v-if="rankText"><span>{{ tr.gameOver.league }}</span><b>{{ rankText }}</b></div>
+          <div v-if="rankText">
+            <span>{{ tr.gameOver.league }}</span
+            ><b>{{ rankText }}</b>
+          </div>
         </div>
-        <p v-if="info.titleUp" class="title-up">Yeni unvan: <b>{{ info.titleUp }}</b> 🎉</p>
+        <p v-if="info.titleUp" class="title-up">
+          Yeni unvan: <b>{{ info.titleUp }}</b> 🎉
+        </p>
         <GameButton
           v-if="info.tipsAwarded > 0 && !info.doubled"
           variant="accent"

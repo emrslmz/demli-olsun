@@ -103,13 +103,7 @@ export function alignBackground(cover: BgPlacement, counterFrac: number, counter
   }
 }
 
-export function computeLayout(
-  W: number,
-  H: number,
-  dpr: number,
-  safeCss: InsetsPx,
-  bgSizes: BgSizes = DEFAULT_BG_SIZES,
-): Layout {
+export function computeLayout(W: number, H: number, dpr: number, safeCss: InsetsPx, bgSizes: BgSizes = DEFAULT_BG_SIZES): Layout {
   const safe: InsetsPx = {
     top: safeCss.top * dpr,
     right: safeCss.right * dpr,

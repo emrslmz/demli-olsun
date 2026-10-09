@@ -46,8 +46,7 @@ describe('league', () => {
   })
 
   it('kademe yükseldikçe botlar güçlenir', () => {
-    const avg = (t: 'mahalle' | 'turkiye') =>
-      generateBots('2026-10-05', t).reduce((s, b) => s + botScoreAt(b, 1), 0) / 29
+    const avg = (t: 'mahalle' | 'turkiye') => generateBots('2026-10-05', t).reduce((s, b) => s + botScoreAt(b, 1), 0) / 29
     expect(avg('turkiye')).toBeGreaterThan(avg('mahalle') * 4)
   })
 

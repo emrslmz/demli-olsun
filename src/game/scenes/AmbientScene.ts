@@ -44,7 +44,10 @@ export class AmbientScene extends BaseScene {
     this.bg = new Background(this, this.shown.venue, L)
     this.themeFx = new ThemeFx(this, L, reduced || runtime.lowQuality)
     const pots = potIds(this.shown.pot)
-    this.demlik = this.add.image(0, 0, this.textures.exists(pots.demlik) ? pots.demlik : 'pot_demlik_celik').setOrigin(0.5, 0.95).setDepth(8)
+    this.demlik = this.add
+      .image(0, 0, this.textures.exists(pots.demlik) ? pots.demlik : 'pot_demlik_celik')
+      .setOrigin(0.5, 0.95)
+      .setDepth(8)
     this.caydanlik = this.add
       .image(0, 0, this.textures.exists(pots.caydanlik) ? pots.caydanlik : 'pot_caydanlik_celik')
       .setOrigin(0.5, 0.95)

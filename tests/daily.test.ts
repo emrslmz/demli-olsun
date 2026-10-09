@@ -63,7 +63,15 @@ describe('daily', () => {
       storeUrl: 'https://example.com',
     })
     expect(t).toBe(
-      ['Demli Olsun #142 🫖', 'Müşteri: Muhtar', '"Ohh, eline sağlık evladım."', 'Renk    🟩🟩🟩🟩🟨', 'Doluluk 🟩🟩🟩🟩🟩', 'Seri 🔥12', 'https://example.com'].join('\n'),
+      [
+        'Demli Olsun #142 🫖',
+        'Müşteri: Muhtar',
+        '"Ohh, eline sağlık evladım."',
+        'Renk    🟩🟩🟩🟩🟨',
+        'Doluluk 🟩🟩🟩🟩🟩',
+        'Seri 🔥12',
+        'https://example.com',
+      ].join('\n'),
     )
   })
 

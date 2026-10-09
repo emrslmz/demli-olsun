@@ -103,7 +103,9 @@ export class ThemeFx {
       const x = dir > 0 ? -80 * L.u + t * (L.W + 160 * L.u) : L.W + 80 * L.u - t * (L.W + 160 * L.u)
       const y = L.H * (0.08 + 0.12 * i) + Math.sin(this.batT * 2 + i) * 30 * L.u
       const s = (90 + i * 10) * L.u
-      b.setPosition(x, y).setDisplaySize(s, s * (0.7 + 0.3 * Math.abs(Math.sin(this.batT * 12 + i)))).setFlipX(dir < 0)
+      b.setPosition(x, y)
+        .setDisplaySize(s, s * (0.7 + 0.3 * Math.abs(Math.sin(this.batT * 12 + i))))
+        .setFlipX(dir < 0)
     })
   }
 

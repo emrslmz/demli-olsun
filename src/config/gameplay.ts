@@ -83,9 +83,36 @@ export interface StageConfig {
 export const STAGES: StageConfig[] = [
   { stage: 1, fromServed: 0, patience: 25, gauge: 'numbers', glasses: ['ince'], sugarChance: 0, queue: 1, trayAllowed: false },
   { stage: 2, fromServed: 5, patience: 20, gauge: 'numbers', glasses: ['ince', 'duz'], sugarChance: 0.2, queue: 2, trayAllowed: false },
-  { stage: 3, fromServed: 15, patience: 16, gauge: 'marks', glasses: ['ince', 'duz', 'kupa'], sugarChance: 0.35, queue: 3, trayAllowed: false },
-  { stage: 4, fromServed: 30, patience: 13, gauge: 'marks', glasses: ['ince', 'duz', 'kupa', 'fincan'], sugarChance: 0.45, queue: 3, trayAllowed: false },
-  { stage: 5, fromServed: 50, patience: 11, gauge: 'none', glasses: ['ince', 'duz', 'kupa', 'fincan'], sugarChance: 0.5, queue: 3, trayAllowed: true },
+  {
+    stage: 3,
+    fromServed: 15,
+    patience: 16,
+    gauge: 'marks',
+    glasses: ['ince', 'duz', 'kupa'],
+    sugarChance: 0.35,
+    queue: 3,
+    trayAllowed: false,
+  },
+  {
+    stage: 4,
+    fromServed: 30,
+    patience: 13,
+    gauge: 'marks',
+    glasses: ['ince', 'duz', 'kupa', 'fincan'],
+    sugarChance: 0.45,
+    queue: 3,
+    trayAllowed: false,
+  },
+  {
+    stage: 5,
+    fromServed: 50,
+    patience: 11,
+    gauge: 'none',
+    glasses: ['ince', 'duz', 'kupa', 'fincan'],
+    sugarChance: 0.5,
+    queue: 3,
+    trayAllowed: true,
+  },
 ]
 
 export const STAGE5 = {

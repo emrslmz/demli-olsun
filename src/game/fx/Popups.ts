@@ -25,10 +25,21 @@ export class SpeechBubble {
   }
 
   /** (x, y): balonun ucu (kartın altı). maxW: en geniş. */
-  show(x: number, y: number, line: string, emoji: string, maxW: number, duration = 1700, tone: 'good' | 'bad' | 'neutral' = 'neutral'): void {
+  show(
+    x: number,
+    y: number,
+    line: string,
+    emoji: string,
+    maxW: number,
+    duration = 1700,
+    tone: 'good' | 'bad' | 'neutral' = 'neutral',
+  ): void {
     const u = this.u
     this.hideTimer?.remove()
-    this.text.setFontSize(Math.round(30 * u)).setWordWrapWidth(maxW - 40 * u).setText(`${line} ${emoji}`)
+    this.text
+      .setFontSize(Math.round(30 * u))
+      .setWordWrapWidth(maxW - 40 * u)
+      .setText(`${line} ${emoji}`)
     const w = Math.min(maxW, this.text.width + 44 * u)
     const h = this.text.height + 30 * u
     const tail = 22 * u
@@ -50,7 +61,13 @@ export class SpeechBubble {
     this.container.setPosition(bx, by).setVisible(true).setScale(0.2).setAlpha(1)
     this.scene.tweens.add({ targets: this.container, scale: 1, duration: 260, ease: 'Back.easeOut' })
     this.hideTimer = this.scene.time.delayedCall(duration, () => {
-      this.scene.tweens.add({ targets: this.container, scale: 0.8, alpha: 0, duration: 200, onComplete: () => this.container.setVisible(false) })
+      this.scene.tweens.add({
+        targets: this.container,
+        scale: 0.8,
+        alpha: 0,
+        duration: 200,
+        onComplete: () => this.container.setVisible(false),
+      })
     })
   }
 
@@ -72,7 +89,14 @@ export class FloatTexts {
     let t = this.pool.find((x) => !x.active)
     if (!t) {
       t = this.scene.add
-        .text(0, 0, '', { fontFamily: FONTS.ui, fontStyle: '900', fontSize: '40px', color: '#FFF6E6', stroke: '#3B2416', strokeThickness: 8 })
+        .text(0, 0, '', {
+          fontFamily: FONTS.ui,
+          fontStyle: '900',
+          fontSize: '40px',
+          color: '#FFF6E6',
+          stroke: '#3B2416',
+          strokeThickness: 8,
+        })
         .setOrigin(0.5)
         .setDepth(90)
       this.pool.push(t)
@@ -82,7 +106,11 @@ export class FloatTexts {
 
   /** Yukarı süzülüp söner. */
   float(x: number, y: number, text: string, size: number, color = '#FFF6E6', rise = 80, duration = 900): void {
-    const t = this.get().setText(text).setFontSize(Math.round(size)).setColor(color).setStroke('#3B2416', Math.max(4, size * 0.18))
+    const t = this.get()
+      .setText(text)
+      .setFontSize(Math.round(size))
+      .setColor(color)
+      .setStroke('#3B2416', Math.max(4, size * 0.18))
     t.setPosition(x, y).setScale(0.4)
     this.scene.tweens.add({ targets: t, scale: 1, duration: 220, ease: 'Back.easeOut' })
     this.scene.tweens.add({
@@ -98,7 +126,11 @@ export class FloatTexts {
 
   /** Bir hedefe uçar (bardaktan HUD'a puan). */
   fly(x: number, y: number, text: string, size: number, to: { x: number; y: number }, onArrive?: () => void, color = '#FFF6E6'): void {
-    const t = this.get().setText(text).setFontSize(Math.round(size)).setColor(color).setStroke('#3B2416', Math.max(4, size * 0.18))
+    const t = this.get()
+      .setText(text)
+      .setFontSize(Math.round(size))
+      .setColor(color)
+      .setStroke('#3B2416', Math.max(4, size * 0.18))
     t.setPosition(x, y).setScale(0.5)
     this.scene.tweens.add({ targets: t, scale: 1.15, duration: 240, ease: 'Back.easeOut' })
     this.scene.tweens.add({
@@ -118,10 +150,21 @@ export class FloatTexts {
 
   /** Büyüyüp sönen kombo yazısı. */
   burst(x: number, y: number, text: string, size: number, color = '#F6C445'): void {
-    const t = this.get().setText(text).setFontSize(Math.round(size)).setColor(color).setStroke('#3B2416', Math.max(5, size * 0.16))
+    const t = this.get()
+      .setText(text)
+      .setFontSize(Math.round(size))
+      .setColor(color)
+      .setStroke('#3B2416', Math.max(5, size * 0.16))
     t.setPosition(x, y).setScale(0.3).setAngle(-6)
     this.scene.tweens.add({ targets: t, scale: 1.25, angle: 3, duration: 300, ease: 'Back.easeOut' })
-    this.scene.tweens.add({ targets: t, alpha: 0, scale: 1.6, delay: 700, duration: 350, onComplete: () => t.setActive(false).setVisible(false) })
+    this.scene.tweens.add({
+      targets: t,
+      alpha: 0,
+      scale: 1.6,
+      delay: 700,
+      duration: 350,
+      onComplete: () => t.setActive(false).setVisible(false),
+    })
   }
 
   destroy(): void {
@@ -142,7 +185,10 @@ export class StarsPop {
     this.stars.forEach((s, i) => {
       const filled = i < n
       s.setTexture(filled ? 'icon_star' : 'icon_star_empty')
-      s.setPosition(x + (i - 1) * size * 1.05, y - (i === 1 ? size * 0.25 : 0)).setDisplaySize(size, size).setVisible(true).setAlpha(1)
+      s.setPosition(x + (i - 1) * size * 1.05, y - (i === 1 ? size * 0.25 : 0))
+        .setDisplaySize(size, size)
+        .setVisible(true)
+        .setAlpha(1)
       const sc = s.scale
       s.setScale(0)
       this.scene.tweens.add({
@@ -156,7 +202,14 @@ export class StarsPop {
           if (filled) onStar?.(i)
         },
       })
-      this.scene.tweens.add({ targets: s, alpha: 0, y: s.y - size * 0.4, delay: 1300 + i * 60, duration: 320, onComplete: () => s.setVisible(false) })
+      this.scene.tweens.add({
+        targets: s,
+        alpha: 0,
+        y: s.y - size * 0.4,
+        delay: 1300 + i * 60,
+        duration: 320,
+        onComplete: () => s.setVisible(false),
+      })
     })
   }
 

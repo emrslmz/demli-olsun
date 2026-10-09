@@ -1,13 +1,6 @@
 /** Uygulama içi satın alma ürünleri. Fiyatlar koda yazılmaz; mağazadan yerelleştirilmiş metin gelir. */
 
-export type ProductId =
-  | 'remove_ads'
-  | 'starter_pack'
-  | 'theme_rize'
-  | 'theme_bogaz'
-  | 'bahsis_s'
-  | 'bahsis_m'
-  | 'bahsis_l'
+export type ProductId = 'remove_ads' | 'starter_pack' | 'theme_rize' | 'theme_bogaz' | 'bahsis_s' | 'bahsis_m' | 'bahsis_l'
 
 export type EntitlementId = 'no_ads' | 'theme_rize' | 'theme_bogaz' | 'starter_pack'
 

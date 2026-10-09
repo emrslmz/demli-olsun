@@ -22,10 +22,7 @@ export interface BootData {
 async function waitFonts(): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return
   const loads = [`700 32px ${FONTS.chalk}`, `400 32px ${FONTS.chalk}`, `800 32px ${FONTS.ui}`, `900 32px ${FONTS.ui}`]
-  await Promise.race([
-    Promise.all(loads.map((f) => document.fonts.load(f, 'çğıİöşüÇĞÖŞÜ'))),
-    new Promise((r) => setTimeout(r, 2500)),
-  ])
+  await Promise.race([Promise.all(loads.map((f) => document.fonts.load(f, 'çğıİöşüÇĞÖŞÜ'))), new Promise((r) => setTimeout(r, 2500))])
 }
 
 export class BootScene extends Phaser.Scene {

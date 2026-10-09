@@ -2,17 +2,7 @@
 
 import { Capacitor } from '@capacitor/core'
 
-export type HapticEvent =
-  | 'pourTick'
-  | 'drop'
-  | 'sugar'
-  | 'serve'
-  | 'stars3'
-  | 'error'
-  | 'lifeLost'
-  | 'combo'
-  | 'button'
-  | 'purchase'
+export type HapticEvent = 'pourTick' | 'drop' | 'sugar' | 'serve' | 'stars3' | 'error' | 'lifeLost' | 'combo' | 'button' | 'purchase'
 
 /** Olay başına en kısa aralık (ms). */
 const THROTTLE: Record<HapticEvent, number> = {

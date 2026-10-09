@@ -17,13 +17,7 @@ import {
 } from '@/core/league'
 import { Rng } from '@/core/rng'
 import { BOT_NAMES } from '@/data/botNames'
-import type {
-  AllTimeRow,
-  LeaderboardService,
-  PlayerLeagueState,
-  WeekResolution,
-  WeeklyBoard,
-} from './LeaderboardService'
+import type { AllTimeRow, LeaderboardService, PlayerLeagueState, WeekResolution, WeeklyBoard } from './LeaderboardService'
 
 export class MockLeaderboardService implements LeaderboardService {
   readonly mode = 'mock' as const

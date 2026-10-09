@@ -202,11 +202,7 @@ export interface DailyRow {
 }
 
 /** Günlük tablo: isabete göre, eşitlikte süreye göre. Tüm satırlar döner; arayüz ilk sıraları ve oyuncunun çevresini gösterir. */
-export function dailyTable(
-  dateKey: string,
-  player: { name: string; accuracy: number; timeSec: number } | null,
-  n = 500,
-): DailyRow[] {
+export function dailyTable(dateKey: string, player: { name: string; accuracy: number; timeSec: number } | null, n = 500): DailyRow[] {
   const rng = new Rng(`daily:table:${dateKey}`)
   const names = rng.shuffle([...BOT_NAMES])
   const accs = dailyBotAccuracies(dateKey, n)

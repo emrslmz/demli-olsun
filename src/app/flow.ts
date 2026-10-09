@@ -4,11 +4,15 @@
 
 import { Capacitor } from '@capacitor/core'
 import { bus, type ContinueOffer, type ShiftResult } from '@/bus'
-import { CONTINUE_COST, type BoosterId } from '@/config/economy'
+import { CONTINUE_COST, STARTER_OFFER, type BoosterId } from '@/config/economy'
+import { productDef, type EntitlementId, type ProductId } from '@/config/products'
 import { canShowInterstitial } from '@/core/adPolicy'
+import { tr } from '@/i18n/tr'
+import { now as clockNow } from './clock'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
+import { purchaseErrorText } from '@/services/iap/PurchaseService'
 import { useAppStore } from '@/stores/app'
 import { useEconomyStore } from '@/stores/economy'
 import { useInventoryStore } from '@/stores/inventory'
@@ -136,8 +140,14 @@ export async function onGameOver(result: ShiftResult): Promise<void> {
   let rankBefore: number | null = null
   let rankAfter: number | null = null
   try {
-    const now = new Date()
-    const state = () => ({ name: player.nickname || 'Sen', weekId: league.weekId, tier: league.tier, weeklyScore: league.weeklyScore, bestScore: progress.bestScore })
+    const now = clockNow()
+    const state = () => ({
+      name: player.nickname || 'Sen',
+      weekId: league.weekId,
+      tier: league.tier,
+      weeklyScore: league.weeklyScore,
+      bestScore: progress.bestScore,
+    })
     rankBefore = (await services.leaderboard.weekly(state(), now)).playerRank
     league.addShiftScore(result.score, now)
     rankAfter = (await services.leaderboard.weekly(state(), now)).playerRank
@@ -219,4 +229,142 @@ export async function playAgain(): Promise<void> {
 export async function gameOverToMenu(): Promise<void> {
   await maybeInterstitial()
   quitToMenu()
+}
+
+// ---------- Eğitim ----------
+
+export function startTutorial(): void {
+  enterGame()
+  bus.emit('game:start', { mode: 'tutorial' })
+}
+
+/** Eğitim bitti ya da atlandı: sıradaki adım onay akışı (ilk açılış) ya da menü. */
+export async function onTutorialFinished(): Promise<void> {
+  const app = useAppStore()
+  const firstRun = !app.flags.tutorialDone
+  app.flags = { ...app.flags, tutorialDone: true }
+  await saveNow()
+  bus.emit('game:quit')
+  leaveGameUi()
+  if (firstRun && !app.flags.consentDone) {
+    app.go('menu')
+    app.open('consentIntro')
+  } else {
+    app.go('menu')
+  }
+}
+
+// ---------- Kayıt ----------
+
+export async function resetSave(): Promise<void> {
+  const { hydrateStores } = await import('@/stores/persist')
+  const fresh = await services.save.reset()
+  hydrateStores(fresh)
+  const { useSettingsStore } = await import('@/stores/settings')
+  useSettingsStore().apply()
+  await saveNow()
+  const app = useAppStore()
+  app.open(null)
+  app.go('onboarding')
+}
+
+// ---------- Satın alma ----------
+
+function applyEntitlements(list: EntitlementId[]): void {
+  const app = useAppStore()
+  app.entitlements = [...list]
+  services.ads.setAdsRemoved(list.includes('no_ads'))
+  const inv = useInventoryStore()
+  if (list.includes('starter_pack')) inv.own('glass', STARTER_OFFER.glassId)
+  // Mağaza kaynaklı mekan hakkı kalktıysa varsayılana dön.
+  const venue = inv.equipped.venue
+  if ((venue === 'rize' && !list.includes('theme_rize')) || (venue === 'bogaz' && !list.includes('theme_bogaz'))) {
+    inv.equip('venue', 'mahalle')
+  }
+}
+
+export async function initPurchases(): Promise<void> {
+  const app = useAppStore()
+  const player = usePlayerStore()
+  // Önbellekteki entitlement'larla başla, mağazadan yenile.
+  applyEntitlements(app.entitlements)
+  services.purchases.onEntitlements((list) => {
+    applyEntitlements(list)
+    void saveNow()
+  })
+  try {
+    await services.purchases.init(player.id)
+  } catch (err) {
+    console.warn('[iap] başlatılamadı', err)
+  }
+}
+
+export async function refreshPurchases(): Promise<void> {
+  try {
+    applyEntitlements(await services.purchases.refresh())
+  } catch {
+    /* önbellek kalır */
+  }
+}
+
+function grantProduct(id: ProductId): void {
+  const def = productDef(id)
+  const econ = useEconomyStore()
+  const inv = useInventoryStore()
+  if (def.tips) econ.add(def.tips)
+  if (id === 'starter_pack') {
+    econ.add(STARTER_OFFER.tips)
+    inv.own('glass', STARTER_OFFER.glassId)
+    for (const b of ['ustaGozu', 'sabirTasi', 'yedekBardak'] as BoosterId[]) inv.addBooster(b, STARTER_OFFER.boostersEach)
+  }
+}
+
+/** Satın alma sırasında oyun duraklar ve arayüz kilitlenir. */
+export async function buyProduct(id: ProductId): Promise<boolean> {
+  const app = useAppStore()
+  if (app.purchaseBusy) return false
+  app.purchaseBusy = true
+  bus.emit('app:interrupt', true)
+  AudioService.setInterrupted(true)
+  try {
+    const r = await services.purchases.purchase(id)
+    if (r.status === 'success') {
+      if (!app.processedTransactions.includes(r.transactionId)) {
+        grantProduct(id)
+        app.processedTransactions = [...app.processedTransactions, r.transactionId]
+      }
+      applyEntitlements(r.entitlements)
+      app.purchasedThisSession = true
+      await saveNow()
+      AudioService.setInterrupted(false)
+      AudioService.play('purchase')
+      HapticsService.trigger('purchase')
+      app.showToast(tr.market.purchaseOk)
+      return true
+    }
+    if (r.status === 'cancelled') app.showToast(tr.market.purchaseCancelled)
+    else app.showToast(purchaseErrorText(r.message))
+    return false
+  } finally {
+    app.purchaseBusy = false
+    AudioService.setInterrupted(false)
+    bus.emit('app:interrupt', false)
+  }
+}
+
+export async function restorePurchases(): Promise<void> {
+  const app = useAppStore()
+  app.purchaseBusy = true
+  try {
+    const r = await services.purchases.restore()
+    if (r.status === 'success') {
+      applyEntitlements(r.entitlements)
+      await saveNow()
+      app.showToast(r.entitlements.length ? tr.market.restoreOk : tr.market.restoreNone)
+    } else {
+      app.showToast(purchaseErrorText(r.message))
+    }
+  } finally {
+    app.purchaseBusy = false
+  }
 }
