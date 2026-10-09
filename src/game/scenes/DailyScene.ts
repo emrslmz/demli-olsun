@@ -26,7 +26,6 @@ export class DailyScene extends BaseScene {
         color: '#EDEDE4',
       })
       .setOrigin(0.5)
-    this.onBus('game:quit', () => this.scene.start('Ambient'))
   }
 
   protected onResize(L: Layout): void {

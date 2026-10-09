@@ -56,6 +56,9 @@ export class Station {
   private readonly splash: Phaser.GameObjects.Particles.ParticleEmitter
   private readonly dropPool: Phaser.GameObjects.Image[] = []
   private readonly cubePool: Phaser.GameObjects.Image[] = []
+  private readonly spoon: Phaser.GameObjects.Image
+  private readonly puddle: Phaser.GameObjects.Image
+  private hasOrder = true
   private L!: Layout
   private readonly v1 = new Phaser.Math.Vector2()
   private readonly v2 = new Phaser.Math.Vector2()
@@ -94,6 +97,8 @@ export class Station {
     this.sugarBowl.on(Phaser.Input.Events.POINTER_DOWN, () => this.dropSugar())
 
     this.saucer = scene.add.image(0, 0, 'prop_tabak').setDepth(10)
+    this.puddle = scene.add.image(0, 0, 'ca_dot').setDepth(11).setVisible(false)
+    this.spoon = scene.add.image(0, 0, 'prop_kasik').setDepth(21).setVisible(false)
     this.glass = new GlassView(scene, cfg.glass, cfg.skin)
     this.glass.container.setDepth(20)
 
@@ -155,7 +160,22 @@ export class Station {
   }
 
   get canServe(): boolean {
-    return this.inputEnabled && !this.busy && !this.overflowed && this.dem + this.su > 0.02 && this.cubesInFlight === 0
+    return this.inputEnabled && this.hasOrder && !this.busy && !this.overflowed && this.dem + this.su > 0.02 && this.cubesInFlight === 0
+  }
+
+  /** Aktif sipariş yokken döküm ve servis kapalı. */
+  setHasOrder(on: boolean): void {
+    this.hasOrder = on
+    if (!on) {
+      this.release('dem')
+      this.release('su')
+      this.demPad.forceRelease()
+      this.suPad.forceRelease()
+    }
+    const en = on && this.inputEnabled
+    this.demPad.setEnabled(en)
+    this.suPad.setEnabled(en)
+    this.sugarBowl.setAlpha(en ? 1 : 0.6)
   }
 
   get isPouring(): boolean {
@@ -181,8 +201,9 @@ export class Station {
       this.demPad.forceRelease()
       this.suPad.forceRelease()
     }
-    this.demPad.setEnabled(on)
-    this.suPad.setEnabled(on)
+    this.demPad.setEnabled(on && this.hasOrder)
+    this.suPad.setEnabled(on && this.hasOrder)
+    this.sugarBowl.setAlpha(on && this.hasOrder ? 1 : 0.6)
   }
 
   setBusy(b: boolean): void {
@@ -211,6 +232,8 @@ export class Station {
     this.overflowed = false
     this.lastIncoming = null
     this.glass.reset()
+    this.puddle.setVisible(false)
+    this.spoon.setVisible(false)
     this.streamDem.clear()
     this.streamSu.clear()
     this.demlik.setPouring(false, this.reduced)
@@ -221,7 +244,7 @@ export class Station {
   // ---------- Giriş ----------
 
   press(src: PourSource): void {
-    if (!this.inputEnabled || this.busy || this.overflowed) return
+    if (!this.inputEnabled || !this.hasOrder || this.busy || this.overflowed) return
     const other: PourSource = src === 'dem' ? 'su' : 'dem'
     if (this.active === other) {
       this.channel(other).release()
@@ -256,7 +279,7 @@ export class Station {
   // ---------- Şeker ----------
 
   dropSugar(): void {
-    if (!this.inputEnabled || this.busy || this.overflowed || this.sugarBowl.alpha < 0.5) return
+    if (!this.inputEnabled || !this.hasOrder || this.busy || this.overflowed) return
     const cube = this.cubePool.find((c) => !c.active) ?? this.scene.add.image(0, 0, 'prop_seker').setDepth(22)
     if (!this.cubePool.includes(cube)) this.cubePool.push(cube)
     const size = 46 * this.L.u
@@ -427,18 +450,67 @@ export class Station {
 
   // ---------- Animasyonlar ----------
 
+  /** Kaşık şıngırtısıyla kısa bir karıştırma. */
+  stir(reduced = false): Promise<void> {
+    const g = this.glass
+    const top = g.topWorldY
+    const size = g.worldRadiusAt(1) * 2.4
+    this.spoon.setVisible(true).setDisplaySize(size, size).setPosition(g.container.x + size * 0.12, top - size * 0.05).setAngle(-20).setAlpha(0)
+    return new Promise((resolve) => {
+      this.scene.tweens.add({ targets: this.spoon, alpha: 1, duration: 80 })
+      this.scene.tweens.add({
+        targets: this.spoon,
+        angle: 20,
+        x: g.container.x - size * 0.12,
+        duration: reduced ? 60 : 110,
+        yoyo: true,
+        repeat: reduced ? 0 : 2,
+        ease: 'Sine.easeInOut',
+        onYoyo: () => {
+          AudioService.play('spoonClink', { rate: 0.95 + Math.random() * 0.15 })
+          this.glass.agitate(0.9)
+        },
+        onComplete: () => {
+          this.scene.tweens.add({ targets: this.spoon, alpha: 0, y: top - size * 0.4, duration: 140, onComplete: () => this.spoon.setVisible(false) })
+          resolve()
+        },
+      })
+    })
+  }
+
+  /** Taşma: sıvı tabağa yayılır. */
+  spill(): void {
+    const c = teaColor(demRatio(this.dem, this.su), this.glass.geo.model.def.pathFactor)
+    const w = this.L.saucer.w
+    this.puddle
+      .setVisible(true)
+      .setTint(rgbToInt(c))
+      .setAlpha(Math.min(0.95, c.a + 0.2))
+      .setPosition(this.saucer.x, this.saucer.y + w * 0.02)
+      .setDisplaySize(w * 0.3, w * 0.08)
+    this.scene.tweens.add({ targets: this.puddle, displayWidth: w * 1.15, displayHeight: w * 0.3, duration: 700, ease: 'Cubic.easeOut' })
+    this.splashAt(this.glass.container.x, this.glass.topWorldY, rgbToInt(c), 14)
+  }
+
   /** Bardak + tabak sağa kayarak çıkar (tepsiyle). */
   slideOut(withTray: Phaser.GameObjects.Image | null): Promise<void> {
     const dist = this.L.W - this.glass.container.x + 300 * this.L.u
-    const targets: Phaser.GameObjects.GameObject[] = [this.glass.container, this.saucer]
-    if (withTray) targets.push(withTray)
+    const targets: Phaser.GameObjects.GameObject[] = [this.glass.container, this.saucer, this.puddle]
+    if (withTray) {
+      const tw = this.L.saucer.w * 1.5
+      withTray.setVisible(true).setDisplaySize(tw, tw).setPosition(this.saucer.x, this.saucer.y - tw * 0.24).setDepth(9)
+      targets.push(withTray)
+    }
     return new Promise((resolve) => {
       this.scene.tweens.add({
         targets,
         x: `+=${dist}`,
         duration: ANIM.serveSlide * 1000,
         ease: 'Back.easeIn',
-        onComplete: () => resolve(),
+        onComplete: () => {
+          withTray?.setVisible(false)
+          resolve()
+        },
       })
     })
   }
@@ -449,6 +521,7 @@ export class Station {
     const startX = -300 * L.u
     this.glass.container.x = startX
     this.saucer.x = startX
+    this.puddle.setVisible(false)
     return new Promise((resolve) => {
       this.scene.tweens.add({
         targets: [this.glass.container, this.saucer],
@@ -487,6 +560,8 @@ export class Station {
     for (const o of [this.demlik, this.caydanlik, this.streamDem, this.streamSu, this.glass]) o.destroy()
     for (const o of [this.fillGauge, this.demGauge, this.demPad, this.suPad, this.serveBtn]) o.destroy()
     this.saucer.destroy()
+    this.puddle.destroy()
+    this.spoon.destroy()
     this.sugarBowl.destroy()
     this.splash.destroy()
     for (const d of [...this.dropPool, ...this.cubePool]) d.destroy()

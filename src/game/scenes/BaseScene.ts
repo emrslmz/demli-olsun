@@ -27,6 +27,13 @@ export abstract class BaseScene extends Phaser.Scene {
     const onResize = () => this.onResize(getLayout())
     this.game.events.on(RESIZE_EVENT, onResize)
     this.onBus('theme:changed', () => this.reloadTheme())
+    this.onBus('game:start', (opts) => {
+      const key = opts.mode === 'shift' ? 'Shift' : opts.mode === 'daily' ? 'Daily' : 'Tutorial'
+      this.scene.start(key, opts)
+    })
+    this.onBus('game:quit', () => {
+      if (this.scene.key !== 'Ambient') this.scene.start('Ambient')
+    })
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(RESIZE_EVENT, onResize)
       for (const off of this.busOffs) off()

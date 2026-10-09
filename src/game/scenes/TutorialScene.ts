@@ -27,7 +27,6 @@ export class TutorialScene extends BaseScene {
         color: '#EDEDE4',
       })
       .setOrigin(0.5)
-    this.onBus('game:quit', () => this.scene.start('Ambient'))
     this.time.delayedCall(1500, () => {
       if ('Tutorial' === 'Tutorial') bus.emit('tutorial:finished', { skipped: true })
     })

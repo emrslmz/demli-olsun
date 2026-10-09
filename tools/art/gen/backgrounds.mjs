@@ -108,12 +108,14 @@ function tile(x, y, s, variant = 0) {
 }
 
 function tileWall(W, y0, y1, calm = 0.35) {
-  const s = W / Math.max(5, Math.round(W / 210))
+  const s = W / Math.max(7, Math.round(W / 150))
   let o = `<rect x="0" y="${f(y0)}" width="${W}" height="${f(y1 - y0)}" fill="#E9E3D1"/>`
   let k = 0
+  o += `<g filter="url(#b2)">`
   for (let y = y0; y < y1; y += s) {
     for (let x = 0; x < W; x += s) o += tile(x, y, s, k++)
   }
+  o += `</g>`
   // Sakinleştirme: krem perde + hafif yumuşatma
   o += `<rect x="0" y="${f(y0)}" width="${W}" height="${f(y1 - y0)}" fill="#F3EBDA" opacity="${calm}"/>`
   // Bordür
@@ -232,7 +234,7 @@ function mahalle(W, H, theme) {
   let s = ''
   const wallColor = night ? '#D7C7B4' : theme === 'yaz' ? '#F4EAD3' : '#EFE5CF'
   s += plasterWall(W, 0, tileTop, wallColor, 'wall' + W)
-  s += tileWall(W, tileTop, counterY, night ? 0.55 : 0.5)
+  s += tileWall(W, tileTop, counterY, night ? 0.62 : 0.58)
   // Raf
   const shelfY = H * 0.255
   let items = ''

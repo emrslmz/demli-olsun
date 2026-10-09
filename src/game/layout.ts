@@ -133,7 +133,7 @@ export function computeLayout(
   const boardW = Math.max(colW - 24 * u, boardMaxW)
   const cardMinW = 262 * u
   const cardSlots = (boardW - 60 * u) / 4 >= cardMinW ? 4 : 3
-  const boardH = Math.min(352 * u, H * 0.2)
+  const boardH = Math.min(440 * u, H * 0.25)
   const board: Rect = { x: cx - boardW / 2, y: hud.y + hud.h + 10 * u, w: boardW, h: boardH }
 
   const cover = placeBackground(W, H, bgSizes)
@@ -173,7 +173,7 @@ export function computeLayout(
   }
 
   const fillGauge: Rect = { x: cx + 205 * u, y: glassBaseY - glassUnit * 1.1, w: 26 * u, h: glassUnit * 1.1 }
-  const demGauge: Rect = { x: cx - 200 * u, y: counterY + 46 * u, w: 400 * u, h: 26 * u }
+  const demGauge: Rect = { x: cx - 200 * u, y: counterY + 74 * u, w: 400 * u, h: 26 * u }
   const sugarBowl = { x: cx + 360 * u, y: counterY - 4 * u, size: 150 * u }
 
   return {

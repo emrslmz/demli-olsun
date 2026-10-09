@@ -44,6 +44,8 @@ export const useAppStore = defineStore('app', () => {
   const phaserReady = ref(false)
   /** Kısa bilgi mesajı (toast). */
   const toast = ref<{ text: string; id: number } | null>(null)
+  /** Onay penceresi içeriği. */
+  const confirmState = ref<{ text: string; yes: string; no: string; onYes: () => void } | null>(null)
 
   const noAds = computed(() => entitlements.value.includes('no_ads'))
 
@@ -64,6 +66,11 @@ export const useAppStore = defineStore('app', () => {
     }, 2600)
   }
 
+  function confirm(text: string, onYes: () => void, yes = 'Evet', no = 'Vazgeç') {
+    confirmState.value = { text, yes, no, onYes }
+    modal.value = 'confirm'
+  }
+
   function hasEntitlement(e: EntitlementId): boolean {
     return entitlements.value.includes(e)
   }
@@ -81,7 +88,9 @@ export const useAppStore = defineStore('app', () => {
     rewardedAvailable,
     phaserReady,
     toast,
+    confirmState,
     noAds,
+    confirm,
     go,
     open,
     showToast,

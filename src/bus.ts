@@ -88,6 +88,8 @@ export type Events = {
   'game:resume': void
   /** Vue → Phaser: oyundan çık, ortam sahnesine dön. */
   'game:quit': void
+  /** Vue → Phaser: mesaiyi şimdi bitir (puan kaydedilir). */
+  'game:end-request': void
   /** Phaser → Vue: canlar bitti, devam teklifi göster. */
   'game:continue-offer': ContinueOffer
   /** Vue → Phaser: devam kararı. */

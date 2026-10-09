@@ -21,10 +21,6 @@ export class AmbientScene extends BaseScene {
     this.logo = this.add.image(0, 0, 'logo_emblem')
     this.layoutAll(L)
     this.tweens.add({ targets: this.logo, y: '-=12', duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
-    this.onBus('game:start', (opts) => {
-      const key = opts.mode === 'shift' ? 'Shift' : opts.mode === 'daily' ? 'Daily' : 'Tutorial'
-      this.scene.start(key, opts)
-    })
   }
 
   private layoutAll(L: Layout) {

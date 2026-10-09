@@ -1,14 +1,45 @@
 <script setup lang="ts">
 /** Ekran yöneticisi (basit state, router yok). Phaser kanvası sürekli monte; Vue menüleri üstüne biner. */
-import { onMounted, ref } from 'vue'
+import { defineAsyncComponent, onMounted, ref } from 'vue'
 import { bus } from '@/bus'
 import PhaserHost from '@/game/PhaserHost.vue'
 import { bootstrap, hideNativeSplash } from '@/app/bootstrap'
+import { onContinueOffer, onGameOver, pauseGame } from '@/app/flow'
+import { services } from '@/services'
+import { AudioService } from '@/services/audio/AudioService'
 import { useAppStore } from '@/stores/app'
+import Toast from '@/ui/components/Toast.vue'
 import Splash from '@/ui/screens/Splash.vue'
+import MainMenu from '@/ui/screens/MainMenu.vue'
+import GameOver from '@/ui/screens/GameOver.vue'
+import PauseModal from '@/ui/modals/PauseModal.vue'
+import ContinueModal from '@/ui/modals/ContinueModal.vue'
+import BoostersModal from '@/ui/modals/BoostersModal.vue'
+import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
+
+const ComingSoon = defineAsyncComponent(() => import('@/ui/screens/ComingSoon.vue'))
 
 const app = useAppStore()
 const ready = ref(false)
+
+function wireBus() {
+  bus.on('game:pause-request', () => pauseGame())
+  bus.on('game:continue-offer', (offer) => onContinueOffer(offer))
+  bus.on('game:over', (r) => void onGameOver(r))
+  bus.on('app:background', () => {
+    if (app.screen === 'game' && !app.modal) pauseGame()
+  })
+  services.ads.on((e) => {
+    if (e.type === 'fullscreen') {
+      AudioService.setInterrupted(e.open)
+      bus.emit('app:interrupt', e.open)
+    } else if (e.type === 'banner') {
+      app.bannerHeight = e.height
+    } else if (e.type === 'availability') {
+      app.rewardedAvailable = e.rewarded
+    }
+  })
+}
 
 onMounted(async () => {
   const started = performance.now()
@@ -16,9 +47,13 @@ onMounted(async () => {
     app.phaserReady = true
     await hideNativeSplash()
     const wait = Math.max(0, 700 - (performance.now() - started))
-    setTimeout(() => app.go('menu'), wait)
+    setTimeout(() => {
+      if (app.screen === 'splash') app.go('menu')
+    }, wait)
   })
   await bootstrap()
+  wireBus()
+  await services.ads.init()
   ready.value = true
   // Splash en fazla 3 sn kalır.
   setTimeout(() => {
@@ -28,45 +63,21 @@ onMounted(async () => {
     }
   }, 3000)
 })
-
-function start(mode: 'shift' | 'daily' | 'tutorial') {
-  app.go('game')
-  if (mode === 'shift') bus.emit('game:start', { mode: 'shift', boosters: [] })
-  else if (mode === 'tutorial') bus.emit('game:start', { mode: 'tutorial' })
-}
-
-function quit() {
-  bus.emit('game:quit')
-  app.go('menu')
-}
 </script>
 
 <template>
   <PhaserHost v-if="ready" />
-  <Transition name="screen">
-    <Splash v-if="app.screen === 'splash'" />
+  <Transition name="screen" mode="out-in">
+    <Splash v-if="app.screen === 'splash'" key="splash" />
+    <MainMenu v-else-if="app.screen === 'menu'" key="menu" @daily="app.showToast('Günün siparişi yakında.')" />
+    <GameOver v-else-if="app.screen === 'gameover'" key="gameover" />
+    <ComingSoon v-else-if="app.screen !== 'game'" :key="app.screen" />
   </Transition>
-  <div v-if="app.screen === 'menu'" class="tmp-menu">
-    <button class="btn btn--primary btn--big" @click="start('shift')">Mesaiye başla</button>
-    <button class="btn" @click="start('tutorial')">Eğitim</button>
-  </div>
-  <button v-if="app.screen === 'game'" class="btn btn--small tmp-quit" @click="quit">Menü</button>
+  <Transition name="modal">
+    <PauseModal v-if="app.modal === 'pause'" />
+    <ContinueModal v-else-if="app.modal === 'continue'" />
+    <BoostersModal v-else-if="app.modal === 'boosters'" />
+    <ConfirmDialog v-else-if="app.modal === 'confirm'" />
+  </Transition>
+  <Toast />
 </template>
-
-<style scoped>
-.tmp-menu {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(40px + var(--safe-bottom));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.tmp-quit {
-  position: absolute;
-  top: calc(10px + var(--safe-top));
-  right: 10px;
-}
-</style>

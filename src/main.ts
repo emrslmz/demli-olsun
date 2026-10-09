@@ -6,3 +6,10 @@ import './ui/styles.css'
 const app = createApp(App)
 app.use(createPinia())
 app.mount('#app')
+
+// Geliştirme kolaylığı: otomasyon testleri ve konsol için bus'a erişim (yalnızca dev build).
+if (import.meta.env.DEV) {
+  void import('./bus').then(({ bus }) => {
+    ;(window as unknown as { __bus: typeof bus }).__bus = bus
+  })
+}
