@@ -77,6 +77,8 @@ export interface SaveData {
     consentDone: boolean
     /** Başlangıç paketi teklifinin ilk gösterildiği an (ms). */
     starterOfferAt: number | null
+    /** İlk günlük siparişten sonra bildirim izni soruldu mu. */
+    notifAsked: boolean
   }
   purchases: {
     processedTransactions: string[]
@@ -132,7 +134,7 @@ export function defaultSave(now: number = Date.now()): SaveData {
       theme: 'auto',
       lowQuality: false,
     },
-    flags: { onboardingDone: false, tutorialDone: false, consentDone: false, starterOfferAt: null },
+    flags: { onboardingDone: false, tutorialDone: false, consentDone: false, starterOfferAt: null, notifAsked: false },
     purchases: { processedTransactions: [], entitlements: [] },
   }
 }

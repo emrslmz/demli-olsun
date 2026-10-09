@@ -2,7 +2,7 @@
 
 import * as Phaser from 'phaser'
 import { FONTS } from '@/config/theme'
-import { num } from '@/i18n/tr'
+import { num, tr } from '@/i18n/tr'
 import type { Layout } from '../layout'
 
 const DARK = 0x3b2416
@@ -133,6 +133,14 @@ export class Hud {
         }
       }
     })
+  }
+
+  /** Günün Siparişi: puan ve can yok; başlık yerine gün numarası. */
+  setDailyMode(title: string): void {
+    this.setLives(0, 0)
+    this.scoreLabel.setText(tr.menu.daily)
+    this.scoreText.setText(title.replace(/^.*#/, '#'))
+    this.comboText.setVisible(false)
   }
 
   setScore(score: number): void {

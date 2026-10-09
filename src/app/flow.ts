@@ -3,17 +3,21 @@
  */
 
 import { Capacitor } from '@capacitor/core'
-import { bus, type ContinueOffer, type ShiftResult } from '@/bus'
+import { bus, type ContinueOffer, type DailyResultData, type ShiftResult } from '@/bus'
 import { CONTINUE_COST, STARTER_OFFER, type BoosterId } from '@/config/economy'
 import { productDef, type EntitlementId, type ProductId } from '@/config/products'
 import { canShowInterstitial } from '@/core/adPolicy'
+import { buildShareText, dailyChallenge } from '@/core/daily'
+import { CUSTOMERS } from '@/data/customers'
 import { tr } from '@/i18n/tr'
 import { now as clockNow } from './clock'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
 import { purchaseErrorText } from '@/services/iap/PurchaseService'
+import { ShareService } from '@/services/share/ShareService'
 import { useAppStore } from '@/stores/app'
+import { useDailyStore } from '@/stores/daily'
 import { useEconomyStore } from '@/stores/economy'
 import { useInventoryStore } from '@/stores/inventory'
 import { useLeagueStore } from '@/stores/league'
@@ -21,6 +25,7 @@ import { saveNow } from '@/stores/persist'
 import { usePlayerStore } from '@/stores/player'
 import { useProgressStore } from '@/stores/progress'
 import { useSessionStore } from '@/stores/session'
+import { useSettingsStore } from '@/stores/settings'
 
 async function setStatusBar(visible: boolean): Promise<void> {
   if (!Capacitor.isNativePlatform()) return
@@ -51,7 +56,9 @@ export function startShift(boosters: BoosterId[]): void {
   const inv = useInventoryStore()
   const used: BoosterId[] = []
   for (const b of boosters) if (inv.useBooster(b)) used.push(b)
-  useSessionStore().lastBoosters = used
+  const session = useSessionStore()
+  session.lastBoosters = used
+  session.mode = 'shift'
   enterGame()
   bus.emit('game:start', { mode: 'shift', boosters: used })
 }
@@ -234,6 +241,7 @@ export async function gameOverToMenu(): Promise<void> {
 // ---------- Eğitim ----------
 
 export function startTutorial(): void {
+  useSessionStore().mode = 'tutorial'
   enterGame()
   bus.emit('game:start', { mode: 'tutorial' })
 }
@@ -260,7 +268,6 @@ export async function resetSave(): Promise<void> {
   const { hydrateStores } = await import('@/stores/persist')
   const fresh = await services.save.reset()
   hydrateStores(fresh)
-  const { useSettingsStore } = await import('@/stores/settings')
   useSettingsStore().apply()
   await saveNow()
   const app = useAppStore()
@@ -367,4 +374,89 @@ export async function restorePurchases(): Promise<void> {
   } finally {
     app.purchaseBusy = false
   }
+}
+
+// ---------- Günün Siparişi ----------
+
+/** Günün siparişini başlatır. Bugün oynandıysa false. */
+export function startDaily(): boolean {
+  const daily = useDailyStore()
+  daily.refreshToday()
+  if (daily.playedToday) {
+    useAppStore().showToast(tr.daily.alreadyPlayed)
+    return false
+  }
+  useSessionStore().mode = 'daily'
+  enterGame()
+  bus.emit('game:start', { mode: 'daily', challenge: dailyChallenge(daily.today) })
+  return true
+}
+
+export async function onDailyFinished(r: DailyResultData): Promise<void> {
+  const app = useAppStore()
+  const daily = useDailyStore()
+  const session = useSessionStore()
+  daily.recordPlay({ day: r.dateKey, accuracy: r.accuracy, timeSec: r.timeSec })
+  if (r.tips > 0) {
+    useEconomyStore().add(r.tips)
+    useProgressStore().totalTipsEarned += r.tips
+  }
+  session.dailyResult = r
+  session.dailyPercentile = null
+  await saveNow()
+  app.open(null)
+  app.go('dailyResult')
+  leaveGameUi()
+  try {
+    session.dailyPercentile = await services.leaderboard.dailyPercentile(r.dateKey, r.accuracy)
+  } catch {
+    session.dailyPercentile = null
+  }
+}
+
+export function dailyShareText(r: DailyResultData): string {
+  return buildShareText({
+    dayNumber: r.dayNumber,
+    customerName: CUSTOMERS[r.customer].name,
+    line: r.line,
+    demScore: r.demScore,
+    fillScore: r.fillScore,
+    streak: useDailyStore().streak,
+    storeUrl: import.meta.env.VITE_STORE_URL ?? '',
+  })
+}
+
+export async function shareDaily(r: DailyResultData): Promise<void> {
+  const app = useAppStore()
+  const text = dailyShareText(r)
+  let image: string | undefined
+  try {
+    const { renderDailyCard } = await import('@/ui/share/dailyCard')
+    image = await renderDailyCard(r, useDailyStore().streak)
+  } catch (err) {
+    console.warn('[share] kart çizilemedi', err)
+  }
+  const out = await ShareService.share(text, image, `demli-olsun-${r.dayNumber}.png`)
+  if (out === 'copied') app.showToast(tr.daily.copied)
+  else if (out === 'failed') app.showToast(tr.errors.generic)
+}
+
+/** İlk günlük siparişten sonra bir kez: bildirim izni teklifi (kullanıcı isterse). */
+export function maybeAskNotifications(): void {
+  const app = useAppStore()
+  const settings = useSettingsStore()
+  if (app.flags.notifAsked || settings.data.notifications) return
+  app.flags = { ...app.flags, notifAsked: true }
+  void saveNow()
+  app.confirm(
+    'Her gün yeni sipariş gelince haber verelim mi? ☕',
+    () => {
+      void import('./notifications').then(async ({ toggleNotifications }) => {
+        const ok = await toggleNotifications(true)
+        app.showToast(ok ? 'Tamam! Her gün haber vereceğiz.' : 'Bildirim izni verilmedi. Ayarlar’dan açabilirsin.')
+      })
+    },
+    'Haber ver',
+    'Şimdi değil',
+  )
 }

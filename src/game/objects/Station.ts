@@ -234,6 +234,13 @@ export class Station {
     this.busy = b
   }
 
+  /** Akışı damlasız keser (süre doldu / zorunlu servis). */
+  stopPour(): void {
+    this.setInputEnabled(false)
+    this.chDem.stop()
+    this.chSu.stop()
+  }
+
   setPot(pot: string): void {
     const ids = potIds(pot)
     this.demlik.setTexture(ids.demlik)

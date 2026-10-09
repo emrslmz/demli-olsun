@@ -85,3 +85,32 @@ describe('daily', () => {
     }
   })
 })
+
+describe('possessiveAblative (Türkçe ek uyumu)', () => {
+  it('sayının okunuşuna göre doğru eki verir', async () => {
+    const { possessiveAblative } = await import('@/i18n/tr')
+    const cases: [number, string][] = [
+      [0, 'ından'],
+      [1, 'inden'],
+      [2, 'sinden'],
+      [3, 'ünden'],
+      [4, 'ünden'],
+      [6, 'sından'],
+      [9, 'undan'],
+      [10, 'undan'],
+      [20, 'sinden'],
+      [30, 'undan'],
+      [40, 'ından'],
+      [50, 'sinden'],
+      [60, 'ından'],
+      [70, 'inden'],
+      [80, 'inden'],
+      [90, 'ından'],
+      [100, 'ünden'],
+      [47, 'sinden'],
+      [85, 'inden'],
+      [99, 'undan'],
+    ]
+    for (const [n, sfx] of cases) expect(possessiveAblative(n), String(n)).toBe(sfx)
+  })
+})

@@ -91,6 +91,8 @@ export const tr = {
     restart: 'Baştan başla',
     quit: 'Menüye dön',
     quitConfirm: 'Mesaiyi bitirmek istiyor musun? Bu mesainin puanı kaydedilir.',
+    serveNow: 'Bardağı şimdi servis et',
+    dailyConfirm: 'Bardak olduğu gibi servis edilecek. Günün siparişinde tek hakkın var. Emin misin?',
   },
   continue: {
     title: 'Son bardak gitti!',
@@ -118,7 +120,8 @@ export const tr = {
     customer: 'Müşteri',
     accuracy: 'İsabet',
     streak: 'Seri',
-    betterThan: 'Bugün oyuncuların %{n}’inden iyisin.',
+    betterThan: 'Bugün oyuncuların %{n}’{sfx} iyisin.',
+    keepGoing: 'Yarın daha iyisi gelir!',
     share: 'Paylaş',
     menu: 'Menü',
     nextIn: 'Sonraki sipariş: {time}',
@@ -217,6 +220,21 @@ export const tr = {
 /** Basit yer tutucu doldurma: t('Dem %{n}', { n: 35 }). */
 export function fmt(text: string, vars: Record<string, string | number> = {}): string {
   return text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`))
+}
+
+/**
+ * Sayıdan sonra gelen iyelik + ayrılma eki (3. tekil): 20 → "sinden", 30 → "undan", 4 → "ünden".
+ * Ünlü uyumu sayının okunuşundaki son kelimeye göre belirlenir.
+ */
+export function possessiveAblative(n: number): string {
+  const v = Math.abs(Math.round(n))
+  const ones = ['ından', 'inden', 'sinden', 'ünden', 'ünden', 'inden', 'sından', 'sinden', 'inden', 'undan']
+  const tens = ['', 'undan', 'sinden', 'undan', 'ından', 'sinden', 'ından', 'inden', 'inden', 'ından']
+  if (v === 0) return 'ından'
+  if (v % 1000 === 0) return 'inden'
+  if (v % 100 === 0) return 'ünden'
+  if (v % 10 !== 0) return ones[v % 10] as string
+  return tens[Math.floor(v / 10) % 10] as string
 }
 
 export function upper(s: string): string {

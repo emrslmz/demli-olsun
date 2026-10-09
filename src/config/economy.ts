@@ -11,6 +11,9 @@ export const STAR_TIP_MULTIPLIER = {
   3: 1.5,
 } as const
 
+/** Günün Siparişi bahşişi: kabul edilirse taban + yıldız başına; reddedilirse teselli. */
+export const DAILY_REWARD = { base: 20, perStar: 15, rejected: 5 }
+
 /** 7 gün boyunca artan günlük giriş ödülü. Bir gün kaçarsa başa döner. */
 export const DAILY_LOGIN_REWARDS = [20, 30, 40, 60, 80, 100, 150]
 

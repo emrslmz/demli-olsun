@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ContinueOffer, DailyResultData, ShiftResult } from '@/bus'
+import type { ContinueOffer, DailyResultData, GameMode, ShiftResult } from '@/bus'
 
 export interface GameOverInfo {
   result: ShiftResult
@@ -21,5 +21,7 @@ export const useSessionStore = defineStore('session', () => {
   const dailyPercentile = ref<number | null>(null)
   /** Tekrar butonu için son mesainin güçlendiricileri. */
   const lastBoosters = ref<string[]>([])
-  return { gameOver, continueOffer, dailyResult, dailyPercentile, lastBoosters }
+  /** Oynanan mod (duraklatma penceresi metinleri için). */
+  const mode = ref<GameMode>('shift')
+  return { gameOver, continueOffer, dailyResult, dailyPercentile, lastBoosters, mode }
 })

@@ -4,7 +4,17 @@ import { defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { bus } from '@/bus'
 import PhaserHost from '@/game/PhaserHost.vue'
 import { bootstrap, hideNativeSplash } from '@/app/bootstrap'
-import { initPurchases, onContinueOffer, onGameOver, onTutorialFinished, pauseGame, refreshPurchases, startTutorial } from '@/app/flow'
+import {
+  initPurchases,
+  onContinueOffer,
+  onDailyFinished,
+  onGameOver,
+  onTutorialFinished,
+  pauseGame,
+  refreshPurchases,
+  startDaily,
+  startTutorial,
+} from '@/app/flow'
 import { maybeStartStarterOffer } from '@/app/market'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
@@ -24,6 +34,7 @@ import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 const Onboarding = defineAsyncComponent(() => import('@/ui/screens/Onboarding.vue'))
 const Settings = defineAsyncComponent(() => import('@/ui/screens/Settings.vue'))
 const Market = defineAsyncComponent(() => import('@/ui/screens/Market.vue'))
+const DailyResult = defineAsyncComponent(() => import('@/ui/screens/DailyResult.vue'))
 const ComingSoon = defineAsyncComponent(() => import('@/ui/screens/ComingSoon.vue'))
 const DailyRewardModal = defineAsyncComponent(() => import('@/ui/modals/DailyRewardModal.vue'))
 const ConsentIntroModal = defineAsyncComponent(() => import('@/ui/modals/ConsentIntroModal.vue'))
@@ -73,6 +84,7 @@ function wireBus() {
   bus.on('game:continue-offer', (offer) => onContinueOffer(offer))
   bus.on('game:over', (r) => void onGameOver(r))
   bus.on('tutorial:finished', () => void onTutorialFinished())
+  bus.on('daily:finished', (r) => void onDailyFinished(r))
   bus.on('app:background', () => {
     if (app.screen === 'game' && !app.modal) pauseGame()
   })
@@ -121,10 +133,11 @@ onMounted(async () => {
   <Transition name="screen" mode="out-in">
     <Splash v-if="app.screen === 'splash'" key="splash" />
     <Onboarding v-else-if="app.screen === 'onboarding'" key="onboarding" @done="onOnboarded" />
-    <MainMenu v-else-if="app.screen === 'menu'" key="menu" @daily="app.showToast('Günün siparişi yakında.')" @dev-tap="devTap" />
+    <MainMenu v-else-if="app.screen === 'menu'" key="menu" @daily="startDaily" @dev-tap="devTap" />
     <GameOver v-else-if="app.screen === 'gameover'" key="gameover" />
     <Settings v-else-if="app.screen === 'settings'" key="settings" />
     <Market v-else-if="app.screen === 'market'" key="market" :initial-tab="app.marketTab" />
+    <DailyResult v-else-if="app.screen === 'dailyResult'" key="dailyResult" />
     <ComingSoon v-else-if="app.screen !== 'game'" :key="app.screen" />
   </Transition>
   <Transition name="modal">
