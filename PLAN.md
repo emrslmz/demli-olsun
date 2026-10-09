@@ -59,3 +59,40 @@ Bu dosya `demli-olsun-prompt.md` tanımına göre hazırlanmıştır. Fazlar sı
 - Bundle kimliği `com.demliolsun.app` olarak varsayıldı; `SETUP.md`'de nasıl değiştirileceği yazılı.
 - Gerçek liderlik backend'i yok; `VITE_LEADERBOARD_MODE=mock` iken liderlikte "Rakipler simülasyondur" notu görünür.
 - Müzik ve ortam sesleri için CC0 dosyaları `SETUP.md`'de önerildi, depoya eklenmedi.
+
+## Durum (Faz 10 sonu)
+
+Tüm fazlar uygulandı ve her biri ayrı commit olarak duruyor. `npm run check` (tip + lint + biçim + 125 test + derleme) temiz. Tarayıcıda (390×844 telefon, 768×1024 ve 1024×1366 tablet) Playwright ile ekran görüntüsü alınarak doğrulandı: takma ad → eğitim → reklam bilgisi → giriş ödülü → menü, mesai, günlük sipariş + paylaşım kartı, çarşı (canlı önizleme), liderlik, hafta sonucu, ayarlar, geliştirici menüsü, çapa düzenleyici.
+
+Ek kararlar (Faz 5–10):
+
+- **Günün Siparişi süresi:** Sabır bitince bardak olduğu gibi servis edilir (tek hak korunur, oyuncu boşa düşmez). Duraklatmadaki "Bardağı şimdi servis et" de aynı şekilde çalışır. Bahşiş: kabul 20 + yıldız başına 15, ret 5 (`DAILY_REWARD`).
+- **Lig haftası kapanışı:** Sonuç bir kez hesaplanır ve hemen uygulanır (kademe + ödül, kayıt); pencere yalnızca gösterir. Uygulama pencere açılmadan kapansa bile ödül kaybolmaz. Mesai sonunda hafta değiştiyse önce geçen hafta kapanır.
+- **Başlangıç Paketi:** 3. mesai bittiğinde oyun sonu ekranında bir kez açılır; teklif anı kayda yazılır, 48 saat Kese'de gerçek geri sayımla kalır.
+- **Kese'ye git (devam penceresi):** Mesai biter, oyun sonundan menüye dönüşte geçiş reklamı gösterilmeden Kese açılır.
+- **Test reklam kimlikleri:** Gerçek kimlikler yalnızca `mode=production` derlemede; `npm run build:debug` / `cap:sync:debug` her zaman Google test kimlikleriyle derler ve geliştirici menüsünü açar.
+- **Bildirim izni:** İlk günlük siparişten sonra menüye dönüşte bir kez sorulur; Ayarlar'dan saatle birlikte açılıp kapatılır. Tam zamanlı alarm izinleri manifestten kaldırıldı.
+- **Türkçe sayı ekleri:** "oyuncuların %20'sinden" gibi metinler için `possessiveAblative()` (testli).
+
+## Kabul kriterleri
+
+| Kriter | Durum |
+|---|---|
+| Telefonda ve tablette dikeyde boşluk/kesik yok, çentik ve gezinme çubuğu içeriği kapatmıyor | ✅ Tarayıcıda 390×844, 768×1024, 1024×1366 doğrulandı; safe area CSS + `layout.ts`. Gerçek cihazda (hareket + 3 tuşlu gezinme) `SETUP.md` §17 ile denenmeli |
+| Orta-alt seviye cihazda dökümde ~60 FPS | ⏳ Cihazda ölçülmeli. Önlemler: DPR ≤ 2, ilk 5 sn < 50 FPS ise otomatik düşük kalite, menüde 30 FPS, kırpma (maske yok), havuzlu partiküller, karede bellek ayırmayan döküm/ses döngüsü |
+| İnternetsiz baştan sona oynanıyor | ✅ Fontlar ve görseller pakette; reklam/IAP hataları yutulur, butonlar "Reklam şu an yok" / "Fiyat yüklenemedi" |
+| Oyun sırasında reklam yok; geçiş kuralları testli | ✅ Banner yalnızca menü ve liderlikte; `adPolicy` testleri |
+| `remove_ads` sonrası banner/geçiş yok, yeniden açılınca da yok | ✅ Entitlement önbelleği açılışta, menü banner'ından önce uygulanır; mağazadan yenilenir |
+| Satın alımları geri yükleme | ✅ Ayarlar ve Kese; mock'ta doğrulandı, sandbox adımları `SETUP.md` §12 |
+| Debug build'de yalnızca test reklam kimlikleri | ✅ `getAdUnitIds` + `build:debug` |
+| Türkçe karakterler tüm fontlarda doğru | ✅ Kalam + Nunito Türkçe glifleri doğrulandı; `toLocale*Case('tr-TR')` |
+| Ses, titreşim, hareket ayarları anında ve kalıcı | ✅ `settings.update()` servislere hemen uygular ve kaydeder |
+| Günün Siparişi iki cihazda aynı gün aynı | ✅ Tarih seed'li, Europe/Istanbul gün sınırı, testli |
+| Mock lider tablosu "simülasyon" notuyla | ✅ |
+
+## Açık işler / bilinen sınırlar
+
+- **Native derleme bu ortamda yapılamadı** (Android SDK ve Xcode yok). Native projeler yapılandırıldı; ilk derleme ve cihaz testleri `SETUP.md` adımlarıyla yapılmalı.
+- **Texture atlası:** Görseller ayrı PNG'ler olarak yükleniyor (Phaser 4 çoklu doku toplu çizimi ile çizim çağrıları düşük kalıyor). Cihaz profilinde gerekirse ikon/karakter görselleri `tools/art` içinde atlasa toplanabilir.
+- **Ses dosyaları** (müzik ve ortam) depoda yok; yuvalar hazır, CC0 kaynaklar `SETUP.md` §13'te.
+- **Liderlik** simülasyon; gerçek backend `LeaderboardService` arayüzünün arkasına takılacak.
