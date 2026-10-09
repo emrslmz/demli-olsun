@@ -141,42 +141,106 @@
     "pot_demlik_celik": {
       "file": "pot/pot_demlik_celik.png",
       "w": 768,
-      "h": 620
+      "h": 620,
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ]
     },
     "pot_caydanlik_celik": {
       "file": "pot/pot_caydanlik_celik.png",
       "w": 768,
-      "h": 768
+      "h": 768,
+      "pivot": [
+        0.458,
+        0.872
+      ],
+      "spout": [
+        0.961,
+        0.385
+      ]
     },
     "pot_demlik_emaye": {
       "file": "pot/pot_demlik_emaye.png",
       "w": 768,
-      "h": 620
+      "h": 620,
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ]
     },
     "pot_caydanlik_emaye": {
       "file": "pot/pot_caydanlik_emaye.png",
       "w": 768,
-      "h": 768
+      "h": 768,
+      "pivot": [
+        0.458,
+        0.872
+      ],
+      "spout": [
+        0.961,
+        0.385
+      ]
     },
     "pot_demlik_porselen": {
       "file": "pot/pot_demlik_porselen.png",
       "w": 768,
-      "h": 620
+      "h": 620,
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ]
     },
     "pot_caydanlik_porselen": {
       "file": "pot/pot_caydanlik_porselen.png",
       "w": 768,
-      "h": 768
+      "h": 768,
+      "pivot": [
+        0.458,
+        0.872
+      ],
+      "spout": [
+        0.961,
+        0.385
+      ]
     },
     "pot_demlik_bakir": {
       "file": "pot/pot_demlik_bakir.png",
       "w": 768,
-      "h": 620
+      "h": 620,
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ]
     },
     "pot_caydanlik_bakir": {
       "file": "pot/pot_caydanlik_bakir.png",
       "w": 768,
-      "h": 768
+      "h": 768,
+      "pivot": [
+        0.458,
+        0.872
+      ],
+      "spout": [
+        0.961,
+        0.385
+      ]
     },
     "prop_tabak": {
       "file": "prop/prop_tabak.png",
