@@ -48,6 +48,11 @@ function reset() {
   app.confirm(tr.settings.resetConfirm, () => void resetSave(), tr.common.yes, tr.common.no)
 }
 
+function onHour(e: Event) {
+  set('notifyHour', Number((e.target as HTMLSelectElement).value))
+  void notif(true)
+}
+
 async function notif(v: boolean) {
   const ok = await toggleNotifications(v)
   if (v && !ok) app.showToast('Bildirim izni verilmedi. Cihaz ayarlarından açabilirsin.')
@@ -94,13 +99,7 @@ async function notif(v: boolean) {
           <ToggleRow :label="tr.settings.notifications" :model-value="s.notifications" @update:model-value="notif" />
           <label v-if="s.notifications" class="hour">
             <span>{{ tr.settings.notifyHour }}</span>
-            <select
-              :value="s.notifyHour"
-              @change="
-                set('notifyHour', Number(($event.target as HTMLSelectElement).value))
-                notif(true)
-              "
-            >
+            <select :value="s.notifyHour" @change="onHour">
               <option v-for="h in 24" :key="h - 1" :value="h - 1">{{ String(h - 1).padStart(2, '0') }}:00</option>
             </select>
           </label>
