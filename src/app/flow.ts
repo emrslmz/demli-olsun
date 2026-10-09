@@ -11,6 +11,7 @@ import { buildShareText, dailyChallenge } from '@/core/daily'
 import { CUSTOMERS } from '@/data/customers'
 import { tr } from '@/i18n/tr'
 import { now as clockNow } from './clock'
+import { leagueState, resolveLeagueWeek } from './league'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
@@ -132,7 +133,6 @@ export async function onGameOver(result: ShiftResult): Promise<void> {
   const progress = useProgressStore()
   const league = useLeagueStore()
   const session = useSessionStore()
-  const player = usePlayerStore()
 
   const prevTitle = progress.title.name
   const newRecord = result.score > progress.bestScore && result.score > 0
@@ -147,17 +147,12 @@ export async function onGameOver(result: ShiftResult): Promise<void> {
   let rankBefore: number | null = null
   let rankAfter: number | null = null
   try {
+    // Hafta değiştiyse önce geçen haftanın sonucu uygulanır (puan sıfırlanmadan).
+    await resolveLeagueWeek()
     const now = clockNow()
-    const state = () => ({
-      name: player.nickname || 'Sen',
-      weekId: league.weekId,
-      tier: league.tier,
-      weeklyScore: league.weeklyScore,
-      bestScore: progress.bestScore,
-    })
-    rankBefore = (await services.leaderboard.weekly(state(), now)).playerRank
+    rankBefore = (await services.leaderboard.weekly(leagueState(), now)).playerRank
     league.addShiftScore(result.score, now)
-    rankAfter = (await services.leaderboard.weekly(state(), now)).playerRank
+    rankAfter = (await services.leaderboard.weekly(leagueState(), now)).playerRank
     league.lastRank = rankAfter
   } catch (err) {
     console.warn('[flow] lig hesaplanamadı', err)

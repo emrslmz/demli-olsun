@@ -15,6 +15,7 @@ import {
   startDaily,
   startTutorial,
 } from '@/app/flow'
+import { resolveLeagueWeek } from '@/app/league'
 import { maybeStartStarterOffer } from '@/app/market'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
@@ -22,6 +23,7 @@ import { useAppStore } from '@/stores/app'
 import { useDailyStore } from '@/stores/daily'
 import { saveNow } from '@/stores/persist'
 import { usePlayerStore } from '@/stores/player'
+import { useSessionStore } from '@/stores/session'
 import Toast from '@/ui/components/Toast.vue'
 import Splash from '@/ui/screens/Splash.vue'
 import MainMenu from '@/ui/screens/MainMenu.vue'
@@ -35,17 +37,19 @@ const Onboarding = defineAsyncComponent(() => import('@/ui/screens/Onboarding.vu
 const Settings = defineAsyncComponent(() => import('@/ui/screens/Settings.vue'))
 const Market = defineAsyncComponent(() => import('@/ui/screens/Market.vue'))
 const DailyResult = defineAsyncComponent(() => import('@/ui/screens/DailyResult.vue'))
-const ComingSoon = defineAsyncComponent(() => import('@/ui/screens/ComingSoon.vue'))
+const Leaderboard = defineAsyncComponent(() => import('@/ui/screens/Leaderboard.vue'))
 const DailyRewardModal = defineAsyncComponent(() => import('@/ui/modals/DailyRewardModal.vue'))
 const ConsentIntroModal = defineAsyncComponent(() => import('@/ui/modals/ConsentIntroModal.vue'))
 const StarterOfferModal = defineAsyncComponent(() => import('@/ui/modals/StarterOfferModal.vue'))
 const DevMenu = defineAsyncComponent(() => import('@/ui/modals/DevMenu.vue'))
+const LeagueResultModal = defineAsyncComponent(() => import('@/ui/modals/LeagueResultModal.vue'))
 
 const DEV_MENU = import.meta.env.DEV || import.meta.env.VITE_DEV_MENU === 'true'
 
 const app = useAppStore()
 const daily = useDailyStore()
 const player = usePlayerStore()
+const session = useSessionStore()
 const ready = ref(false)
 
 /** Açılıştan sonra ilk ekran: takma ad → eğitim → menü. */
@@ -70,9 +74,11 @@ let menuTimer = 0
 function checkMenuQueue() {
   clearTimeout(menuTimer)
   if (app.screen !== 'menu' || app.modal) return
-  menuTimer = window.setTimeout(() => {
+  menuTimer = window.setTimeout(async () => {
+    if (app.flags.tutorialDone) await resolveLeagueWeek()
     if (app.screen !== 'menu' || app.modal) return
     if (app.flags.tutorialDone && !app.flags.consentDone) app.open('consentIntro')
+    else if (session.leagueResult) app.open('leagueResult')
     else if (daily.pendingLogin) app.open('dailyReward')
     else if (maybeStartStarterOffer()) app.open('starterOffer')
   }, 650)
@@ -138,7 +144,7 @@ onMounted(async () => {
     <Settings v-else-if="app.screen === 'settings'" key="settings" />
     <Market v-else-if="app.screen === 'market'" key="market" :initial-tab="app.marketTab" />
     <DailyResult v-else-if="app.screen === 'dailyResult'" key="dailyResult" />
-    <ComingSoon v-else-if="app.screen !== 'game'" :key="app.screen" />
+    <Leaderboard v-else-if="app.screen === 'leaderboard'" key="leaderboard" />
   </Transition>
   <Transition name="modal">
     <PauseModal v-if="app.modal === 'pause'" />
@@ -148,6 +154,7 @@ onMounted(async () => {
     <DailyRewardModal v-else-if="app.modal === 'dailyReward'" />
     <ConsentIntroModal v-else-if="app.modal === 'consentIntro'" />
     <StarterOfferModal v-else-if="app.modal === 'starterOffer'" />
+    <LeagueResultModal v-else-if="app.modal === 'leagueResult'" />
     <DevMenu v-else-if="app.modal === 'dev'" />
   </Transition>
   <Toast />

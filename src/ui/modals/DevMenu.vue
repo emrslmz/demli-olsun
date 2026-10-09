@@ -6,7 +6,7 @@
  */
 import { computed, ref } from 'vue'
 import { bus } from '@/bus'
-import { clockOffsetDays, resetClock, shiftDays } from '@/app/clock'
+import { clockOffsetDays, now as clockNow, resetClock, shiftDays } from '@/app/clock'
 import { resetSave } from '@/app/flow'
 import { effectiveThemeSetting } from '@/app/bootstrap'
 import { THEME_IDS, type ThemeSetting } from '@/config/theme'
@@ -17,6 +17,7 @@ import type { MockPurchaseScenario } from '@/services/iap/MockPurchaseService'
 import { ThemeService } from '@/services/theme/ThemeService'
 import { useAppStore } from '@/stores/app'
 import { useDailyStore } from '@/stores/daily'
+import { useLeagueStore } from '@/stores/league'
 import { useEconomyStore } from '@/stores/economy'
 import { useInventoryStore } from '@/stores/inventory'
 import { saveNow } from '@/stores/persist'
@@ -28,6 +29,7 @@ const app = useAppStore()
 const econ = useEconomyStore()
 const inv = useInventoryStore()
 const daily = useDailyStore()
+const league = useLeagueStore()
 const settings = useSettingsStore()
 const overlay = ref(false)
 const anchors = ref(false)
@@ -71,6 +73,12 @@ function setIap(s: MockPurchaseScenario) {
 function clearIap() {
   ;(services.purchases as unknown as { clearStore?: () => void }).clearStore?.()
   app.showToast('Sahte mağaza sıfırlandı')
+}
+
+function leaguePoints(n: number) {
+  league.addShiftScore(n, clockNow())
+  void saveNow()
+  app.showToast(`Haftalık puan: ${league.weeklyScore}`)
 }
 
 function days(n: number) {
@@ -150,6 +158,7 @@ function reset() {
           <GameButton size="small" @click="days(-1)">−1 gün</GameButton>
           <GameButton size="small" @click="days(1)">+1 gün</GameButton>
           <GameButton size="small" @click="days(7)">+1 hafta (lig)</GameButton>
+          <GameButton size="small" @click="leaguePoints(5000)">+5.000 lig puanı</GameButton>
           <GameButton size="small" @click="days(0)">Sıfırla</GameButton>
         </div>
       </section>
