@@ -39,6 +39,7 @@ Faydalı komutlar:
 | `npm run build:debug` | Debug web paketi: **daima Google test reklam kimlikleri**, geliştirici menüsü açık |
 | `npm run cap:sync` / `cap:sync:debug` | Web paketini derleyip native projelere kopyalar |
 | `npm run art` | Tüm görselleri koddan yeniden üretir (`tools/art/`) |
+| `npm run art:custom` | `custom-assets/` klasörüne koyduğun kendi görsellerini oyuna alır (bkz. `ASSETS.md`) |
 | `npm run cap:assets` | `assets/` içindeki ikon/splash'ten native ikonları üretir |
 
 ## 3. Paket kimliği (bundle id)
@@ -282,6 +283,7 @@ Son manifesti doğrulamak için Android Studio'da `AndroidManifest.xml` → altt
 ## 16. Tema ve görseller
 
 - Aktif tema: `.env` → `VITE_ACTIVE_THEME` (`auto` = tarihe göre: Aralık–Şubat kış, Haziran–Ağustos yaz, 20 Ekim–2 Kasım cadılar bayramı). Geliştirici menüsünden anında değiştirilebilir.
+- Kendi çizdiğin görselleri koymak için: `ASSETS.md` (dosyayı `custom-assets/` klasörüne koy, `npm run art:custom`).
 - Tüm görseller `tools/art/` altındaki kodla çizilir: `npm run art` (yalnızca bir tema: `npm run art -- --theme=kis`). Üretimden sonra PNG'ler `tools/art/quantize.py` ile 256 renk paletine indirilir (Python 3 + Pillow varsa; yoksa adım atlanır, görseller yalnızca daha büyük olur. Elle atlamak için `npm run art -- --no-quantize`). Görsel değiştirince çapaları (demlik pivot/ağız, tezgâh çizgisi) geliştirici menüsündeki **çapa düzenleyici** ile ayarla; "Kopyala" ile gelen JSON'u ilgili `manifest.json`'a işle.
 - Uygulama ikonu ve splash kaynakları `assets/` altında; değiştirince `npm run cap:assets`.
 

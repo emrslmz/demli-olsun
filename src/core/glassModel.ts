@@ -22,8 +22,9 @@ export interface GlassDef {
 }
 
 /**
- * Gerçek ince belli çay bardağı (yaklaşık 100 cc): yuvarlak alt göbek, dar bel, hafifçe açılan ağız,
- * kalın cam dip. Ağız çapı / yükseklik ≈ 0,55. Görsel üretici (tools/art/lib/teaGlass.mjs) aynı profili kullanır.
+ * Cartoon ince belli çay bardağı: tombul alt göbek, belirgin dar bel, açılan ağız, kalın cam dip.
+ * Gerçek bardaktan biraz daha tombul (ağız çapı / yükseklik ≈ 0,64): cartoon okunurluğu için abartılı.
+ * Görsel üretici (tools/art/lib/teaGlass.mjs) aynı profili kullanır.
  */
 export const GLASS_DEFS: Record<GlassProfileId, GlassDef> = {
   ince: {
@@ -31,20 +32,20 @@ export const GLASS_DEFS: Record<GlassProfileId, GlassDef> = {
     name: 'İnce belli',
     height: 1,
     profile: [
-      [0, 0.178],
-      [0.05, 0.23],
-      [0.12, 0.259],
-      [0.2, 0.265],
-      [0.3, 0.248],
-      [0.4, 0.214],
-      [0.48, 0.2],
-      [0.57, 0.206],
-      [0.7, 0.232],
-      [0.85, 0.261],
-      [1, 0.283],
+      [0, 0.2],
+      [0.05, 0.255],
+      [0.12, 0.288],
+      [0.2, 0.298],
+      [0.3, 0.278],
+      [0.4, 0.232],
+      [0.5, 0.203],
+      [0.6, 0.21],
+      [0.72, 0.246],
+      [0.86, 0.285],
+      [1, 0.318],
     ],
-    wall: 0.022,
-    base: 0.085,
+    wall: 0.03,
+    base: 0.11,
     pathFactor: 1,
   },
 }

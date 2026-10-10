@@ -83,6 +83,19 @@ Ek kararlar (Faz 5–10):
 - **Servis:** Bardak tabağıyla müşteriye gider, müşteri tepki verip ayrılır, soldan yeni boş bardak gelir.
 - **Arayüz:** Krem paneller, kalın kenarlı parlak butonlar (yeşil = başla, kırmızı = birincil, mavi = paylaş), sade ana menü (büyük "Mesaiye başla", "Günün siparişi", üç kutucuk: Çarşı / Liderlik / Ayarlar).
 
+## v3: cartoon vektör bardak ve kendi görsellerin
+
+Geri bildirim: bardaklar daha "cartoon vektör" olsun; görselleri kullanıcı da üretebilir.
+
+- **Bardak stili:** gradyan yerine düz renkler, daha kalın kontur, tombul göbek ve belirgin bel (abartılı profil), sağda
+  tek ton gölge bandı, solda kalın beyaz parlama şeritleri, kırmızı kenarlı düz tabak. Çay neredeyse opak düz renk;
+  yüzeyi açık tonlu ve konturlu. Aynı dil oyundaki canlı bardakta (`glassArt.ts`), SVG görsellerde (`teaGlass.mjs`)
+  ve Çarşı kartlarında (`GlassThumb.vue`, profil `glassModel`'den) kullanılır.
+- **Kendi görsellerin:** `custom-assets/<kimlik>.png` + `npm run art:custom` (`tools/art/custom.mjs`). Oyundaki bardak
+  üç katmanlı PNG ile değiştirilebilir (`bardak_arka`, `bardak_ic` maske, `bardak_on`); iç profil maskeden çıkarılır
+  (`core/glassMask.ts`, testli), böylece seviye/hacim/hedef çizgileri çizilen şekle uyar. Şablonlar
+  `custom-assets/sablon/`. Ayrıntı: `ASSETS.md`.
+
 ## Kabul kriterleri
 
 | Kriter | Durum |

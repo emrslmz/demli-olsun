@@ -1,5 +1,6 @@
 /**
- * Bardak görünümü: arka cam → sıvı gövdesi (kırpılan, tint'li) → parıltı → yüzey elipsi (dalgalı) → hedef çizgileri → ön cam.
+ * Bardak görünümü: arka cam → sıvı gövdesi (kırpılan, tint'li) → yüzey elipsi (dalgalı) → hedef çizgileri → ön cam.
+ * Düz cartoon dili: çay neredeyse opak düz renk, yüzey açık tonlu ve konturlu.
  * Hedef çizgileri: koyu "dem çizgisi" (önce buraya kadar dem) ve beyaz "dolu çizgisi" (suyla buraya kadar).
  * Bardak her zaman glassModel profilinden çizilir; görünen seviye hesaplanan hacimle birebir tutar.
  * Sıvı yüzeyi iki sinüs dalgasının toplamıdır; döküm sırasında genlik artar, sonra durulur.
@@ -9,17 +10,19 @@ import * as Phaser from 'phaser'
 import type { GlassProfileId } from '@/core/glassModel'
 import { rgbToInt, teaColor, type TeaRgba } from '@/core/teaColor'
 import type { GlassSkin } from '@/data/cosmetics'
-import { ELLIPSE_K, ensureGlassTextures, GLASS_TEX_UNIT, type GlassGeometry } from '../art/glassArt'
+import { ELLIPSE_K, ensureGlassTextures, type GlassGeometry } from '../art/glassArt'
 
 const SURFACE_POINTS = 20
 const SWIRL_DOTS = 6
+
+/** Cartoon: açık çay bile dolgun görünsün (renk okunurluğu arka plandan bağımsız kalır). */
+const liquidAlpha = (a: number): number => 0.45 + 0.55 * a
 
 export class GlassView {
   readonly container: Phaser.GameObjects.Container
   private readonly scene: Phaser.Scene
   private back!: Phaser.GameObjects.Image
   private liquid!: Phaser.GameObjects.Image
-  private glow!: Phaser.GameObjects.Image
   private surface!: Phaser.GameObjects.Graphics
   private guides!: Phaser.GameObjects.Graphics
   private front!: Phaser.GameObjects.Image
@@ -62,14 +65,13 @@ export class GlassView {
     const oy = g.yBase / g.texH
     this.back = this.scene.add.image(0, 0, keys.back).setOrigin(ox, oy)
     this.liquid = this.scene.add.image(0, 0, keys.liquid).setOrigin(ox, oy)
-    this.glow = this.scene.add.image(0, 0, 'ca_glow').setBlendMode(Phaser.BlendModes.ADD).setAlpha(0)
     this.surface = this.scene.add.graphics()
     for (let i = 0; i < SWIRL_DOTS; i++) {
       this.swirl.push(this.scene.add.image(0, 0, 'ca_dot').setAlpha(0))
     }
     this.guides = this.scene.add.graphics()
     this.front = this.scene.add.image(0, 0, keys.front).setOrigin(ox, oy)
-    this.container.add([this.back, this.liquid, this.glow, ...this.swirl, this.surface, this.guides, this.front])
+    this.container.add([this.back, this.liquid, ...this.swirl, this.surface, this.guides, this.front])
     this.applyLevel()
   }
 
@@ -78,10 +80,10 @@ export class GlassView {
     this.build(type, skin)
   }
 
-  /** unit: ince bardağın ekrandaki iç yüksekliği (px). */
+  /** unit: bardağın ekrandaki iç yüksekliği (px; kodla çizilen ya da kullanıcı görseli fark etmez). */
   place(x: number, baseY: number, unit: number): void {
     this.container.setPosition(x, baseY)
-    this.container.setScale(unit / GLASS_TEX_UNIT)
+    this.container.setScale(unit / this.geo.hpx)
   }
 
   get displayScale(): number {
@@ -174,19 +176,7 @@ export class GlassView {
     this.liquid.setVisible(!empty)
     this.liquid.setCrop(0, cropY, g.texW, g.texH - cropY)
     this.liquid.setTint(tint)
-    this.liquid.setAlpha(this.color.a)
-    // Ortadaki sıcak parıltı
-    const midH = h * 0.5
-    const lx = g.cx
-    const ly = g.y(midH)
-    const ox = lx - g.cx
-    const oy = ly - g.yBase
-    const rr = g.r(midH)
-    this.glow.setPosition(ox, oy)
-    this.glow.setDisplaySize(rr * 1.5, Math.max(10, (g.y(0) - g.y(h)) * 0.95))
-    const glowA = empty ? 0 : 0.28 * Math.min(1, vol * 2.2) * (0.4 + 0.6 * this.color.a)
-    this.glow.setAlpha(glowA)
-    this.glow.setTint(rgbToInt({ r: Math.min(255, this.color.r + 60), g: Math.min(255, this.color.g + 40), b: this.color.b }))
+    this.liquid.setAlpha(liquidAlpha(this.color.a))
     this.drawSurface(h, empty)
     this.drawSwirl(h, empty)
     this.drawGuides(vol)
@@ -253,33 +243,32 @@ export class GlassView {
     const amp = ry * (0.04 + 0.22 * this.agitation + 0.25 * this.bump)
     const t = this.time
     const c = this.color
-    // Yüzey: gövdeden biraz açık (ışık yansıması)
-    const top = rgbToInt({ r: Math.min(255, c.r + 28), g: Math.min(255, c.g + 22), b: Math.min(255, c.b + 18) })
-    const alpha = Math.min(1, c.a + 0.08)
+    // Yüzey: gövdeden belirgin açık (turuncuya kayan) düz ton + koyu ince kontur + solda beyaz parıltı.
+    const lift = (v: number, to: number) => Math.round(v + (to - v) * 0.45)
+    const top = rgbToInt({ r: lift(c.r, 255), g: lift(c.g, 180), b: lift(c.b, 92) })
+    const alpha = Math.min(1, liquidAlpha(c.a) + 0.08)
+    const path = () => {
+      s.beginPath()
+      for (let i = 0; i <= SURFACE_POINTS; i++) {
+        const a = (i / SURFACE_POINTS) * Math.PI * 2
+        const wave = Math.sin(a * 3 + t * 7.5) * 0.6 + Math.sin(a * 5 - t * 11) * 0.4
+        const x = Math.cos(a) * rx
+        const y = cy + Math.sin(a) * ry + wave * amp
+        if (i === 0) s.moveTo(x, y)
+        else s.lineTo(x, y)
+      }
+      s.closePath()
+    }
     s.fillStyle(top, alpha)
-    s.beginPath()
-    for (let i = 0; i <= SURFACE_POINTS; i++) {
-      const a = (i / SURFACE_POINTS) * Math.PI * 2
-      const wx = Math.cos(a)
-      const wave = Math.sin(a * 3 + t * 7.5) * 0.6 + Math.sin(a * 5 - t * 11) * 0.4
-      const x = wx * rx
-      const y = cy + Math.sin(a) * ry + wave * amp
-      if (i === 0) s.moveTo(x, y)
-      else s.lineTo(x, y)
-    }
-    s.closePath()
+    path()
     s.fillPath()
-    // Arka kenarda menisküs parıltısı
-    s.lineStyle(Math.max(1.5, ry * 0.12), 0xffffff, 0.35 + 0.2 * this.agitation)
-    s.beginPath()
-    for (let i = 0; i <= 10; i++) {
-      const a = Math.PI + (i / 10) * Math.PI
-      const x = Math.cos(a) * rx * 0.92
-      const y = cy + Math.sin(a) * ry * 0.92
-      if (i === 0) s.moveTo(x, y)
-      else s.lineTo(x, y)
-    }
+    const edge = rgbToInt({ r: Math.round(c.r * 0.55), g: Math.round(c.g * 0.5), b: Math.round(c.b * 0.45) })
+    s.lineStyle(Math.max(1.5, g.hpx * 0.012), edge, alpha)
+    path()
     s.strokePath()
+    // Parıltı
+    s.fillStyle(0xffffff, 0.5 + 0.2 * this.agitation)
+    s.fillEllipse(-rx * 0.38, cy - ry * 0.1, rx * 0.52, ry * 0.68)
   }
 
   private drawSwirl(h: number, empty: boolean): void {

@@ -50,13 +50,13 @@ describe('glassModel', () => {
     expect(waist).toBeGreaterThan(dhdv(0.9) * 1.4)
   })
 
-  it('gerçek ince belli oranları: ağız en geniş, göbek belden geniş', () => {
+  it('cartoon ince belli oranları: ağız en geniş, göbek belden belirgin geniş', () => {
     const m = getGlassModel('ince')
     const rim = m.radiusAt(1)
     const belly = m.radiusAt(0.2)
     const waist = m.radiusAt(0.48)
-    expect((rim * 2) / 1).toBeGreaterThan(0.5)
-    expect((rim * 2) / 1).toBeLessThan(0.62)
+    expect((rim * 2) / 1).toBeGreaterThan(0.55)
+    expect((rim * 2) / 1).toBeLessThan(0.7)
     expect(belly).toBeLessThan(rim)
     expect(waist).toBeLessThan(belly * 0.8)
     expect(m.maxRadius).toBeCloseTo(rim, 3)

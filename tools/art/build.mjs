@@ -11,6 +11,8 @@
 //   npm run art -- --review           # kontak sayfaları (assets-work/review/)
 //   npm run art -- --icons            # uygulama ikonu ve splash (assets/)
 //
+// Sonunda custom-assets/ klasöründeki kendi görsellerin uygulanır (tools/art/custom.mjs, ASSETS.md).
+//
 // Playwright yerelde yoksa global kurulum kullanılır (npm i -g playwright).
 
 import { execSync } from 'node:child_process'
@@ -21,6 +23,7 @@ import { catalog, PALETTES, THEMES } from './catalog.mjs'
 import { generate } from './gen/index.mjs'
 import { placeholderSvg } from './lib/placeholder.mjs'
 import { appIconSvgs } from './gen/appicon.mjs'
+import { applyCustom } from './custom.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = path.join(ROOT, 'public/assets/themes')
@@ -75,7 +78,8 @@ function mergeManifest(existing, fresh) {
   // Yalnızca katalogdaki görseller kalır; elle ayarlanmış çapalar korunur.
   const out = { ...existing, ...fresh, assets: {} }
   for (const [id, a] of Object.entries(fresh.assets)) {
-    const prev = existing.assets?.[id] ?? {}
+    // Kullanıcı görseli işareti taşınmaz; custom-assets/ hâlâ varsa applyCustom yeniden uygular.
+    const { custom: _custom, ...prev } = existing.assets?.[id] ?? {}
     const keep = {}
     for (const k of ['pivot', 'spout', 'counterY', 'slice']) {
       if (prev[k] !== undefined && !arg('reset-anchors')) keep[k] = prev[k]
@@ -192,6 +196,7 @@ async function main() {
     if (!arg('review-only')) {
       for (const t of themes) await buildTheme(page, t)
       quantize(themes.map((t) => path.join(OUT, t)))
+      applyCustom({ themes })
     }
     if (arg('icons') || (!arg('only') && !themeArg)) await buildAppIcons(page)
     if (arg('review') || arg('review-only')) for (const t of themes) await buildContactSheet(page, t)

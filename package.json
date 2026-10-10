@@ -18,6 +18,7 @@
     "format": "prettier --write src tests",
     "check": "npm run typecheck && eslint src tests --max-warnings=0 && prettier --check src tests && vitest run && vite build",
     "art": "node tools/art/build.mjs",
+    "art:custom": "node tools/art/custom.mjs",
     "build:debug": "vue-tsc --noEmit -p tsconfig.app.json && vite build --mode debug",
     "cap:sync": "npm run build && cap sync",
     "cap:sync:debug": "npm run build:debug && cap sync",
