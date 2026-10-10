@@ -15,6 +15,8 @@ import type { Layout } from '../layout'
 import { PlayScene } from './PlayScene'
 
 type Sub = 'dem' | 'su' | 'serve' | 'early-dem' | 'early-su' | 'early-wait' | 'serve2' | 'free' | 'done' | 'busy'
+/** Elin demliği ya da çaydanlığı gösterdiği adımlar. */
+const POT_SUBS: Sub[] = ['dem', 'su', 'early-dem', 'early-su']
 
 const ORDERS: Order[] = [
   {
@@ -89,12 +91,18 @@ export class TutorialScene extends PlayScene {
     this.station.setHasOrder(false)
     this.station.events.on('serve', () => void this.onServe())
     this.station.events.on('overflow', () => void this.onOverflow())
+    // Pot kalkınca el boş yeri göstermesin: döküm sırasında gizlenir, bitince aynı adımda yeniden gösterilir.
+    this.station.events.on('pourStart', () => {
+      if (POT_SUBS.includes(this.sub)) this.hideHand()
+    })
     this.station.events.on('pourEnd', (src: string) => {
       if (this.sub === 'early-su' && src === 'su') {
         this.releaseFill = this.station.fillPct
         this.sub = 'early-wait'
         this.hideHand()
+        return
       }
+      this.time.delayedCall(450, () => this.pointPot())
     })
     this.onResize(this.L)
     void this.startStep(0)
@@ -121,12 +129,13 @@ export class TutorialScene extends PlayScene {
     const c = L.controls
     switch (s) {
       case 'dem':
+        // El demliği gösterir (DEM butonu da aynı işi yapar).
         this.hint(tr.tutorial.step1a)
-        this.pointAt(c.dem.x + c.dem.w / 2, c.dem.y + c.dem.h * 0.55)
+        this.pointPot()
         break
       case 'su':
         this.hint(tr.tutorial.step1b)
-        this.pointAt(c.su.x + c.su.w / 2, c.su.y + c.su.h * 0.55)
+        this.pointPot()
         break
       case 'serve':
         this.hint(tr.tutorial.step1c)
@@ -134,10 +143,10 @@ export class TutorialScene extends PlayScene {
         break
       case 'early-dem':
         this.hint(tr.tutorial.step2a)
-        this.pointAt(c.dem.x + c.dem.w / 2, c.dem.y + c.dem.h * 0.55)
+        this.pointPot()
         break
       case 'early-su':
-        this.pointAt(c.su.x + c.su.w / 2, c.su.y + c.su.h * 0.55)
+        this.pointPot()
         break
       case 'serve2':
         this.hint(tr.tutorial.step2b)
@@ -288,6 +297,13 @@ export class TutorialScene extends PlayScene {
     this.hintText.setAlpha(0)
     this.tweens.add({ targets: this.hintText, alpha: 1, duration: 250 })
     AudioService.play('pop')
+  }
+
+  /** Bu adımda dökülecek potu gösterir (döküm sürüyorsa göstermez). */
+  private pointPot(): void {
+    if (!POT_SUBS.includes(this.sub) || this.station.chDem.held || this.station.chSu.held) return
+    const p = this.station.potCenter(this.sub === 'dem' || this.sub === 'early-dem' ? 'dem' : 'su')
+    this.pointAt(p.x, p.y)
   }
 
   private pointAt(x: number, y: number): void {

@@ -95,6 +95,10 @@ Geri bildirim: bardaklar daha "cartoon vektör" olsun; görselleri kullanıcı d
   üç katmanlı PNG ile değiştirilebilir (`bardak_arka`, `bardak_ic` maske, `bardak_on`); iç profil maskeden çıkarılır
   (`core/glassMask.ts`, testli), böylece seviye/hacim/hedef çizgileri çizilen şekle uyar. Şablonlar
   `custom-assets/sablon/`. Ayrıntı: `ASSETS.md`.
+- **Döküm girişi:** demlik ve çaydanlığın kendisi de dokunulabilir (tezgâhtaki yerinde sabit dokunma alanı; pot
+  kalkınca parmak altından kaysa da bırakma doğru eşleşir). Basılı tut → döker, bırak → durur; kısa dokunuş (<220 ms)
+  → döküm açık kalır, aynı kaynağa ikinci dokunuş durdurur (ilk iki seferde "Durdurmak için tekrar dokun" ipucu).
+  Aynı kural DEM/SU butonlarında da geçerli. Eğitimdeki el artık potu gösterir.
 
 ## Kabul kriterleri
 

@@ -1,6 +1,10 @@
 /**
  * Servis tezgâhı: tabak + bardak (hedef çizgileriyle), tezgâhta dinlenen demlik (dem) ve çaydanlık (su),
- * akış çizgileri, şekerlik, DEM/SU basılı tutma alanları ve "Servis et". Mesai, Günlük ve Eğitim sahneleri bunu kullanır.
+ * akış çizgileri, şekerlik, DEM/SU butonları ve "Servis et". Mesai, Günlük ve Eğitim sahneleri bunu kullanır.
+ *
+ * Döküm girişi: demliğe/çaydanlığa ya da DEM/SU butonuna
+ *   - basılı tutunca döker, bırakınca durur;
+ *   - kısa dokununca (TAP_MS'den kısa) dökmeye başlar ve açık kalır, aynı kaynağa tekrar dokununca durur.
  */
 
 import * as Phaser from 'phaser'
@@ -30,7 +34,11 @@ export interface StationConfig {
   reducedMotion?: boolean
 }
 
-export type StationEvent = 'serve' | 'overflow' | 'sugar' | 'pourStart' | 'pourEnd' | 'drop'
+export type StationEvent = 'serve' | 'overflow' | 'sugar' | 'pourStart' | 'pourEnd' | 'drop' | 'latch'
+
+/** Bundan kısa basış "dokunuş" sayılır: döküm açık kalır, ikinci dokunuş kapatır (ms). */
+export const TAP_MS = 220
+const SOURCES: PourSource[] = ['dem', 'su']
 
 const DEM_STREAM: StreamStyle = { color: rgbToInt(teaColor(0.85)), alpha: 0.96, highlight: 0xffb07a, width: 22 }
 const SU_STREAM: StreamStyle = { color: 0xd8eef8, alpha: 0.7, highlight: 0xffffff, width: 24 }
@@ -59,6 +67,15 @@ export class Station {
   private readonly bubbles: Phaser.GameObjects.Particles.ParticleEmitter
   private readonly puddle: Phaser.GameObjects.Image
   private hasOrder = true
+  /** Demlik ve çaydanlığın tezgâhtaki yerinde sabit dokunma alanları. */
+  private readonly potZones: Record<PourSource, Phaser.GameObjects.Zone>
+  /** Pota basan parmak (bırakınca eşleşir). */
+  private readonly potPointer: Record<PourSource, number | null> = { dem: null, su: null }
+  /** Kısa dokunuşla açık kalan döküm. */
+  private readonly latched: Record<PourSource, boolean> = { dem: false, su: false }
+  private readonly downAt: Record<PourSource, number> = { dem: 0, su: 0 }
+  /** Bu basış açık dökümü kapatmak içindi; bırakma yok sayılır. */
+  private readonly stopTap: Record<PourSource, boolean> = { dem: false, su: false }
   private L!: Layout
   private readonly v1 = new Phaser.Math.Vector2()
   private readonly v2 = new Phaser.Math.Vector2()
@@ -138,10 +155,34 @@ export class Station {
     this.suPad = new ChunkyButton(scene, { color: 0x2f9fd8, icon: 'icon_water', label: tr.game.water, hold: true })
     this.serveBtn = new ChunkyButton(scene, { color: 0x4cb848, icon: 'icon_serve', label: tr.game.serve })
     for (const b of [this.demPad, this.suPad, this.serveBtn]) b.container.setDepth(40)
-    this.demPad.onDown = () => this.press('dem')
-    this.demPad.onUp = () => this.release('dem')
-    this.suPad.onDown = () => this.press('su')
-    this.suPad.onUp = () => this.release('su')
+    this.demPad.onDown = () => this.inputDown('dem')
+    this.demPad.onUp = () => this.inputUp('dem')
+    this.suPad.onDown = () => this.inputDown('su')
+    this.suPad.onUp = () => this.inputUp('su')
+
+    // Demlik ve çaydanlığa doğrudan dokunma. Alan şekerliğin altında kalır (derinlik 11 < 12), çakışırsa şeker kazanır.
+    const zone = (src: PourSource) => {
+      const z = scene.add.zone(0, 0, 10, 10).setOrigin(0, 0).setDepth(11).setInteractive({ useHandCursor: true })
+      z.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
+        this.potPointer[src] = p.id
+        this.inputDown(src)
+      })
+      return z
+    }
+    this.potZones = { dem: zone('dem'), su: zone('su') }
+    const potUp = (p: Phaser.Input.Pointer) => {
+      for (const src of SOURCES) {
+        if (this.potPointer[src] !== p.id) continue
+        this.potPointer[src] = null
+        this.inputUp(src)
+      }
+    }
+    scene.input.on(Phaser.Input.Events.POINTER_UP, potUp)
+    scene.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, potUp)
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      scene.input.off(Phaser.Input.Events.POINTER_UP, potUp)
+      scene.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, potUp)
+    })
     this.serveBtn.onUp = () => {
       if (this.canServe) this.events.emit('serve')
     }
@@ -247,6 +288,8 @@ export class Station {
   resetContents(): void {
     this.chDem.stop()
     this.chSu.stop()
+    this.latched.dem = false
+    this.latched.su = false
     this.dem = 0
     this.su = 0
     this.sugar = 0
@@ -264,12 +307,43 @@ export class Station {
 
   // ---------- Giriş ----------
 
+  /** Pot ya da butona basıldı: açık döküm varsa kapatır, yoksa dökmeye başlar. */
+  private inputDown(src: PourSource): void {
+    if (this.latched[src]) {
+      this.stopTap[src] = true
+      this.release(src)
+      return
+    }
+    this.stopTap[src] = false
+    this.downAt[src] = performance.now()
+    this.press(src)
+  }
+
+  /** Bırakıldı: kısa dokunuşsa döküm açık kalır, basılı tutulduysa durur. */
+  private inputUp(src: PourSource): void {
+    if (this.stopTap[src]) {
+      this.stopTap[src] = false
+      return
+    }
+    if (!this.channel(src).held) return
+    if (performance.now() - this.downAt[src] < TAP_MS) {
+      this.latched[src] = true
+      this.events.emit('latch', src)
+      return
+    }
+    this.release(src)
+  }
+
+  /** Kısa dokunuşla açık kalan döküm var mı. */
+  isLatched(src: PourSource): boolean {
+    return this.latched[src]
+  }
+
   press(src: PourSource): void {
     if (!this.inputEnabled || !this.hasOrder || this.busy || this.overflowed) return
     const other: PourSource = src === 'dem' ? 'su' : 'dem'
-    if (this.active === other) {
-      this.channel(other).release()
-      this.pot(other).setPouring(false, this.reduced)
+    if (this.active === other || this.latched[other]) {
+      this.release(other)
       ;(other === 'dem' ? this.demPad : this.suPad).forceRelease()
     }
     this.active = src
@@ -280,6 +354,7 @@ export class Station {
   }
 
   release(src: PourSource): void {
+    this.latched[src] = false
     const ch = this.channel(src)
     if (ch.held) {
       ch.release()
@@ -287,6 +362,12 @@ export class Station {
     }
     this.pot(src).setPouring(false, this.reduced)
     if (this.active === src) this.active = null
+  }
+
+  /** Pot gövdesinin tezgâhtaki orta noktası (eğitimdeki el işareti için). */
+  potCenter(src: PourSource): { x: number; y: number } {
+    const b = this.pot(src).restBounds()
+    return { x: b.x + b.w / 2, y: b.y + b.h * 0.55 }
   }
 
   private channel(src: PourSource): PourChannel {
@@ -632,6 +713,13 @@ export class Station {
     this.bubbles.setScale(L.u * 1.4)
     this.demlik.layout(L.pots.dem.rest, L.pots.dem.spout, L.potWidth.demlik)
     this.caydanlik.layout(L.pots.su.rest, L.pots.su.spout, L.potWidth.caydanlik)
+    for (const src of SOURCES) {
+      const b = this.pot(src).restBounds()
+      const pad = 16 * u
+      const z = this.potZones[src]
+      z.setPosition(b.x - pad, b.y - pad).setSize(b.w + pad * 2, b.h + pad)
+      z.input?.hitArea.setTo(0, 0, b.w + pad * 2, b.h + pad)
+    }
     const bs = L.sugarBowl.size
     this.sugarBowl.setPosition(L.sugarBowl.x, L.sugarBowl.y - bs * 0.32).setDisplaySize(bs, bs)
     this.demPad.layout(L.controls.dem, u)
@@ -643,6 +731,7 @@ export class Station {
     this.events.removeAllListeners()
     for (const o of [this.demlik, this.caydanlik, this.streamDem, this.streamSu, this.glass]) o.destroy()
     for (const o of [this.demPad, this.suPad, this.serveBtn]) o.destroy()
+    for (const src of SOURCES) this.potZones[src].destroy()
     this.glassSteam.destroy()
     this.kettleSteam.destroy()
     this.bubbles.destroy()

@@ -8,6 +8,7 @@ import type { GlassProfileId } from '@/core/glassModel'
 import { glassSkin } from '@/data/cosmetics'
 import type { CustomerId } from '@/data/customers'
 import { BUCKET_EMOJI, pickLine, type LineBucket } from '@/data/lines'
+import { tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import { useInventoryStore } from '@/stores/inventory'
 import { saveNow } from '@/stores/persist'
@@ -77,6 +78,14 @@ export abstract class PlayScene extends BaseScene {
     this.customer = new CustomerView(this, L, inv.equipped.glass)
     this.customer.setReducedMotion(this.reduced)
     this.floats = new FloatTexts(this)
+    // Kısa dokunuşla açık kalan dökümde ilk iki seferde nasıl durdurulacağını söyle.
+    let latchHints = 0
+    this.station.events.on('latch', () => {
+      if (latchHints >= 2) return
+      latchHints++
+      const u = this.L.u
+      this.floats.float(this.L.col.cx, this.station.glass.topWorldY - 150 * u, tr.game.tapToStop, 40 * u, '#FFF6E6', 50 * u, 2200)
+    })
     this.starsPop = new StarsPop(this)
     this.coins = new CoinBurst(this)
     this.debug = new DebugOverlay(this)

@@ -79,6 +79,7 @@ export const tr = {
     serve: 'Servis et',
     overflow: 'Taştı!',
     timeUp: 'Süre doldu!',
+    tapToStop: 'Durdurmak için tekrar dokun',
   },
   pause: {
     title: 'Mola',
@@ -197,8 +198,8 @@ export const tr = {
   },
   tutorial: {
     skip: 'Eğitimi atla',
-    step1a: 'Önce dem: DEM’e basılı tut, koyu kesikli çizgiye kadar doldur.',
-    step1b: 'Şimdi su: SU’ya basılı tut, beyaz çizgiye kadar doldur.',
+    step1a: 'Önce dem: demliğe basılı tut, koyu kesikli çizgiye gelince bırak.',
+    step1b: 'Şimdi su: çaydanlığa basılı tut, beyaz çizgiye gelince bırak.',
     step1c: 'Hedefe yaklaştın. Servis et!',
     step2a: 'Bıraktıktan sonra birkaç damla daha düşer. Çizgiden biraz önce bırak!',
     step2b: 'Gördün mü? Artık akış devam etti. Servis et.',

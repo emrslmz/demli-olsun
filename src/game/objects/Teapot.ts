@@ -1,7 +1,7 @@
 /**
  * Demlik / çaydanlık. Görselde ağız sağa bakar; sağdaki çaydanlık yatay aynalanır (pivot ve spout da).
- * Tezgâhta dinlenir; basılınca kalkıp bardağın üstüne gelir ve ~35° eğilir, bırakınca düzelir,
- * artık akış bitince tezgâhtaki yerine döner.
+ * Tezgâhta dinlenir; dökümde kalkıp bardağın üstüne gelir ve ~35° eğilir, durunca düzelir,
+ * artık akış bitince tezgâhtaki yerine döner. Dokunma alanı Station'da (tezgâhtaki yerinde sabit).
  */
 
 import * as Phaser from 'phaser'
@@ -151,6 +151,13 @@ export class Teapot {
   }
 
   update(_dt: number): void {}
+
+  /** Tezgâhta dinlenirken kapladığı alan (dokunma alanı için; pot kalkmışken de değişmez). */
+  restBounds(): { x: number; y: number; w: number; h: number } {
+    const w = this.image.width * this.baseScale
+    const h = this.image.height * this.baseScale
+    return { x: this.rest.x - this.image.originX * w, y: this.rest.y - this.image.originY * h, w, h }
+  }
 
   /** Ağız ucunun şu anki dünya konumu. */
   spoutWorld(out: Phaser.Math.Vector2): Phaser.Math.Vector2 {
