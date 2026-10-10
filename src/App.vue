@@ -77,7 +77,7 @@ function checkMenuQueue() {
   clearTimeout(menuTimer)
   if (app.screen !== 'menu' || app.modal) return
   menuTimer = window.setTimeout(async () => {
-    if (app.flags.tutorialDone) await resolveLeagueWeek()
+    if (app.flags.tutorialDone && app.online) await resolveLeagueWeek()
     if (app.screen !== 'menu' || app.modal) return
     if (app.flags.tutorialDone && !app.flags.consentDone) app.open('consentIntro')
     else if (session.leagueResult) app.open('leagueResult')

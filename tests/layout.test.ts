@@ -36,6 +36,16 @@ describe('layout', () => {
         expect(L.controls.dem.y + L.controls.dem.h).toBeLessThanOrEqual(H - safe.bottom * dpr)
       })
 
+      it('DEM, Servis ve SU butonları aynı hizada ve aynı yükseklikte', () => {
+        const { dem, serve, su } = L.controls
+        expect(serve.y).toBeCloseTo(dem.y, 5)
+        expect(su.y).toBeCloseTo(dem.y, 5)
+        expect(serve.h).toBeCloseTo(dem.h, 5)
+        expect(su.h).toBeCloseTo(dem.h, 5)
+        expect(serve.x).toBeGreaterThan(dem.x + dem.w)
+        expect(su.x).toBeGreaterThan(serve.x + serve.w)
+      })
+
       it('HUD safe area altında başlar, sahne katmanları sırayla dizilir', () => {
         const hudBottom = L.hud.y + L.hud.h
         expect(L.hud.y).toBeGreaterThanOrEqual(safe.top * dpr)

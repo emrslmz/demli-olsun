@@ -2,7 +2,7 @@
 // Yandan ~15° yukarıdan bakış, parlak cartoon gölgelendirme.
 
 import { register } from './index.mjs'
-import { C, ellipsePath, f, rng, rrectPath, shade, svg } from '../lib/svg.mjs'
+import { C, ellipsePath, f, newId, rng, rrectPath, shade, svg } from '../lib/svg.mjs'
 import { contactShadow, lg, rg, toon } from '../lib/toon.mjs'
 import { GLASS_K, saucerSvg, spoonSvg } from '../lib/teaGlass.mjs'
 
@@ -104,40 +104,56 @@ function seker(W) {
 }
 
 function sekerlik(W) {
+  // Tabakla takım porselen şekerlik: beyaz gövde, kırmızı bant + altın çizgi, kısa ayak, tepeleme kesme şeker.
   const cx = W / 2
   const s0 = W / 512
-  const top = 270 * s0
-  const bot = 430 * s0
-  const rx = 180 * s0
+  const top = 250 * s0
+  const bot = 420 * s0
+  const rx = 200 * s0
   const k = GLASS_K
-  let s = contactShadow(cx, bot + 40 * s0, rx * 0.8, 26 * s0, 0.3)
-  const foot = `M${f(cx - 90 * s0)} ${f(bot - 6 * s0)} L${f(cx - 104 * s0)} ${f(bot + 30 * s0)} Q${f(cx)} ${f(bot + 52 * s0)} ${f(cx + 104 * s0)} ${f(bot + 30 * s0)} L${f(cx + 90 * s0)} ${f(bot - 6 * s0)}Z`
-  s += toon(foot, '#D6E4EC', { sw: 7, band: [8, 0] })
-  const bowl = `M${f(cx - rx)} ${f(top)} Q${f(cx - rx + 10 * s0)} ${f(bot - 40 * s0)} ${f(cx - 86 * s0)} ${f(bot)} L${f(cx + 86 * s0)} ${f(bot)} Q${f(cx + rx - 10 * s0)} ${f(bot - 40 * s0)} ${f(cx + rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 1 ${f(cx - rx)} ${f(top)}Z`
-  s += toon(bowl, '#CFE6F0', {
-    sw: 8,
-    band: [12, 0],
-    light: 1.15,
-    inner: [...Array(9)].map((_, i) => `<path d="M${f(cx - rx + i * 46 * s0)} ${f(top + 20 * s0)} q${f(10 * s0)} ${f(80 * s0)} ${f(30 * s0)} ${f(150 * s0)}" stroke="#fff" stroke-width="${f(8 * s0)}" fill="none" opacity=".45"/>`).join(''),
-    spec: [[cx - rx * 0.6, top + 60 * s0, 14 * s0, 40 * s0, -10, 0.8]],
-  })
-  // Kasenin içi ve kesme şeker yığını; ön kenar küplerin altını örter
-  s += `<path d="${ellipsePath(cx, top, rx, rx * k)}" fill="#9FC3D3"/>`
+  const sw = 9 * s0
+  let s = `<ellipse cx="${f(cx)}" cy="${f(bot + 36 * s0)}" rx="${f(rx * 0.85)}" ry="${f(30 * s0)}" fill="#2A1408" opacity=".25"/>`
+  // Ayak
+  const foot = `M${f(cx - 88 * s0)} ${f(bot - 8 * s0)} L${f(cx - 100 * s0)} ${f(bot + 26 * s0)} A${f(100 * s0)} ${f(100 * s0 * k)} 0 0 0 ${f(cx + 100 * s0)} ${f(bot + 26 * s0)} L${f(cx + 88 * s0)} ${f(bot - 8 * s0)}Z`
+  s += `<path d="${foot}" fill="#E3E9EE" stroke="${OUT}" stroke-width="${f(sw)}" stroke-linejoin="round"/>`
+  // Gövde (yuvarlak kase)
+  const bowl = `M${f(cx - rx)} ${f(top)} C${f(cx - rx)} ${f(bot - 30 * s0)} ${f(cx - 110 * s0)} ${f(bot)} ${f(cx - 70 * s0)} ${f(bot)} L${f(cx + 70 * s0)} ${f(bot)} C${f(cx + 110 * s0)} ${f(bot)} ${f(cx + rx)} ${f(bot - 30 * s0)} ${f(cx + rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 1 ${f(cx - rx)} ${f(top)}Z`
+  const bid = newId('sb')
+  s += `<clipPath id="${bid}"><path d="${bowl}"/></clipPath>`
+  s += `<path d="${bowl}" fill="#F7F9FA"/>`
+  s += `<g clip-path="url(#${bid})">`
+  // Sağda düz gölge bandı
+  s += `<ellipse cx="${f(cx + rx * 0.95)}" cy="${f((top + bot) / 2 + 20 * s0)}" rx="${f(rx * 0.55)}" ry="${f((bot - top) * 0.8)}" fill="#DCE4EA"/>`
+  // Kırmızı bant ve altın çizgi (ağzın altında)
+  s += `<path d="M${f(cx - rx - 4 * s0)} ${f(top + 34 * s0)} A${f(rx + 4 * s0)} ${f((rx + 4 * s0) * k)} 0 0 0 ${f(cx + rx + 4 * s0)} ${f(top + 34 * s0)}" fill="none" stroke="#D23B2B" stroke-width="${f(26 * s0)}"/>`
+  s += `<path d="M${f(cx - rx - 4 * s0)} ${f(top + 62 * s0)} A${f(rx + 4 * s0)} ${f((rx + 4 * s0) * k)} 0 0 0 ${f(cx + rx + 4 * s0)} ${f(top + 62 * s0)}" fill="none" stroke="#F2C14E" stroke-width="${f(7 * s0)}"/>`
+  // Lale motifi (ön yüz ortası)
+  const ty = top + 112 * s0
+  s += `<path d="M${f(cx)} ${f(ty + 40 * s0)} C${f(cx - 26 * s0)} ${f(ty + 20 * s0)} ${f(cx - 26 * s0)} ${f(ty - 14 * s0)} ${f(cx - 14 * s0)} ${f(ty - 22 * s0)} L${f(cx)} ${f(ty - 6 * s0)} L${f(cx + 14 * s0)} ${f(ty - 22 * s0)} C${f(cx + 26 * s0)} ${f(ty - 14 * s0)} ${f(cx + 26 * s0)} ${f(ty + 20 * s0)} ${f(cx)} ${f(ty + 40 * s0)}Z" fill="#D23B2B" stroke="${OUT}" stroke-width="${f(5 * s0)}" stroke-linejoin="round"/>`
+  s += `<path d="M${f(cx)} ${f(ty + 40 * s0)} L${f(cx)} ${f(ty + 70 * s0)}" stroke="#4E9A3A" stroke-width="${f(7 * s0)}" stroke-linecap="round"/>`
+  // Sol parlama
+  s += `<path d="M${f(cx - rx * 0.78)} ${f(top + 90 * s0)} Q${f(cx - rx * 0.74)} ${f(bot - 50 * s0)} ${f(cx - rx * 0.45)} ${f(bot - 22 * s0)}" fill="none" stroke="#fff" stroke-width="${f(16 * s0)}" stroke-linecap="round"/>`
+  s += `</g>`
+  s += `<path d="${bowl}" fill="none" stroke="${OUT}" stroke-width="${f(sw)}" stroke-linejoin="round"/>`
+  // İç (arka yarı gölgede) ve tepeleme kesme şeker
+  s += `<path d="${ellipsePath(cx, top, rx - 6 * s0, (rx - 6 * s0) * k)}" fill="#C9D3DA"/>`
   const cubes = [
-    [-100, 14],
-    [-36, 20],
-    [30, 18],
-    [96, 12],
-    [-66, -26],
-    [2, -30],
-    [66, -24],
-    [-30, -70],
-    [34, -66],
+    [-118, 6],
+    [-50, 14],
+    [22, 14],
+    [94, 6],
+    [-86, -40],
+    [-14, -36],
+    [58, -40],
+    [-50, -84],
+    [22, -82],
+    [-14, -126],
   ]
-  for (const [dx, dy] of cubes) s += `<g transform="translate(${f(cx + dx * s0 - 36 * s0)} ${f(top + dy * s0 - 52 * s0)}) scale(${f(0.56 * s0)})">${seker(128)}</g>`
-  s += `<path d="M${f(cx - rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 0 ${f(cx + rx)} ${f(top)}" fill="none" stroke="#CFE6F0" stroke-width="${f(16 * s0)}"/>`
-  s += `<path d="M${f(cx - rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 0 ${f(cx + rx)} ${f(top)}" fill="none" stroke="#fff" stroke-width="${f(6 * s0)}" opacity=".8"/>`
-  s += `<path d="${ellipsePath(cx, top, rx, rx * k)}" fill="none" stroke="${OUT}" stroke-width="${f(7 * s0)}"/>`
+  for (const [dx, dy] of cubes) s += `<g transform="translate(${f(cx + dx * s0 - 42 * s0)} ${f(top + dy * s0 - 62 * s0)}) scale(${f(0.66 * s0)})">${seker(128)}</g>`
+  // Ön dudak (küplerin altını örter) + kontur
+  s += `<path d="M${f(cx - rx + 4 * s0)} ${f(top)} A${f(rx - 4 * s0)} ${f((rx - 4 * s0) * k)} 0 0 0 ${f(cx + rx - 4 * s0)} ${f(top)}" fill="none" stroke="#F7F9FA" stroke-width="${f(18 * s0)}"/>`
+  s += `<path d="${ellipsePath(cx, top, rx, rx * k)}" fill="none" stroke="${OUT}" stroke-width="${f(sw)}"/>`
+  s += `<ellipse cx="${f(cx - rx * 0.55)}" cy="${f(top + rx * k * 0.75)}" rx="${f(26 * s0)}" ry="${f(8 * s0)}" fill="#fff"/>`
   return s
 }
 

@@ -417,6 +417,8 @@ export async function onDailyFinished(r: DailyResultData): Promise<void> {
   app.open(null)
   app.go('dailyResult')
   leaveGameUi()
+  // Oyuncular arası sıralama yalnızca çevrimiçiyken.
+  if (!app.online) return
   try {
     session.dailyPercentile = await services.leaderboard.dailyPercentile(r.dateKey, r.accuracy)
   } catch {

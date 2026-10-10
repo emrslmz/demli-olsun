@@ -160,6 +160,7 @@ export abstract class PlayScene extends BaseScene {
     const dt = Math.min(0.05, deltaMs / 1000)
     this.checkFps(deltaMs)
     this.station.update(dt)
+    this.customer.setGuide(this.station.gauge, this.station.liveDem)
     this.customer.update(dt)
     this.themeFx.update(dt)
     this.tick(dt)

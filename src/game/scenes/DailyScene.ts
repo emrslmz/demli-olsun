@@ -1,5 +1,5 @@
 /**
- * Günün Siparişi: herkese aynı tek sipariş (tarih seed'li), tek hak, bardakta yalnızca doluluk çizgisi,
+ * Günün Siparişi: herkese aynı tek sipariş (tarih seed'li), tek hak, renk çubuğunda yalnızca hedef,
  * o güne özel akış hızı. Süre biterse bardak olduğu gibi servis edilir. Sonuç Vue'ya 'daily:finished' ile gider.
  */
 

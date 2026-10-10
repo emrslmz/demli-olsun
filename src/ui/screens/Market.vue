@@ -219,6 +219,14 @@ watch(tab, (t) => {
   bus.emit('cosmetic:preview', null)
 })
 
+// Bağlantı geri gelince fiyatları yeniden yükle.
+watch(
+  () => app.online,
+  (on) => {
+    if (on && (productsFailed.value || !products.value?.length)) void loadProducts()
+  },
+)
+
 function back() {
   app.go('menu')
 }
@@ -310,6 +318,7 @@ onBeforeUnmount(() => {
 
         <!-- Kese -->
         <div v-else-if="tab === 'shop'" class="rows">
+          <p v-if="!app.online" class="warn">{{ tr.errors.offlineShop }}</p>
           <div v-for="r in shopRows" :key="r.id" class="row" :class="{ star: r.id === 'starter_pack' }">
             <img class="row__icon" :src="ThemeService.url(r.icon)" alt="" />
             <div class="row__txt">
@@ -319,17 +328,23 @@ onBeforeUnmount(() => {
             </div>
             <div class="row__btns">
               <GameButton v-if="r.owned" size="small" disabled>{{ tr.market.purchased }}</GameButton>
-              <GameButton v-else size="small" variant="metal" :disabled="!priceOf(r.id) || app.purchaseBusy" @click="buyProduct(r.id)">
+              <GameButton
+                v-else
+                size="small"
+                variant="metal"
+                :disabled="!app.online || !priceOf(r.id) || app.purchaseBusy"
+                @click="buyProduct(r.id)"
+              >
                 {{ priceOf(r.id) ?? (products ? tr.common.priceUnavailable : tr.common.loading) }}
               </GameButton>
             </div>
           </div>
-          <p v-if="productsFailed || (products && !products.length)" class="warn">
+          <p v-if="app.online && (productsFailed || (products && !products.length))" class="warn">
             Mağaza fiyatlarına ulaşılamadı. İnternet bağlantını kontrol et.
             <GameButton size="small" @click="loadProducts">Tekrar dene</GameButton>
           </p>
           <p class="fine">Fiyatlar mağazadan, yerel para biriminle gelir.</p>
-          <GameButton size="small" variant="ghost" class="restore" :disabled="app.purchaseBusy" @click="restorePurchases">
+          <GameButton size="small" variant="ghost" class="restore" :disabled="!app.online || app.purchaseBusy" @click="restorePurchases">
             {{ tr.market.restore }}
           </GameButton>
         </div>

@@ -72,7 +72,7 @@ export interface StageConfig {
   fromServed: number
   /** Müşterinin bekleme süresi (sn, müşteri çarpanından önce). */
   patience: number
-  /** Bardaktaki rehber: numbers → dem + dolu çizgisi, marks → yalnız dolu çizgisi, none → göz kararı. */
+  /** Sipariş balonundaki renk çubuğu: numbers → hedef ▼ + anlık renk ▲, marks → yalnız hedef, none → çubuk yok. */
   gauge: GaugeMode
   sugarChance: number
 }

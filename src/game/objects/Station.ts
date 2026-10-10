@@ -1,5 +1,5 @@
 /**
- * Servis tezgâhı: tabak + bardak (hedef çizgileriyle), tezgâhta dinlenen demlik (dem) ve çaydanlık (su),
+ * Servis tezgâhı: tabak + bardak + kaşık, tezgâhta dinlenen demlik (dem) ve çaydanlık (su),
  * akış çizgileri, şekerlik, DEM/SU butonları ve "Servis et". Mesai, Günlük ve Eğitim sahneleri bunu kullanır.
  *
  * Döküm girişi: demliğe/çaydanlığa ya da DEM/SU butonuna
@@ -19,6 +19,7 @@ import { HapticsService } from '@/services/haptics/HapticsService'
 import { potIds } from '../assets'
 import type { Layout } from '../layout'
 import { ChunkyButton } from './Controls'
+import { ELLIPSE_K } from '../art/glassArt'
 import { GlassView } from './GlassView'
 import { PourStream, type StreamStyle } from './PourStream'
 import { Teapot } from './Teapot'
@@ -39,6 +40,9 @@ export type StationEvent = 'serve' | 'overflow' | 'sugar' | 'pourStart' | 'pourE
 /** Bundan kısa basış "dokunuş" sayılır: döküm açık kalır, ikinci dokunuş kapatır (ms). */
 export const TAP_MS = 220
 const SOURCES: PourSource[] = ['dem', 'su']
+/** prop_kasik görselinde çanağın ortası (döndürme ve yerleştirme noktası) ve sap ucu (oran). */
+const SPOON_BOWL = { x: 0.18, y: 0.53 }
+const SPOON_TIP = { x: 0.93, y: 0.37 }
 
 const DEM_STREAM: StreamStyle = { color: rgbToInt(teaColor(0.85)), alpha: 0.96, highlight: 0xffb07a, width: 22 }
 const SU_STREAM: StreamStyle = { color: 0xd8eef8, alpha: 0.7, highlight: 0xffffff, width: 24 }
@@ -62,6 +66,10 @@ export class Station {
   private readonly dropPool: Phaser.GameObjects.Image[] = []
   private readonly cubePool: Phaser.GameObjects.Image[] = []
   private readonly spoon: Phaser.GameObjects.Image
+  /** Karıştırırken bardağın içindeki kaşık sapı (çay yüzeyinin üstünde kalan kısım). */
+  private readonly stirGfx: Phaser.GameObjects.Graphics
+  /** Kaşık tabakta mı (tabakla birlikte hareket eder) yoksa elde mi. */
+  private spoonOnSaucer = true
   private readonly glassSteam: Steam
   private readonly kettleSteam: Steam
   private readonly bubbles: Phaser.GameObjects.Particles.ParticleEmitter
@@ -93,10 +101,11 @@ export class Station {
   private wasPouring = false
   private cubesInFlight = 0
   private reduced = false
-  /** Rehber modu: numbers → dem ve dolu çizgisi, marks → yalnız dolu çizgisi, none → çizgi yok. */
+  /** Rehber modu: numbers → renk çubuğunda hedef + anlık renk, marks → yalnız hedef, none → çubuk yok. */
   gauge: GaugeMode
-  private targetDem: number | null = null
-  private targetFill: number | null = null
+  /** Aktif siparişin hedefleri (yüzde). */
+  targetDem: number | null = null
+  targetFill: number | null = null
 
   constructor(scene: Phaser.Scene, cfg: StationConfig, L: Layout) {
     this.scene = scene
@@ -112,12 +121,18 @@ export class Station {
     this.demlik.image.setDepth(30)
     this.caydanlik.image.setDepth(30)
 
-    this.sugarBowl = scene.add.image(0, 0, 'prop_sekerlik').setDepth(12).setInteractive({ useHandCursor: true })
+    // Şekerlik demliğin önünde durur (derinlik 32 > demlik 30); dokunma alanı da demlik alanından önceliklidir.
+    this.sugarBowl = scene.add
+      .image(0, 0, 'prop_sekerlik')
+      .setDepth(32)
+      .setInteractive({ useHandCursor: true, pixelPerfect: true, alphaTolerance: 40 })
     this.sugarBowl.on(Phaser.Input.Events.POINTER_DOWN, () => this.dropSugar())
 
     this.saucer = scene.add.image(0, 0, 'prop_tabak').setDepth(10)
     this.puddle = scene.add.image(0, 0, 'ca_dot').setDepth(11).setVisible(false)
-    this.spoon = scene.add.image(0, 0, 'prop_kasik').setDepth(21).setVisible(false)
+    // Çay kaşığı: tabağın kenarında durur, bardakla birlikte gelir gider; şekerli çayda servisten önce karıştırır.
+    this.spoon = scene.add.image(0, 0, 'prop_kasik').setDepth(11).setOrigin(SPOON_BOWL.x, SPOON_BOWL.y)
+    this.stirGfx = scene.add.graphics().setDepth(19)
     this.glass = new GlassView(scene, cfg.glass, cfg.skin)
     this.glass.container.setDepth(20)
 
@@ -160,7 +175,7 @@ export class Station {
     this.suPad.onDown = () => this.inputDown('su')
     this.suPad.onUp = () => this.inputUp('su')
 
-    // Demlik ve çaydanlığa doğrudan dokunma. Alan şekerliğin altında kalır (derinlik 11 < 12), çakışırsa şeker kazanır.
+    // Demlik ve çaydanlığa doğrudan dokunma. Alan şekerliğin altında kalır (derinlik 11 < 32), çakışırsa şeker kazanır.
     const zone = (src: PourSource) => {
       const z = scene.add.zone(0, 0, 10, 10).setOrigin(0, 0).setDepth(11).setInteractive({ useHandCursor: true })
       z.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
@@ -187,7 +202,6 @@ export class Station {
       if (this.canServe) this.events.emit('serve')
     }
 
-    this.setGaugeMode(cfg.gauge)
     this.layout(L)
   }
 
@@ -228,24 +242,20 @@ export class Station {
     return this.chDem.phase !== 'idle' || this.chSu.phase !== 'idle'
   }
 
+  /** Rehber modu (sipariş balonundaki renk çubuğu bunu okur; bardakta çizgi yok). */
   setGaugeMode(mode: GaugeMode): void {
     this.gauge = mode
-    this.applyGuides()
   }
 
-  /** Sipariş hedefleri (yüzde). Bardakta çizgi olarak gösterilir (moda göre). */
+  /** Sipariş hedefleri (yüzde) ya da null. */
   setTargets(dem: number | null, fill: number | null): void {
     this.targetDem = dem
     this.targetFill = fill
-    this.applyGuides()
   }
 
-  private applyGuides(): void {
-    const fill = this.targetFill
-    const dem = this.targetDem
-    const showFill = fill !== null && this.gauge !== 'none'
-    const showDem = fill !== null && dem !== null && this.gauge === 'numbers'
-    this.glass.setGuides(showDem ? ((dem as number) / 100) * ((fill as number) / 100) : null, showFill ? (fill as number) / 100 : null)
+  /** Bardaktaki çayın dem oranı (0..1); bardak boşsa null. */
+  get liveDem(): number | null {
+    return this.dem + this.su > 0.004 ? demRatio(this.dem, this.su) : null
   }
 
   setInputEnabled(on: boolean): void {
@@ -297,7 +307,10 @@ export class Station {
     this.lastIncoming = null
     this.glass.reset()
     this.puddle.setVisible(false)
-    this.spoon.setVisible(false)
+    this.stirGfx.clear()
+    this.spoonOnSaucer = true
+    this.spoon.setVisible(true).setAlpha(1)
+    this.syncSpoon()
     this.streamDem.clear()
     this.streamSu.clear()
     this.demlik.snapToRest()
@@ -569,42 +582,141 @@ export class Station {
   // ---------- Animasyonlar ----------
 
   /** Kaşık şıngırtısıyla kısa bir karıştırma. */
+  /**
+   * Servis öncesi karıştırma. Yalnızca şeker atıldıysa (şekeri eritmek için): kaşık tabaktan alınır, bardağın içine
+   * (ön camın arkasına) dalar, perspektifli daireler çizer, her turda bardağa çarpıp şıngırdar, şeker beyaz girdapla
+   * erir; sonra kaşık tabağa geri konur. Şekersiz çay karıştırılmaz.
+   */
   stir(reduced = false): Promise<void> {
+    if (this.sugar <= 0) return Promise.resolve()
     const g = this.glass
-    const top = g.topWorldY
-    const size = g.worldRadiusAt(1) * 2.4
-    this.spoon
-      .setVisible(true)
-      .setDisplaySize(size, size)
-      .setPosition(g.container.x + size * 0.12, top - size * 0.05)
-      .setAngle(-20)
-      .setAlpha(0)
+    const u = this.L.u
+    const turns = reduced ? 1 : 3
+    const tPick = 0.28
+    const tDip = 0.14
+    const tTurn = 0.34
+    const tLift = 0.16
+    const tPut = 0.26
+    const total = tPick + tDip + turns * tTurn + tLift + tPut
+    const rest = this.spoonRestPose()
+    const s0 = this.spoon.scaleX
+    // Kaşığın bardak üstündeki "elde" pozu: çanak ağzın biraz üstünde, sap sağa yatık.
+    const handRot = Phaser.Math.DegToRad(-62)
+    const handX = g.container.x + g.worldRadiusAt(1) * 0.15
+    const handY = g.topWorldY - 18 * u
+    let lastTurn = 0
+    this.spoonOnSaucer = false
+    g.stirSwirl(turns * tTurn + tDip + tLift, 0xfff6e6)
     return new Promise((resolve) => {
-      this.scene.tweens.add({ targets: this.spoon, alpha: 1, duration: 80 })
+      const state = { t: 0 }
       this.scene.tweens.add({
-        targets: this.spoon,
-        angle: 20,
-        x: g.container.x - size * 0.12,
-        duration: reduced ? 60 : 110,
-        yoyo: true,
-        repeat: reduced ? 0 : 2,
-        ease: 'Sine.easeInOut',
-        onYoyo: () => {
-          AudioService.play('spoonClink', { rate: 0.95 + Math.random() * 0.15 })
-          this.glass.agitate(0.9)
+        targets: state,
+        t: total,
+        duration: total * 1000,
+        ease: 'Linear',
+        onUpdate: () => {
+          let t = state.t
+          const surfY = g.surfaceWorldY()
+          const rS = g.worldRadiusAt(g.levelH())
+          const tipBase = { x: g.container.x + rS * 0.55, y: g.topWorldY - g.worldRadiusAt(1) * 1.1 }
+          if (t < tPick) {
+            // Tabaktan alınır, bardağın üstüne gelir ve dikleşir.
+            const k = Phaser.Math.Easing.Cubic.Out(t / tPick)
+            this.stirGfx.clear()
+            this.spoon
+              .setVisible(true)
+              .setDepth(21)
+              .setPosition(rest.x + (handX - rest.x) * k, rest.y + (handY - rest.y) * k - Math.sin(k * Math.PI) * 40 * u)
+              .setRotation(rest.rot + (handRot - rest.rot) * k)
+              .setScale(s0)
+            return
+          }
+          t -= tPick
+          this.spoon.setVisible(false)
+          let a: { x: number; y: number }
+          let b: { x: number; y: number }
+          if (t < tDip + turns * tTurn) {
+            const dip = Math.min(1, t / tDip)
+            const turnT = Math.max(0, t - tDip)
+            const th = (turnT / tTurn) * Math.PI * 2
+            const amp = Math.min(1, turnT / 0.12)
+            // Çanak yüzeyin altında görünmez; sap yüzeyden çıkar. Alt uç geniş, üst uç küçük daire çizer.
+            a = { x: g.container.x + rS * 0.5 * amp * Math.cos(th), y: surfY + rS * ELLIPSE_K * 0.5 * amp * Math.sin(th) + 3 * u }
+            b = { x: tipBase.x + rS * 0.16 * amp * Math.cos(th), y: tipBase.y + rS * ELLIPSE_K * 0.16 * amp * Math.sin(th) }
+            // Dalış: sap yukarıdan iner.
+            const lift = (1 - Phaser.Math.Easing.Cubic.Out(dip)) * (surfY - g.topWorldY + 20 * u)
+            a.y -= lift
+            b.y -= lift
+            const turn = Math.floor(turnT / tTurn + 0.25)
+            if (turnT > 0 && turn > lastTurn) {
+              lastTurn = turn
+              AudioService.play('spoonClink', { rate: 0.92 + Math.random() * 0.2 })
+              HapticsService.trigger('sugar')
+            }
+            g.agitate(0.55)
+          } else {
+            // Kaşık yukarı çekilir.
+            const k = Phaser.Math.Easing.Cubic.In(Math.min(1, (t - tDip - turns * tTurn) / tLift))
+            const up = k * (surfY - g.topWorldY + 30 * u)
+            a = { x: g.container.x, y: surfY + 3 * u - up }
+            b = { x: tipBase.x, y: tipBase.y - up }
+            if (t >= tDip + turns * tTurn + tLift) {
+              // Tabağa geri konur.
+              const kk = Phaser.Math.Easing.Cubic.InOut((t - tDip - turns * tTurn - tLift) / tPut)
+              const back = this.spoonRestPose()
+              this.stirGfx.clear()
+              this.spoon
+                .setVisible(true)
+                .setPosition(handX + (back.x - handX) * kk, handY + (back.y - handY) * kk - Math.sin(kk * Math.PI) * 30 * u)
+                .setRotation(handRot + (back.rot - handRot) * kk)
+              return
+            }
+          }
+          this.drawSpoonHandle(a, b)
         },
         onComplete: () => {
-          this.scene.tweens.add({
-            targets: this.spoon,
-            alpha: 0,
-            y: top - size * 0.4,
-            duration: 140,
-            onComplete: () => this.spoon.setVisible(false),
-          })
+          this.stirGfx.clear()
+          this.spoonOnSaucer = true
+          this.spoon.setVisible(true).setDepth(11)
+          this.syncSpoon()
           resolve()
         },
       })
     })
+  }
+
+  /** Bardağın içindeki kaşık sapı: kalın koyu kontur + gümüş gövde + parlama; uçta yuvarlak sap başı. */
+  private drawSpoonHandle(a: { x: number; y: number }, b: { x: number; y: number }): void {
+    const gfx = this.stirGfx
+    const w = 15 * this.L.u
+    const o = 4.5 * this.L.u
+    gfx.clear()
+    gfx.lineStyle(w + o * 2, 0x3b2416, 1).lineBetween(a.x, a.y, b.x, b.y)
+    gfx.fillStyle(0x3b2416, 1).fillCircle(b.x, b.y, w * 0.5 + o)
+    gfx.lineStyle(w, 0xd5dce2, 1).lineBetween(a.x, a.y, b.x, b.y)
+    gfx.fillStyle(0xd5dce2, 1).fillCircle(b.x, b.y, w * 0.5)
+    gfx.lineStyle(w * 0.3, 0xffffff, 0.9).lineBetween(a.x - w * 0.18, a.y, b.x - w * 0.18, b.y)
+  }
+
+  /** Kaşığın tabaktaki yeri: çanak bardağın sağında, sap tabağın dışına doğru. */
+  private spoonRestPose(): { x: number; y: number; rot: number } {
+    const sw = this.saucer.displayWidth / 1.15
+    return { x: this.saucer.x + sw * 0.27, y: this.saucer.y + sw * 0.035, rot: Phaser.Math.DegToRad(4) }
+  }
+
+  /** Tabaktaki kaşığı tabağın konumu, ölçeği ve opaklığıyla eşler. */
+  private syncSpoon(): void {
+    if (!this.spoonOnSaucer) return
+    const sw = this.saucer.displayWidth / 1.15
+    const p = this.spoonRestPose()
+    // Sap uzunluğu (çanak → uç) tabak genişliğinin ~%55'i.
+    const len = sw * 0.55
+    const tex = this.spoon.width * Math.hypot(SPOON_TIP.x - SPOON_BOWL.x, SPOON_TIP.y - SPOON_BOWL.y)
+    this.spoon
+      .setPosition(p.x, p.y)
+      .setRotation(p.rot)
+      .setScale(len / tex)
+      .setAlpha(this.saucer.alpha)
   }
 
   /** Taşma: sıvı tabağa yayılır. */
@@ -646,12 +758,14 @@ export class Station {
           this.saucer.setScale(ss * (1 - 0.3 * t))
           this.glass.container.setAlpha(1 - Math.max(0, t - 0.7) / 0.3)
           this.saucer.setAlpha(1 - Math.max(0, t - 0.7) / 0.3)
+          this.syncSpoon()
         },
         onComplete: () => {
           this.glass.container.setAlpha(1)
           this.saucer.setScale(ss).setAlpha(1)
           // Yeni bardak gelene kadar ekran dışında, yerleşimdeki yüksekliğinde bekler.
           this.placeGlassAt(-300 * this.L.u)
+          this.syncSpoon()
           resolve()
         },
       })
@@ -668,6 +782,7 @@ export class Station {
         x: `+=${dist}`,
         duration: ANIM.serveSlide * 1000,
         ease: 'Back.easeIn',
+        onUpdate: () => this.syncSpoon(),
         onComplete: () => resolve(),
       })
     })
@@ -686,6 +801,7 @@ export class Station {
         x: L.glassCx,
         duration: ANIM.serveSlide * 1000,
         ease: 'Back.easeOut',
+        onUpdate: () => this.syncSpoon(),
         onComplete: () => {
           AudioService.play('glassTick')
           resolve()
@@ -701,6 +817,7 @@ export class Station {
     const L = this.L
     this.saucer.setPosition(x, L.saucer.y).setDisplaySize(L.saucer.w * 1.15, L.saucer.w * 1.15)
     this.glass.place(x, L.glassBaseY, L.glassUnit)
+    this.syncSpoon()
   }
 
   layout(L: Layout): void {
@@ -721,7 +838,8 @@ export class Station {
       z.input?.hitArea.setTo(0, 0, b.w + pad * 2, b.h + pad)
     }
     const bs = L.sugarBowl.size
-    this.sugarBowl.setPosition(L.sugarBowl.x, L.sugarBowl.y - bs * 0.32).setDisplaySize(bs, bs)
+    // Görselde kasenin ayağı yüksekliğin ~%89'unda: ayak L.sugarBowl.y çizgisine oturur.
+    this.sugarBowl.setPosition(L.sugarBowl.x, L.sugarBowl.y - bs * 0.39).setDisplaySize(bs, bs)
     this.demPad.layout(L.controls.dem, u)
     this.suPad.layout(L.controls.su, u)
     this.serveBtn.layout(L.controls.serve, u)
@@ -738,6 +856,7 @@ export class Station {
     this.saucer.destroy()
     this.puddle.destroy()
     this.spoon.destroy()
+    this.stirGfx.destroy()
     this.sugarBowl.destroy()
     this.splash.destroy()
     for (const d of [...this.dropPool, ...this.cubePool]) d.destroy()

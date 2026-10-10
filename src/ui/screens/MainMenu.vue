@@ -128,7 +128,7 @@ function logoTap() {
           <GameButton size="icon" variant="metal" icon="icon_shop" :aria-label="tr.menu.market" @click="app.openMarket()" />
           <span>{{ tr.menu.market }}</span>
         </div>
-        <div class="tile">
+        <div v-if="app.online" class="tile">
           <GameButton size="icon" variant="blue" icon="icon_trophy" :aria-label="tr.menu.leaderboard" @click="app.go('leaderboard')" />
           <span>{{ tr.menu.leaderboard }}</span>
         </div>

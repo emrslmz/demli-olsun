@@ -20,7 +20,7 @@ export const DAILY_LOGIN_REWARDS = [20, 30, 40, 60, 80, 100, 150]
 export type BoosterId = 'ustaGozu' | 'sabirTasi' | 'yedekBardak'
 
 export const BOOSTERS: Record<BoosterId, { price: number; patienceBonus?: number; durationSec?: number }> = {
-  /** Bu mesai bardaktaki dem + doluluk çizgileri hep görünür, gösterge çarpanı 1.0 olur. */
+  /** Bu mesai renk çubuğunda çayın anlık rengi hep görünür, gösterge çarpanı 1.0 olur. */
   ustaGozu: { price: 150 },
   /** İlk 60 sn boyunca sabır %50 artar. */
   sabirTasi: { price: 120, patienceBonus: 0.5, durationSec: 60 },

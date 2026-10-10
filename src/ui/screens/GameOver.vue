@@ -79,7 +79,7 @@ const rankText = computed(() => {
             <span>{{ tr.gameOver.tipsEarned }}</span>
             <b class="tips"><img :src="ThemeService.url('icon_coin')" alt="" />{{ num(info.tipsAwarded * (info.doubled ? 2 : 1)) }}</b>
           </div>
-          <div v-if="rankText">
+          <div v-if="rankText && app.online">
             <span>{{ tr.gameOver.league }}</span
             ><b>{{ rankText }}</b>
           </div>

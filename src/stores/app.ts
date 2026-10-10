@@ -27,6 +27,8 @@ export const useAppStore = defineStore('app', () => {
   /** Banner yüksekliği (CSS px), menü içeriği bunun üstünde kalsın. */
   const bannerHeight = ref(0)
   const rewardedAvailable = ref(false)
+  /** İnternet bağlantısı (tarayıcı/WebView bildirir). Kapalıyken liderlik, lig ve satın almalar gizlenir. */
+  const online = ref(typeof navigator === 'undefined' ? true : navigator.onLine !== false)
   const phaserReady = ref(false)
   /** Kısa bilgi mesajı (toast). */
   const toast = ref<{ text: string; id: number } | null>(null)
@@ -78,6 +80,7 @@ export const useAppStore = defineStore('app', () => {
     purchaseBusy,
     bannerHeight,
     rewardedAvailable,
+    online,
     phaserReady,
     toast,
     confirmState,

@@ -146,7 +146,7 @@ export function computeLayout(W: number, H: number, dpr: number, safeCss: Insets
   const controls = {
     area: controlsArea,
     dem: { x: controlsArea.x, y: ctrlY, w: sideW, h: ctrlH },
-    serve: { x: controlsArea.x + sideW + gap, y: ctrlY + ctrlH * 0.1, w: midW, h: ctrlH * 0.8 },
+    serve: { x: controlsArea.x + sideW + gap, y: ctrlY, w: midW, h: ctrlH },
     su: { x: controlsArea.x + sideW + gap + midW + gap, y: ctrlY, w: sideW, h: ctrlH },
   }
 
@@ -167,7 +167,7 @@ export function computeLayout(W: number, H: number, dpr: number, safeCss: Insets
   const custCx = cx + 160 * u
   const customer = { cx: custCx, bottom: custBottom, size: custSize }
   const bw = 440 * u
-  const bh = 270 * u
+  const bh = 310 * u
   const headY = custTop + custSize * 0.42
   const bubble = {
     x: colX + 22 * u,
@@ -185,7 +185,8 @@ export function computeLayout(W: number, H: number, dpr: number, safeCss: Insets
     dem: { rest: { x: cx - 330 * u, y: potRestY }, spout: { x: cx - 50 * u, y: spoutY } },
     su: { rest: { x: cx + 330 * u, y: potRestY }, spout: { x: cx + 50 * u, y: spoutY } },
   }
-  const sugarBowl = { x: cx - 300 * u, y: Math.min(counterFrontY - 20 * u, glassBaseY + 70 * u), size: 150 * u }
+  // Şekerlik: tezgâhın sol önünde, demliğin önünde (y: ayağının oturduğu çizgi).
+  const sugarBowl = { x: cx - 335 * u, y: counterFrontY - 12 * u, size: 230 * u }
 
   return {
     W,

@@ -13,7 +13,9 @@ import { initLifecycle } from '@/services/platform/lifecycle'
 import { initSafeArea } from '@/services/platform/safeArea'
 import { ThemeService } from '@/services/theme/ThemeService'
 import { hydrateStores, saveNow } from '@/stores/persist'
+import { useAppStore } from '@/stores/app'
 import { useSettingsStore } from '@/stores/settings'
+import { tr } from '@/i18n/tr'
 
 export function effectiveThemeSetting(): ReturnType<typeof resolveThemeSetting> {
   const s = useSettingsStore().data.theme
@@ -29,6 +31,19 @@ export async function bootstrap(): Promise<void> {
   hydrateStores(loaded.data)
   useSettingsStore().apply()
   await ThemeService.setTheme(effectiveThemeSetting(), false)
+
+  // Bağlantı durumu: çevrimdışıyken liderlik/lig/satın alma gizlenir; açık ekran liderlikse menüye dönülür.
+  const app = useAppStore()
+  const setOnline = (on: boolean) => {
+    if (app.online === on) return
+    app.online = on
+    if (!on) {
+      app.showToast(tr.errors.offline)
+      if (app.screen === 'leaderboard') app.go('menu')
+    }
+  }
+  window.addEventListener('online', () => setOnline(true))
+  window.addEventListener('offline', () => setOnline(false))
 
   // İlk dokunuşta AudioContext.resume().
   const unlock = () => AudioService.unlock()

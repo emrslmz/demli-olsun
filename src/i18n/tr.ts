@@ -62,7 +62,7 @@ export const tr = {
     start: 'Başla',
     none: 'Güçlendiricisiz başla',
     ustaGozu: 'Usta Gözü',
-    ustaGozuDesc: 'Bu mesai bardaktaki iki çizgi de hep görünür (çarpan 1.0).',
+    ustaGozuDesc: 'Bu mesai renk çubuğunda çayın anlık rengi hep görünür (çarpan 1.0).',
     sabirTasi: 'Sabır Taşı',
     sabirTasiDesc: 'İlk 60 sn müşterilerin sabrı %50 artar.',
     yedekBardak: 'Yedek Bardak',
@@ -124,7 +124,7 @@ export const tr = {
     color: 'Renk',
     fill: 'Doluluk',
     alreadyPlayed: 'Bugünün siparişini verdin. Yarın yenisi gelecek.',
-    oneShot: 'Tek hak! Bardakta sadece doluluk çizgisi var.',
+    oneShot: 'Tek hak! Renk çubuğunda yalnızca istenen renk var.',
     copied: 'Sonuç panoya kopyalandı.',
   },
   dailyReward: {
@@ -183,7 +183,7 @@ export const tr = {
     haptics: 'Titreşim',
     reducedMotion: 'Azaltılmış hareket',
     colorBlind: 'Renk körlüğü modu',
-    colorBlindDesc: 'Bardaktaki dem ve doluluk çizgileri hep görünür.',
+    colorBlindDesc: 'Renk çubuğunda çayın anlık rengi hep işaretlenir (▲).',
     nickname: 'Takma adı değiştir',
     tutorial: 'Eğitimi tekrar oyna',
     restore: 'Satın alımları geri yükle',
@@ -198,10 +198,10 @@ export const tr = {
   },
   tutorial: {
     skip: 'Eğitimi atla',
-    step1a: 'Önce dem: demliğe basılı tut, koyu kesikli çizgiye gelince bırak.',
-    step1b: 'Şimdi su: çaydanlığa basılı tut, beyaz çizgiye gelince bırak.',
+    step1a: 'Önce dem: demliğe basılı tut. Bardağın üçte biri kadar dem yeter.',
+    step1b: 'Şimdi su: çaydanlığa basılı tut. Renk çubuğunda ▲ işaret ▼ hedefe gelince ve bardak balondaki kadar dolunca bırak.',
     step1c: 'Hedefe yaklaştın. Servis et!',
-    step2a: 'Bıraktıktan sonra birkaç damla daha düşer. Çizgiden biraz önce bırak!',
+    step2a: 'Açık çay az demle olur. Bıraktıktan sonra birkaç damla daha düşer: biraz erken bırak!',
     step2b: 'Gördün mü? Artık akış devam etti. Servis et.',
     step3: 'Şimdi sıra sende. Siparişi tuttur ve servis et!',
     done: 'Aferin çırak! Mesaiye hazırsın.',
@@ -209,7 +209,8 @@ export const tr = {
   exitConfirm: 'Oyundan çıkmak istiyor musun?',
   errors: {
     generic: 'Bir şeyler ters gitti. Lütfen tekrar dene.',
-    offline: 'İnternet yok. Oyun internetsiz de oynanır; reklam ve satın alma şu an kullanılamaz.',
+    offline: 'İnternet yok. Oyun internetsiz de oynanır; liderlik, reklam ve satın alma şu an kapalı.',
+    offlineShop: 'İnternet yok: satın almalar şu an yapılamaz.',
   },
 }
 

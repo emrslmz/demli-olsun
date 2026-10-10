@@ -1,7 +1,7 @@
 /**
  * Mesai (ana mod, sonsuz): müşteriler tek tek tezgâha gelir, balonda ne istediklerini gösterir.
  * Çayı doldur, servis et; isabet ve hız puan, kombo ve bahşiş getirir. Bekletilen, taşan ya da beğenilmeyen
- * çay can götürür. Zorluk aşamalarla artar (bardaktaki çizgiler azalır, sabır kısalır, şeker istenir).
+ * çay can götürür. Zorluk aşamalarla artar (renk çubuğundaki yardım azalır, sabır kısalır, şeker istenir).
  */
 
 import * as Phaser from 'phaser'
@@ -37,9 +37,9 @@ interface ActiveOrder {
 
 const STAGE_NOTES: Record<number, string> = {
   2: 'Şeker isteyenler geldi!',
-  3: 'Artık sadece dolu çizgisi var',
+  3: 'Renk işaretin artık yok: rengine bak!',
   4: 'Müşteriler acele ediyor',
-  5: 'Göz kararı! Çizgi yok',
+  5: 'Göz kararı! Renk çubuğu da yok',
 }
 
 export class ShiftScene extends PlayScene {
