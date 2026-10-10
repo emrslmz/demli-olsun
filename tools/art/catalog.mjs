@@ -25,6 +25,14 @@ export const ICONS = [
 export const DECALS = ['decal_yaldiz', 'decal_lale', 'decal_nazar', 'decal_kristal', 'decal_baslangic']
 export const BADGES = ['badge_mahalle', 'badge_ilce', 'badge_sehir', 'badge_bolge', 'badge_turkiye']
 
+/** Temada kıyafet/aksesuarı değişen müşteriler (characters.mjs → themeAccessory ile aynı). */
+const THEME_CHARS = {
+  default: CUSTOMERS,
+  kis: CUSTOMERS,
+  yaz: ['muhtar', 'esnaf', 'taksici'],
+  halloween: ['ogrenci', 'esnaf', 'muhtar'],
+}
+
 const THEME_PARTICLE = { kis: 'fx_snowflake', yaz: 'fx_sun_glint', halloween: 'fx_bat' }
 
 /**
@@ -41,11 +49,11 @@ export function catalog(theme) {
 
   // Arka planlar
   for (const v of isDefault ? VENUES : ['mahalle']) {
-    add({ id: `bg_${v}_phone`, folder: 'bg', w: 1080, h: 1920, fmt: 'jpg', meta: { counterY: 0.68 } })
-    add({ id: `bg_${v}_tablet`, folder: 'bg', w: 1536, h: 2048, fmt: 'jpg', meta: { counterY: 0.68 } })
+    add({ id: `bg_${v}_phone`, folder: 'bg', w: 1080, h: 2340, fmt: 'jpg', meta: { counterY: 0.5 } })
+    add({ id: `bg_${v}_tablet`, folder: 'bg', w: 1536, h: 2048, fmt: 'jpg', meta: { counterY: 0.5 } })
   }
-  // Müşteriler
-  for (const c of CUSTOMERS) for (const e of EXPRESSIONS) add({ id: `char_${c}_${e}`, folder: 'char', w: 512, h: 512 })
+  // Müşteriler (temada yalnızca aksesuarı değişenler; diğerleri default'tan gelir)
+  for (const c of THEME_CHARS[theme] ?? CUSTOMERS) for (const e of EXPRESSIONS) add({ id: `char_${c}_${e}`, folder: 'char', w: 640, h: 640 })
   // Logo
   add({ id: 'logo_emblem', folder: 'logo', w: 1024, h: 1024 })
 
@@ -59,17 +67,14 @@ export function catalog(theme) {
     add({ id: 'prop_seker', folder: 'prop', w: 128, h: 128 })
     add({ id: 'prop_kasik', folder: 'prop', w: 256, h: 256 })
     add({ id: 'prop_tepsi', folder: 'prop', w: 768, h: 768 })
-    add({ id: 'ui_board', folder: 'ui', w: 1536, h: 640, meta: { slice: [0.06, 0.06, 0.08, 0.08] } })
-    add({ id: 'ui_card', folder: 'ui', w: 512, h: 640 })
-    add({ id: 'ui_panel', folder: 'ui', w: 1024, h: 1024, meta: { slice: [0.09, 0.09, 0.09, 0.09] } })
+    add({ id: 'prop_tezgah_ust', folder: 'prop', w: 1080, h: 560, fmt: 'jpg' })
+    add({ id: 'prop_tezgah_on', folder: 'prop', w: 1080, h: 720, fmt: 'jpg' })
     for (const id of ICONS) add({ id, folder: 'icon', w: 256, h: 256 })
     add({ id: 'fx_steam', folder: 'fx', w: 256, h: 256, bgColor: '#000000', meta: { blend: 'add' } })
     add({ id: 'fx_sparkle', folder: 'fx', w: 128, h: 128, bgColor: '#000000', meta: { blend: 'add' } })
     for (const id of DECALS) add({ id, folder: 'decal', w: 512, h: 512 })
     for (const id of BADGES) add({ id, folder: 'badge', w: 512, h: 512 })
   } else {
-    add({ id: 'deco_board_top', folder: 'deco', w: 1536, h: 256, extra: 'deco' })
-    add({ id: 'deco_card_corner', folder: 'deco', w: 256, h: 256, extra: 'deco' })
     add({ id: 'deco_counter', folder: 'deco', w: 512, h: 512, extra: 'deco' })
     const p = THEME_PARTICLE[theme]
     if (p === 'fx_sun_glint') {

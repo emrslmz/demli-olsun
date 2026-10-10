@@ -43,10 +43,10 @@ export const FIXED_COLORS = {
 }
 
 export const FONTS = {
-  /** Tahta ve fişler: el yazısı / tebeşir karakterli. */
-  chalk: 'Kalam',
-  /** Arayüz: sağlam, okunaklı sans. */
-  ui: 'Nunito',
+  /** Başlıklar ve oyun içi büyük yazılar: yuvarlak, kalın cartoon. */
+  chalk: '"Baloo 2", sans-serif',
+  /** Arayüz. */
+  ui: '"Baloo 2", sans-serif',
 }
 
 /**

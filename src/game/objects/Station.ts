@@ -1,6 +1,6 @@
 /**
- * Servis tezgâhı: tabak + bardak, demlik (dem) ve çaydanlık (su), akış çizgileri, göstergeler,
- * şekerlik, DEM/SU basılı tutma alanları ve "Servis et". Mesai, Günlük ve Eğitim sahneleri bunu kullanır.
+ * Servis tezgâhı: tabak + bardak (hedef çizgileriyle), tezgâhta dinlenen demlik (dem) ve çaydanlık (su),
+ * akış çizgileri, şekerlik, DEM/SU basılı tutma alanları ve "Servis et". Mesai, Günlük ve Eğitim sahneleri bunu kullanır.
  */
 
 import * as Phaser from 'phaser'
@@ -12,11 +12,9 @@ import type { GlassSkin } from '@/data/cosmetics'
 import { tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
-import { onColor, ThemeService } from '@/services/theme/ThemeService'
 import { potIds } from '../assets'
 import type { Layout } from '../layout'
 import { ChunkyButton } from './Controls'
-import { DemGauge, FillGauge } from './Gauges'
 import { GlassView } from './GlassView'
 import { PourStream, type StreamStyle } from './PourStream'
 import { Teapot } from './Teapot'
@@ -34,8 +32,8 @@ export interface StationConfig {
 
 export type StationEvent = 'serve' | 'overflow' | 'sugar' | 'pourStart' | 'pourEnd' | 'drop'
 
-const DEM_STREAM: StreamStyle = { color: rgbToInt(teaColor(0.85)), alpha: 0.96, highlight: 0xffb07a, width: 15 }
-const SU_STREAM: StreamStyle = { color: 0xd8eef8, alpha: 0.62, highlight: 0xffffff, width: 18 }
+const DEM_STREAM: StreamStyle = { color: rgbToInt(teaColor(0.85)), alpha: 0.96, highlight: 0xffb07a, width: 22 }
+const SU_STREAM: StreamStyle = { color: 0xd8eef8, alpha: 0.7, highlight: 0xffffff, width: 24 }
 
 export class Station {
   readonly scene: Phaser.Scene
@@ -48,8 +46,6 @@ export class Station {
   private readonly streamSu: PourStream
   readonly chDem: PourChannel
   readonly chSu: PourChannel
-  readonly fillGauge: FillGauge
-  readonly demGauge: DemGauge
   readonly demPad: ChunkyButton
   readonly suPad: ChunkyButton
   readonly serveBtn: ChunkyButton
@@ -80,8 +76,10 @@ export class Station {
   private wasPouring = false
   private cubesInFlight = 0
   private reduced = false
-  /** Sahne gösterge modu; renk körlüğü vb. dışarıda çözülür. */
+  /** Rehber modu: numbers → dem ve dolu çizgisi, marks → yalnız dolu çizgisi, none → çizgi yok. */
   gauge: GaugeMode
+  private targetDem: number | null = null
+  private targetFill: number | null = null
 
   constructor(scene: Phaser.Scene, cfg: StationConfig, L: Layout) {
     this.scene = scene
@@ -122,8 +120,8 @@ export class Station {
     })
     this.splash.setDepth(26)
 
-    this.glassSteam = new Steam(scene, L.u, { rate: cfg.reducedMotion ? 0.5 : 1, depth: 24 })
-    this.kettleSteam = new Steam(scene, L.u, { rate: 0.45, strength: 0.6, depth: 31 })
+    this.glassSteam = new Steam(scene, L.u, { rate: cfg.reducedMotion ? 0.4 : 0.7, depth: 24 })
+    this.kettleSteam = new Steam(scene, L.u, { rate: cfg.reducedMotion ? 0.15 : 0.25, strength: 0.5, depth: 31 })
     this.kettleSteam.setActive(true)
     this.bubbles = scene.add.particles(0, 0, 'ca_ring', {
       emitting: false,
@@ -135,27 +133,10 @@ export class Station {
     })
     this.bubbles.setDepth(23)
 
-    this.fillGauge = new FillGauge(scene)
-    this.demGauge = new DemGauge(scene)
-    this.fillGauge.setDepth(35)
-    this.demGauge.setDepth(35)
-
-    const pal = ThemeService.paletteInt
-    const P = ThemeService.palette
-    this.demPad = new ChunkyButton(scene, { color: pal.warm, icon: 'icon_dem', label: tr.game.dem, hold: true, textColor: onColor(P.warm) })
-    this.suPad = new ChunkyButton(scene, {
-      color: pal.accent,
-      icon: 'icon_water',
-      label: tr.game.water,
-      hold: true,
-      textColor: onColor(P.accent),
-    })
-    this.serveBtn = new ChunkyButton(scene, {
-      color: pal.metal,
-      icon: 'icon_serve',
-      label: tr.game.serve,
-      textColor: '#FFF6E6',
-    })
+    // Canlı, temadan bağımsız buton renkleri (oyun içi okunurluk)
+    this.demPad = new ChunkyButton(scene, { color: 0xe8573c, icon: 'icon_dem', label: tr.game.dem, hold: true })
+    this.suPad = new ChunkyButton(scene, { color: 0x2f9fd8, icon: 'icon_water', label: tr.game.water, hold: true })
+    this.serveBtn = new ChunkyButton(scene, { color: 0x4cb848, icon: 'icon_serve', label: tr.game.serve })
     for (const b of [this.demPad, this.suPad, this.serveBtn]) b.container.setDepth(40)
     this.demPad.onDown = () => this.press('dem')
     this.demPad.onUp = () => this.release('dem')
@@ -208,13 +189,22 @@ export class Station {
 
   setGaugeMode(mode: GaugeMode): void {
     this.gauge = mode
-    this.fillGauge.setMode(mode)
-    this.demGauge.setMode(mode)
+    this.applyGuides()
   }
 
+  /** Sipariş hedefleri (yüzde). Bardakta çizgi olarak gösterilir (moda göre). */
   setTargets(dem: number | null, fill: number | null): void {
-    this.demGauge.setTarget(dem)
-    this.fillGauge.setTarget(fill)
+    this.targetDem = dem
+    this.targetFill = fill
+    this.applyGuides()
+  }
+
+  private applyGuides(): void {
+    const fill = this.targetFill
+    const dem = this.targetDem
+    const showFill = fill !== null && this.gauge !== 'none'
+    const showDem = fill !== null && dem !== null && this.gauge === 'numbers'
+    this.glass.setGuides(showDem ? ((dem as number) / 100) * ((fill as number) / 100) : null, showFill ? (fill as number) / 100 : null)
   }
 
   setInputEnabled(on: boolean): void {
@@ -267,8 +257,8 @@ export class Station {
     this.spoon.setVisible(false)
     this.streamDem.clear()
     this.streamSu.clear()
-    this.demlik.setPouring(false, this.reduced)
-    this.caydanlik.setPouring(false, this.reduced)
+    this.demlik.snapToRest()
+    this.caydanlik.snapToRest()
     AudioService.pourSilence()
   }
 
@@ -381,8 +371,9 @@ export class Station {
     const flowR = Math.max(this.chDem.ratio, this.chSu.ratio)
     if (flowR > 0) this.glass.agitate(0.35 + 0.65 * flowR)
     this.glass.update(dt)
-    this.demlik.update(dt)
-    this.caydanlik.update(dt)
+    // Artık akış bitince demlik/çaydanlık tezgâhtaki yerine döner.
+    if (this.chDem.phase === 'idle') this.demlik.park(this.reduced)
+    if (this.chSu.phase === 'idle') this.caydanlik.park(this.reduced)
 
     // Akış çizgileri
     this.drawStream(dt, 'dem')
@@ -394,7 +385,7 @@ export class Station {
     this.glassSteam.setPosition(g.container.x, g.surfaceWorldY() - 6 * this.L.u)
     const sp = this.caydanlik.spoutWorld(this.v1)
     this.kettleSteam.setPosition(sp.x, sp.y)
-    this.kettleSteam.setActive(!this.chSu.streaming)
+    this.kettleSteam.setActive(this.caydanlik.atRest)
 
     // Ses ve titreşim
     const loud = this.chDem.ratio >= this.chSu.ratio ? 'dem' : 'su'
@@ -407,10 +398,6 @@ export class Station {
       AudioService.pourUpdate(loud, 0, Math.min(1, this.volume))
       this.wasPouring = false
     }
-
-    // Göstergeler
-    this.fillGauge.setValue(this.fillPct)
-    this.demGauge.setValue(this.demPct, this.dem + this.su > 0.003)
 
     this.demPad.setHighlight(this.chDem.streaming ? this.chDem.ratio : 0)
     this.suPad.setHighlight(this.chSu.streaming ? this.chSu.ratio : 0)
@@ -553,29 +540,54 @@ export class Station {
     this.splashAt(this.glass.container.x, this.glass.topWorldY, rgbToInt(c), 14)
   }
 
-  /** Bardak + tabak sağa kayarak çıkar (tepsiyle). */
-  slideOut(withTray: Phaser.GameObjects.Image | null): Promise<void> {
+  /** Servis: bardak tabağıyla müşteriye doğru kalkar, küçülür ve kaybolur. */
+  serveTo(target: { x: number; y: number }): Promise<void> {
+    const targets: Phaser.GameObjects.Components.Transform[] = [this.glass.container, this.saucer]
+    const sx = this.glass.container.scaleX
+    const ss = this.saucer.scaleX
+    return new Promise((resolve) => {
+      const state = { t: 0 }
+      const from = targets.map((t) => ({ x: t.x, y: t.y }))
+      this.scene.tweens.add({
+        targets: state,
+        t: 1,
+        duration: ANIM.serveSlide * 1000 * 1.2,
+        ease: 'Cubic.easeInOut',
+        onUpdate: () => {
+          const t = state.t
+          const lift = Math.sin(t * Math.PI) * 60 * this.L.u
+          targets.forEach((o, i) => {
+            const f0 = from[i] as { x: number; y: number }
+            o.x = f0.x + (target.x - f0.x) * t
+            o.y = f0.y + (target.y - f0.y) * t - lift
+          })
+          this.glass.container.setScale(sx * (1 - 0.3 * t))
+          this.saucer.setScale(ss * (1 - 0.3 * t))
+          this.glass.container.setAlpha(1 - Math.max(0, t - 0.7) / 0.3)
+          this.saucer.setAlpha(1 - Math.max(0, t - 0.7) / 0.3)
+        },
+        onComplete: () => {
+          this.glass.container.setAlpha(1)
+          this.saucer.setScale(ss).setAlpha(1)
+          // Yeni bardak gelene kadar ekran dışında, yerleşimdeki yüksekliğinde bekler.
+          this.placeGlassAt(-300 * this.L.u)
+          resolve()
+        },
+      })
+    })
+  }
+
+  /** Bardak + tabak sağa kayarak çıkar (taşma, gidilen müşteri). */
+  slideOut(): Promise<void> {
     const dist = this.L.W - this.glass.container.x + 300 * this.L.u
     const targets: Phaser.GameObjects.GameObject[] = [this.glass.container, this.saucer, this.puddle]
-    if (withTray) {
-      const tw = this.L.saucer.w * 1.5
-      withTray
-        .setVisible(true)
-        .setDisplaySize(tw, tw)
-        .setPosition(this.saucer.x, this.saucer.y - tw * 0.24)
-        .setDepth(9)
-      targets.push(withTray)
-    }
     return new Promise((resolve) => {
       this.scene.tweens.add({
         targets,
         x: `+=${dist}`,
         duration: ANIM.serveSlide * 1000,
         ease: 'Back.easeIn',
-        onComplete: () => {
-          withTray?.setVisible(false)
-          resolve()
-        },
+        onComplete: () => resolve(),
       })
     })
   }
@@ -583,9 +595,9 @@ export class Station {
   /** Soldan tabağıyla yeni boş bardak gelir. */
   slideIn(): Promise<void> {
     const L = this.L
-    const startX = -300 * L.u
-    this.glass.container.x = startX
-    this.saucer.x = startX
+    this.placeGlassAt(-300 * L.u)
+    this.glass.container.setAlpha(1)
+    this.saucer.setAlpha(1)
     this.puddle.setVisible(false)
     return new Promise((resolve) => {
       this.scene.tweens.add({
@@ -603,21 +615,25 @@ export class Station {
 
   // ---------- Yerleşim ----------
 
+  /** Bardak + tabak: yerleşimdeki yükseklik ve ölçek, verilen x'te. */
+  private placeGlassAt(x: number): void {
+    const L = this.L
+    this.saucer.setPosition(x, L.saucer.y).setDisplaySize(L.saucer.w * 1.15, L.saucer.w * 1.15)
+    this.glass.place(x, L.glassBaseY, L.glassUnit)
+  }
+
   layout(L: Layout): void {
     this.L = L
     const u = L.u
-    this.saucer.setPosition(L.saucer.cx, L.saucer.y).setDisplaySize(L.saucer.w, L.saucer.w)
     // Tabak görselinde tabak dikey merkezde; bardak tabağın üst yüzeyine oturur.
-    this.glass.place(L.glassCx, L.glassBaseY, L.glassUnit)
+    this.placeGlassAt(L.glassCx)
     this.glassSteam.setZone(this.glass.worldRadiusAt(1) * 1.2)
     this.kettleSteam.setZone(14 * L.u)
     this.bubbles.setScale(L.u * 1.4)
-    this.demlik.layout(L.spoutTarget.dem, L.potWidth.demlik)
-    this.caydanlik.layout(L.spoutTarget.su, L.potWidth.caydanlik)
+    this.demlik.layout(L.pots.dem.rest, L.pots.dem.spout, L.potWidth.demlik)
+    this.caydanlik.layout(L.pots.su.rest, L.pots.su.spout, L.potWidth.caydanlik)
     const bs = L.sugarBowl.size
     this.sugarBowl.setPosition(L.sugarBowl.x, L.sugarBowl.y - bs * 0.32).setDisplaySize(bs, bs)
-    this.fillGauge.layout(L.fillGauge, u)
-    this.demGauge.layout(L.demGauge, u)
     this.demPad.layout(L.controls.dem, u)
     this.suPad.layout(L.controls.su, u)
     this.serveBtn.layout(L.controls.serve, u)
@@ -626,7 +642,7 @@ export class Station {
   destroy(): void {
     this.events.removeAllListeners()
     for (const o of [this.demlik, this.caydanlik, this.streamDem, this.streamSu, this.glass]) o.destroy()
-    for (const o of [this.fillGauge, this.demGauge, this.demPad, this.suPad, this.serveBtn]) o.destroy()
+    for (const o of [this.demPad, this.suPad, this.serveBtn]) o.destroy()
     this.glassSteam.destroy()
     this.kettleSteam.destroy()
     this.bubbles.destroy()

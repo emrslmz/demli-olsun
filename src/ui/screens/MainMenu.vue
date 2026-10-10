@@ -2,6 +2,7 @@
 /** Ana Menü: arkada buharı tüten büyük bir bardak çay (Phaser ortam sahnesi). */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { now as clockNow } from '@/app/clock'
+import { bus } from '@/bus'
 import { startShift } from '@/app/flow'
 import { msUntilNextIstanbulMidnight } from '@/core/daily'
 import { duration, fmt, num, tr } from '@/i18n/tr'
@@ -27,8 +28,19 @@ const inv = useInventoryStore()
 const now = ref(clockNow().getTime())
 let timer = 0
 let offBack: (() => void) | null = null
+/** Logo ile butonlar arasındaki boşluk: ortam sahnesindeki bardak buraya sığdırılır. */
+const heroEl = ref<HTMLElement | null>(null)
+let heroObs: ResizeObserver | null = null
+function reportHeroSlot() {
+  // offsetTop: ekran giriş animasyonundaki transform'dan etkilenmez (menü tam ekran, üstü 0).
+  const el = heroEl.value
+  if (el) bus.emit('menu:hero-slot', { top: el.offsetTop, bottom: el.offsetTop + el.offsetHeight })
+}
 
 onMounted(() => {
+  heroObs = new ResizeObserver(reportHeroSlot)
+  if (heroEl.value) heroObs.observe(heroEl.value)
+  bus.on('menu:hero-request', reportHeroSlot)
   timer = window.setInterval(() => {
     now.value = clockNow().getTime()
     daily.refreshToday()
@@ -39,6 +51,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearInterval(timer)
   offBack?.()
+  heroObs?.disconnect()
+  bus.off('menu:hero-request', reportHeroSlot)
   void services.ads.hideBanner()
 })
 
@@ -83,10 +97,13 @@ function logoTap() {
   <div class="menu" :style="{ paddingBottom: `calc(14px + var(--safe-bottom) + ${app.bannerHeight}px)` }">
     <header class="menu__top">
       <div class="who">
-        <span class="who__name">{{ player.nickname || 'Çırak' }}</span>
-        <span class="who__title">{{ progress.title.name }} · {{ num(progress.totalServed) }} servis</span>
-        <div v-if="progress.nextTitle" class="who__bar" :title="nextTitleText">
-          <i :style="{ width: `${titlePct}%` }" />
+        <img class="who__icon" :src="ThemeService.url('icon_life')" alt="" />
+        <div class="who__txt">
+          <span class="who__name">{{ player.nickname || 'Çırak' }}</span>
+          <span class="who__title">{{ progress.title.name }}</span>
+          <div v-if="progress.nextTitle" class="who__bar" :title="nextTitleText">
+            <i :style="{ width: `${titlePct}%` }" />
+          </div>
         </div>
       </div>
       <div class="menu__top-right">
@@ -96,18 +113,29 @@ function logoTap() {
     </header>
 
     <div class="brand" @pointerdown="logoTap">
-      <img class="brand__logo" :src="ThemeService.url('logo_emblem')" alt="" />
-      <h1 class="brand__name">{{ tr.appName }}</h1>
-      <p v-if="progress.bestScore > 0" class="brand__best">{{ tr.menu.best }}: {{ num(progress.bestScore) }}</p>
+      <h1 class="brand__name"><span>Demli</span><span>Olsun</span></h1>
+      <p v-if="progress.bestScore > 0" class="brand__best">
+        <img :src="ThemeService.url('icon_trophy')" alt="" />{{ num(progress.bestScore) }}
+      </p>
     </div>
 
+    <div ref="heroEl" class="hero-slot" aria-hidden="true" />
     <nav class="menu__actions">
-      <GameButton variant="primary" size="big" icon="icon_serve" @click="start">{{ tr.menu.startShift }}</GameButton>
+      <GameButton class="play" variant="go" size="big" icon="icon_serve" @click="start">{{ tr.menu.startShift }}</GameButton>
+      <GameButton class="daily" variant="accent" icon="icon_clock" @click="emit('daily')">{{ dailyLabel }}</GameButton>
       <div class="menu__row">
-        <GameButton class="daily" variant="accent" icon="icon_clock" @click="emit('daily')">{{ dailyLabel }}</GameButton>
-        <GameButton size="icon" variant="metal" icon="icon_shop" :aria-label="tr.menu.market" @click="app.openMarket()" />
-        <GameButton size="icon" variant="blue" icon="icon_trophy" :aria-label="tr.menu.leaderboard" @click="app.go('leaderboard')" />
-        <GameButton size="icon" icon="icon_settings" :aria-label="tr.menu.settings" @click="app.go('settings')" />
+        <div class="tile">
+          <GameButton size="icon" variant="metal" icon="icon_shop" :aria-label="tr.menu.market" @click="app.openMarket()" />
+          <span>{{ tr.menu.market }}</span>
+        </div>
+        <div class="tile">
+          <GameButton size="icon" variant="blue" icon="icon_trophy" :aria-label="tr.menu.leaderboard" @click="app.go('leaderboard')" />
+          <span>{{ tr.menu.leaderboard }}</span>
+        </div>
+        <div class="tile">
+          <GameButton size="icon" icon="icon_settings" :aria-label="tr.menu.settings" @click="app.go('settings')" />
+          <span>{{ tr.menu.settings }}</span>
+        </div>
       </div>
     </nav>
   </div>
@@ -133,89 +161,160 @@ function logoTap() {
   gap: 8px;
   align-items: flex-end;
 }
+.who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #fffaf0, #f3e2c2);
+  border: 3px solid var(--c-dark);
+  border-radius: 18px;
+  padding: 4px 12px 4px 6px;
+  color: var(--c-ink);
+  box-shadow: 0 4px 0 var(--c-dark);
+}
+.who__icon {
+  width: 40px;
+  height: 40px;
+}
+.who__txt {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+.who__name {
+  font-weight: 800;
+  font-size: 17px;
+}
+.who__title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #8a5a33;
+}
 .who__bar {
-  margin-top: 5px;
+  margin-top: 3px;
   height: 7px;
-  width: 140px;
+  width: 110px;
   border-radius: 99px;
-  background: rgba(255, 246, 230, 0.2);
+  background: #e5d3b0;
+  border: 1.5px solid rgba(59, 36, 22, 0.5);
   overflow: hidden;
 }
 .who__bar i {
   display: block;
   height: 100%;
-  background: var(--c-metal);
+  background: linear-gradient(180deg, #8fdc6a, #4cb848);
   border-radius: 99px;
 }
-.who {
-  display: flex;
-  flex-direction: column;
-  background: rgba(30, 43, 36, 0.86);
-  border: 3px solid var(--c-dark);
-  border-radius: 14px;
-  padding: 6px 12px;
-  color: #fff6e6;
-  box-shadow: 0 3px 0 var(--c-dark);
-}
-.who__name {
-  font-weight: 900;
-  font-size: 17px;
-}
-.who__title {
-  font-family: var(--f-chalk);
-  font-size: 15px;
-  opacity: 0.9;
-}
 .brand {
-  margin-top: 2vh;
+  margin-top: 1.5vh;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.brand__logo {
-  width: min(30vw, 150px);
-  filter: drop-shadow(0 6px 0 rgba(30, 14, 4, 0.45));
-  animation: bob 3s ease-in-out infinite;
-}
 .brand__name {
-  margin: 4px 0 0;
-  font-size: clamp(40px, 12vw, 60px);
-  font-weight: 1000;
-  color: #fff6e6;
-  -webkit-text-stroke: 2px var(--c-dark);
-  text-shadow: 0 5px 0 var(--c-dark);
-  line-height: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: clamp(54px, 17vw, 84px);
+  font-weight: 800;
+  line-height: 0.82;
+  color: #fff3d6;
+  -webkit-text-stroke: 8px var(--c-dark);
+  paint-order: stroke fill;
+  text-shadow: 0 7px 0 var(--c-dark);
+  transform: rotate(-4deg);
+  animation: brand-in 600ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.brand__name span:last-child {
+  color: #ffc24a;
+  margin-left: 0.6em;
 }
 .brand__best {
-  margin: 8px 0 0;
-  font-family: var(--f-chalk);
-  font-weight: 700;
-  font-size: 20px;
-  color: #fff6e6;
-  text-shadow: 0 2px 0 var(--c-dark);
+  margin: 12px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--c-ink);
+  background: rgba(255, 246, 230, 0.92);
+  border: 3px solid var(--c-dark);
+  border-radius: 99px;
+  padding: 2px 14px 2px 6px;
+  box-shadow: 0 3px 0 var(--c-dark);
+}
+.brand__best img {
+  width: 26px;
+  height: 26px;
+}
+.hero-slot {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .menu__actions {
-  margin-top: auto;
-  width: min(100%, 440px);
+  width: min(100%, 420px);
   align-self: center;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+.play {
+  font-size: 28px;
+  min-height: 78px;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+.daily {
+  font-size: 18px;
+}
 .menu__row {
   display: flex;
-  gap: 10px;
+  justify-content: space-around;
+  margin-top: 2px;
 }
-.menu__row .daily {
-  flex: 1;
-  min-width: 0;
-  font-size: 16px;
-  padding-left: 10px;
-  padding-right: 10px;
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #fff6e6;
+  font-weight: 800;
+  font-size: 15px;
+  text-shadow:
+    0 2px 0 var(--c-dark),
+    0 0 3px var(--c-dark);
 }
-@keyframes bob {
+/* Kısa ekranlarda logo ve butonlar küçülür, bardağa yer kalır. */
+@media (max-height: 700px) {
+  .brand {
+    margin-top: 0;
+  }
+  .brand__name {
+    font-size: clamp(44px, 13vw, 62px);
+    -webkit-text-stroke-width: 6px;
+    text-shadow: 0 5px 0 var(--c-dark);
+  }
+  .brand__best {
+    margin-top: 6px;
+    font-size: 15px;
+  }
+  .menu__actions {
+    gap: 8px;
+  }
+  .play {
+    font-size: 24px;
+    min-height: 62px;
+  }
+}
+@keyframes brand-in {
+  from {
+    transform: rotate(-4deg) scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes pulse {
   50% {
-    transform: translateY(-6px) rotate(-2deg);
+    transform: scale(1.03);
   }
 }
 </style>

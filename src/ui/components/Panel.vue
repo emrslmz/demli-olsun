@@ -1,16 +1,9 @@
 <script setup lang="ts">
-/** ui_panel görselini 9-slice (border-image) olarak kullanan kâğıt panel. */
-import { computed } from 'vue'
-import { ThemeService } from '@/services/theme/ThemeService'
-
-const style = computed(() => {
-  const url = ThemeService.url('ui_panel')
-  return url ? { borderImage: `url("${url}") 92 fill / 30px stretch` } : {}
-})
+/** Cartoon kâğıt panel: krem zemin, kalın koyu kenar, üstte parlama, altta kalın gölge. */
 </script>
 
 <template>
-  <div class="ppanel" :style="style">
+  <div class="ppanel">
     <div class="ppanel__inner"><slot /></div>
   </div>
 </template>
@@ -18,16 +11,32 @@ const style = computed(() => {
 <style scoped>
 .ppanel {
   width: 100%;
-  border: 30px solid transparent;
-  background: transparent;
-  filter: drop-shadow(0 8px 0 rgba(30, 14, 4, 0.55));
   display: flex;
   min-height: 0;
+  position: relative;
+  background: linear-gradient(180deg, #fffaf0 0%, #fff3dc 60%, #f6e3c0 100%);
+  border: 4px solid var(--c-dark);
+  border-radius: 28px;
+  box-shadow:
+    0 8px 0 rgba(42, 20, 8, 0.85),
+    0 14px 26px rgba(20, 8, 2, 0.35),
+    inset 0 -6px 0 rgba(160, 110, 60, 0.18),
+    inset 0 3px 0 rgba(255, 255, 255, 0.9);
+  padding: 18px 18px 20px;
+}
+.ppanel::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  right: 40%;
+  top: 9px;
+  height: 9px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
 }
 .ppanel__inner {
-  margin: -8px;
-  padding: 4px;
-  width: calc(100% + 16px);
+  width: 100%;
   overflow: auto;
   max-height: calc(100dvh - 120px - var(--safe-top) - var(--safe-bottom));
   color: var(--c-ink);

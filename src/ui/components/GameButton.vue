@@ -6,7 +6,7 @@ import { ThemeService } from '@/services/theme/ThemeService'
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'default' | 'primary' | 'accent' | 'blue' | 'metal' | 'ghost'
+    variant?: 'default' | 'primary' | 'go' | 'accent' | 'blue' | 'metal' | 'ghost'
     size?: 'small' | 'normal' | 'big' | 'icon'
     icon?: string
     disabled?: boolean

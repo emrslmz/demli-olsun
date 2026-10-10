@@ -25,7 +25,7 @@ describe('layout', () => {
       })
 
       it('tezgâh çizgisi arka planın counterY çizgisine denk gelir', () => {
-        const bgCounter = L.bg.y + 0.68 * L.bg.srcH * L.bg.scale
+        const bgCounter = L.bg.y + 0.5 * L.bg.srcH * L.bg.scale
         expect(Math.abs(bgCounter - L.counterY)).toBeLessThan(1)
       })
 
@@ -36,16 +36,24 @@ describe('layout', () => {
         expect(L.controls.dem.y + L.controls.dem.h).toBeLessThanOrEqual(H - safe.bottom * dpr)
       })
 
-      it('HUD safe area altında başlar, öğeler üst üste binmez', () => {
+      it('HUD safe area altında başlar, sahne katmanları sırayla dizilir', () => {
+        const hudBottom = L.hud.y + L.hud.h
         expect(L.hud.y).toBeGreaterThanOrEqual(safe.top * dpr)
-        expect(L.board.y).toBeGreaterThan(L.hud.y + L.hud.h - 1)
-        expect(L.counterY).toBeGreaterThan(L.board.y + L.board.h)
-        expect(L.glassBaseY - L.glassUnit * 1.12).toBeGreaterThan(L.board.y + L.board.h)
-        expect(L.controls.dem.y).toBeGreaterThan(L.counterY)
+        expect(L.bubble.y).toBeGreaterThanOrEqual(hudBottom - 1)
+        expect(L.bubble.y + L.bubble.h).toBeLessThan(L.counterY)
+        expect(L.counterY).toBeGreaterThan(hudBottom)
+        expect(L.glassBaseY).toBeGreaterThan(L.counterY)
+        expect(L.counterFrontY).toBeGreaterThan(L.glassBaseY)
+        expect(L.controls.dem.y).toBeGreaterThan(L.counterFrontY)
       })
 
-      it('kart sayısı 3 ya da 4', () => {
-        expect([3, 4]).toContain(L.cardSlots)
+      it('müşteri tezgâhın arkasında, balon ve bardak kolona sığar', () => {
+        expect(L.customer.bottom).toBeGreaterThan(L.counterY)
+        expect(L.customer.bottom - L.customer.size).toBeLessThan(L.counterY)
+        expect(L.bubble.x).toBeGreaterThanOrEqual(L.col.x)
+        expect(L.bubble.x + L.bubble.w).toBeLessThanOrEqual(L.col.x + L.col.w)
+        expect(L.pots.dem.rest.x).toBeLessThan(L.glassCx)
+        expect(L.pots.su.rest.x).toBeGreaterThan(L.glassCx)
       })
     })
   }
@@ -59,6 +67,5 @@ describe('layout', () => {
     const L = computeLayout(1536, 2048, 2, { top: 0, bottom: 0, left: 0, right: 0 })
     expect(L.col.w).toBeLessThan(1536)
     expect(L.col.cx).toBeCloseTo(768, 0)
-    expect(L.cardSlots).toBe(4)
   })
 })

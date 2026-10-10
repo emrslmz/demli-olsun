@@ -4,7 +4,7 @@
  * ekranda görünen seviye ise yüksekliktir. Bel dar olduğunda seviye orada kendiliğinden hızlanır.
  */
 
-export type GlassProfileId = 'ince' | 'duz' | 'kupa' | 'fincan'
+export type GlassProfileId = 'ince'
 
 export interface GlassDef {
   id: GlassProfileId
@@ -13,83 +13,39 @@ export interface GlassDef {
   height: number
   /** İç profil kontrol noktaları: [h (0..1), r (iç yükseklik birimiyle yarıçap)]. h artan sırada. */
   profile: [number, number][]
-  /** Cam/porselen duvar kalınlığı (iç yükseklik birimiyle). */
+  /** Cam duvar kalınlığı (iç yükseklik birimiyle). */
   wall: number
-  /** Dip kalınlığı (iç yükseklik birimiyle). */
+  /** Kalın cam dip (iç yükseklik birimiyle). */
   base: number
   /** Işık yolu katsayısı: geniş bardakta çay daha koyu görünür. */
   pathFactor: number
-  /** Opak bardakta içi görünmez (porselen fincan). */
-  opaque: boolean
-  handle: boolean
 }
 
+/**
+ * Gerçek ince belli çay bardağı (yaklaşık 100 cc): yuvarlak alt göbek, dar bel, hafifçe açılan ağız,
+ * kalın cam dip. Ağız çapı / yükseklik ≈ 0,55. Görsel üretici (tools/art/lib/teaGlass.mjs) aynı profili kullanır.
+ */
 export const GLASS_DEFS: Record<GlassProfileId, GlassDef> = {
   ince: {
     id: 'ince',
     name: 'İnce belli',
     height: 1,
     profile: [
-      [0, 0.165],
-      [0.06, 0.2],
-      [0.18, 0.212],
-      [0.3, 0.19],
-      [0.4, 0.162],
-      [0.52, 0.172],
-      [0.68, 0.212],
-      [0.85, 0.248],
-      [1, 0.272],
+      [0, 0.178],
+      [0.05, 0.23],
+      [0.12, 0.259],
+      [0.2, 0.265],
+      [0.3, 0.248],
+      [0.4, 0.214],
+      [0.48, 0.2],
+      [0.57, 0.206],
+      [0.7, 0.232],
+      [0.85, 0.261],
+      [1, 0.283],
     ],
     wall: 0.022,
-    base: 0.09,
+    base: 0.085,
     pathFactor: 1,
-    opaque: false,
-    handle: false,
-  },
-  duz: {
-    id: 'duz',
-    name: 'Düz bardak',
-    height: 0.9,
-    profile: [
-      [0, 0.205],
-      [1, 0.255],
-    ],
-    wall: 0.024,
-    base: 0.08,
-    pathFactor: 1.05,
-    opaque: false,
-    handle: false,
-  },
-  kupa: {
-    id: 'kupa',
-    name: 'Kupa',
-    height: 0.82,
-    profile: [
-      [0, 0.34],
-      [0.04, 0.36],
-      [1, 0.37],
-    ],
-    wall: 0.04,
-    base: 0.07,
-    pathFactor: 1.35,
-    opaque: false,
-    handle: true,
-  },
-  fincan: {
-    id: 'fincan',
-    name: 'Porselen fincan',
-    height: 0.6,
-    profile: [
-      [0, 0.2],
-      [0.15, 0.3],
-      [0.45, 0.37],
-      [1, 0.42],
-    ],
-    wall: 0.04,
-    base: 0.06,
-    pathFactor: 1.2,
-    opaque: true,
-    handle: true,
   },
 }
 

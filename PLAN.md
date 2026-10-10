@@ -41,15 +41,12 @@ Bu dosya `demli-olsun-prompt.md` tanımına göre hazırlanmıştır. Fazlar sı
 - **Phaser 4 farkları:** `setTintFill` yok (`setTint().setTintMode(FILL)`), maskeler filtre oldu. Sıvı ve bardak için maske yerine **kırpma (crop)** kullanılır: bardağın iç silüeti bir kez doku olarak üretilir, seviye değiştikçe `setCrop` ile kesilir; yüzey dalgası 20 noktalı küçük bir poligondur. Bardak desenleri (decal) açılışta Canvas 2D ile bardak silüetine kırpılarak dokuya işlenir; çalışma anında maske gerekmez.
 - **Renk modeli:** "Beer–Lambert benzeri": dem oranı önce ışık yolu ile ölçeklenmiş optik yoğunluğa çevrilir (`d' = 1 − (1 − d)^L`, kupa için `L > 1`), sonra dokümandaki renk duraklarından doğrusal ışık uzayında monoton bir eğriyle renk ve opaklık elde edilir. Tema rengi çaya asla etki etmez.
 - **Kombo:** "1 + 0.1 × seri" ifadesinde seri, mevcut servis dahil art arda gelen ≥85 isabet sayısıdır (ilk iyi servis ×1.1).
-- **Bekleyen kartların sabrı:** Kuyrukta 3 kart varken arkadakiler çok beklediği için aktif olmayan kartların sabrı %35 hızla azalır (`config/gameplay.ts`).
 - **Muhtar "taşmaya ekstra kızar":** taşmada can kaybına ek olarak 100 puan cezası ve kombo sıfırlanır.
 - **Rıza Amca "3 yıldızın altını beğenmez":** 3 yıldızın altında bahşiş vermez ve homurdanan bir replik söyler (can kaybı yalnızca <50'de).
-- **Tepsi siparişi (Esnaf):** Tek kartta aynı tarifte 3–4 bardak; her bardak ayrı servis edilip puanlanır, kart son bardakta kapanır. Sabır bardak sayısıyla ölçeklenir.
-- **Tablette 4 kart:** Kart alanı genişliğe göre 3 ya da 4 kart sığdırır. Yoğun saatte kuyruk +1 olur ve tablet bu 4. kartı gösterebilir; normal akışta zorluk tablosu aynen uygulanır.
 - **Devam modalı:** Ödüllü reklamla (mesai başına 1) ya da bahşişle (150) devam edilir; bahşiş yetmezse tek satırlık "Kese'ye git" bağlantısı görünür.
 - **Günlük gün numarası:** Çıkış tarihi `2026-10-01` (Europe/Istanbul) kabul edildi (`config/economy.ts` → `LAUNCH_DATE`).
 - **Bot puanları:** Her bot hafta boyunca seed'den türetilen zamanlarda "oturum" oynar; haftalık puan, o ana kadar oynanan oturumların toplamıdır. Böylece puan monoton artar, deterministiktir ve tablo hafta boyunca canlıdır.
-- **Fontlar:** Tahta/fiş için **Kalam** (el yazısı/tebeşir karakterli), arayüz için **Nunito** (yuvarlak, okunaklı sans). İkisi de SIL OFL 1.1; Türkçe glifler (ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü ve ₺) `fontTools` ile doğrulandı, Latin + Latin Extended-A alt kümesiyle woff2 olarak `src/assets/fonts/` altında paketlendi (toplam ~100 KB, internetsiz çalışır).
+- **Font:** Her yerde **Baloo 2** (yuvarlak, kalın, cartoon oyun yazısı; değişken ağırlık 400–800). SIL OFL 1.1; Türkçe glifler (ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü ve ₺) `fontTools` ile doğrulandı, Latin + Latin Extended alt kümeleri woff2 olarak `src/assets/fonts/` altında paketlendi (internetsiz çalışır). Fredoka denendi ama ğ/ş/İ glifleri olmadığı için elendi.
 - **Ses dosyaları:** Ortam ve müzik için `public/audio/manifest.json` yuvaları tanımlı; dosya yoksa sessiz geçilir. Efektler ZzFX ile prosedürel.
 - **Android/iOS derlemesi:** Bu ortamda Android SDK indirilemiyor (dl.google.com erişimi yok) ve Xcode yok; native projeler `cap add` ile üretildi ve yapılandırıldı (dikey kilit, izinler, AdMob meta-data, `Info.plist` anahtarları), ancak cihazda çalıştırma `SETUP.md`'deki adımlarla senin makinende yapılmalı.
 - **`npm audit`:** Uyarılar `@capacitor/assets` (yalnızca geliştirme aracı) bağımlılıklarından geliyor; uygulama paketine girmiyor.
@@ -62,7 +59,7 @@ Bu dosya `demli-olsun-prompt.md` tanımına göre hazırlanmıştır. Fazlar sı
 
 ## Durum (Faz 10 sonu)
 
-Tüm fazlar uygulandı ve her biri ayrı commit olarak duruyor. `npm run check` (tip + lint + biçim + 125 test + derleme) temiz. Tarayıcıda (390×844 telefon, 768×1024 ve 1024×1366 tablet) Playwright ile ekran görüntüsü alınarak doğrulandı: takma ad → eğitim → reklam bilgisi → giriş ödülü → menü, mesai, günlük sipariş + paylaşım kartı, çarşı (canlı önizleme), liderlik, hafta sonucu, ayarlar, geliştirici menüsü, çapa düzenleyici.
+Tüm fazlar uygulandı ve her biri ayrı commit olarak duruyor. `npm run check` (tip + lint + biçim + testler + derleme) temiz. Tarayıcıda (390×844 telefon, 768×1024 ve 1024×1366 tablet) Playwright ile ekran görüntüsü alınarak doğrulandı: takma ad → eğitim → reklam bilgisi → giriş ödülü → menü, mesai, günlük sipariş + paylaşım kartı, çarşı (canlı önizleme), liderlik, hafta sonucu, ayarlar, geliştirici menüsü, çapa düzenleyici.
 
 Ek kararlar (Faz 5–10):
 
@@ -73,6 +70,18 @@ Ek kararlar (Faz 5–10):
 - **Test reklam kimlikleri:** Gerçek kimlikler yalnızca `mode=production` derlemede; `npm run build:debug` / `cap:sync:debug` her zaman Google test kimlikleriyle derler ve geliştirici menüsünü açar.
 - **Bildirim izni:** İlk günlük siparişten sonra menüye dönüşte bir kez sorulur; Ayarlar'dan saatle birlikte açılıp kapatılır. Tam zamanlı alarm izinleri manifestten kaldırıldı.
 - **Türkçe sayı ekleri:** "oyuncuların %20'sinden" gibi metinler için `possessiveAblative()` (testli).
+
+## v2: sadeleştirme ve cartoon görünüm
+
+İlk sürüm geri bildirimi: "çok detaylı, yapmacık, bardaklar gerçek bardak değil, sipariş mantığı fazla". Buna göre:
+
+- **Gerçek ince belli bardak:** Tek bardak tipi (`ince`), gerçek çay bardağı profiliyle (geniş ağız, ince bel, tombul alt, kalın cam dip) hem görsellerde (`tools/art/lib/teaGlass.mjs`) hem oyunda (`glassModel.ts`, `glassArt.ts`) aynı. Kırmızı + yaldız bantlı beyaz porselen tabak. Siparişlerdeki düz bardak, kupa ve fincan kaldırıldı; Çarşı'daki bardaklar aynı ince belli bardağın desenli (decal) sürümleri.
+- **Parlak cartoon stil:** Kalın koyu kontur, degrade gövde, gölge bandı, kenar ışığı, beyaz parlama ve yumuşak temas gölgesi (`tools/art/lib/toon.mjs`). Karakterler büyük kafalı, ifadeleri belirgin; arka planlar yalnız duvar + raf (tezgâh ayrı katman). Görseller 256 renk paletine indirilip küçültülür (`tools/art/quantize.py`).
+- **Tek müşteri, görsel sipariş:** Sipariş tahtası, kart kuyruğu ve tepsi siparişleri kaldırıldı. Tezgâhın arkasında tek müşteri durur; sipariş, yanındaki konuşma balonunda küçük bir bardak resmiyle (hedef renk + doluluk), çay adıyla ve şeker sayısıyla gösterilir. Sabır balonun altındaki çubuktur.
+- **Bardakta çizgi rehberi:** Ayrı göstergeler yerine bardağın üzerinde kesikli çizgiler: koyu çizgi = dem seviyesi, beyaz çizgi = doluluk. 1–2. aşamada ikisi, 3–4. aşamada yalnız doluluk çizgisi, 5. aşamada hiç çizgi yok (göz kararı). Renk körlüğü modu ve Usta Gözü iki çizgiyi hep açık tutar.
+- **Demlik ve çaydanlık tezgâhta:** Basılı tutunca tezgâhtan kalkıp bardağın üstüne gelir, eğilip döker; bırakınca yerine döner.
+- **Servis:** Bardak tabağıyla müşteriye gider, müşteri tepki verip ayrılır, soldan yeni boş bardak gelir.
+- **Arayüz:** Krem paneller, kalın kenarlı parlak butonlar (yeşil = başla, kırmızı = birincil, mavi = paylaş), sade ana menü (büyük "Mesaiye başla", "Günün siparişi", üç kutucuk: Çarşı / Liderlik / Ayarlar).
 
 ## Kabul kriterleri
 
@@ -85,7 +94,7 @@ Ek kararlar (Faz 5–10):
 | `remove_ads` sonrası banner/geçiş yok, yeniden açılınca da yok | ✅ Entitlement önbelleği açılışta, menü banner'ından önce uygulanır; mağazadan yenilenir |
 | Satın alımları geri yükleme | ✅ Ayarlar ve Kese; mock'ta doğrulandı, sandbox adımları `SETUP.md` §12 |
 | Debug build'de yalnızca test reklam kimlikleri | ✅ `getAdUnitIds` + `build:debug` |
-| Türkçe karakterler tüm fontlarda doğru | ✅ Kalam + Nunito Türkçe glifleri doğrulandı; `toLocale*Case('tr-TR')` |
+| Türkçe karakterler tüm fontlarda doğru | ✅ Baloo 2 Türkçe glifleri doğrulandı; `toLocale*Case('tr-TR')` |
 | Ses, titreşim, hareket ayarları anında ve kalıcı | ✅ `settings.update()` servislere hemen uygular ve kaydeder |
 | Günün Siparişi iki cihazda aynı gün aynı | ✅ Tarih seed'li, Europe/Istanbul gün sınırı, testli |
 | Mock lider tablosu "simülasyon" notuyla | ✅ |

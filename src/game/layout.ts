@@ -1,7 +1,10 @@
 /**
  * Ekran boyutu + safe area → yerleşim. Tüm değerler cihaz pikseli (CSS × DPR).
  * Sabit 1080×1920 + letterbox yok: 9:21 telefondan 3:4 iPad'e kadar her oran dolu ve kesiksiz.
- * Telefonda içerik tam genişlik; tablette içerik kolonu ortalanır ve genişliği bir üst sınırla tutulur.
+ *
+ * Sahne (yukarıdan aşağı): HUD → tezgâhın arkasında duran müşteri ve sipariş balonu → tezgâh arka kenarı
+ * (counterY) → tezgâh üstünde tabaklı bardak, iki yanda dinlenen demlik ve çaydanlık, önde şekerlik →
+ * tezgâh önü → DEM / Servis / SU butonları.
  */
 
 export interface Rect {
@@ -28,6 +31,11 @@ export interface BgPlacement {
   y: number
 }
 
+export interface Point {
+  x: number
+  y: number
+}
+
 export interface Layout {
   W: number
   H: number
@@ -38,25 +46,27 @@ export interface Layout {
   col: { x: number; w: number; cx: number }
   isTablet: boolean
   hud: Rect
-  board: Rect
-  cardSlots: number
   bg: BgPlacement
-  /** Tezgâh çizgisi (ekran y). */
+  /** Tezgâhın arka kenarı (ekran y). Müşteri bu çizginin arkasında durur. */
   counterY: number
-  /** İnce belli bardağın ekrandaki iç yüksekliği; diğer bardaklar buna göre ölçeklenir. */
+  /** Tezgâh üst yüzeyinin ön kenarı; altında tezgâh önü paneli başlar. */
+  counterFrontY: number
+  /** Müşteri görseli (kare): alt kenarı tezgâhın arkasında kalır. */
+  customer: { cx: number; bottom: number; size: number }
+  /** Sipariş balonu (müşterinin yanında). */
+  bubble: Rect & { tailX: number; tailY: number }
+  /** Bardağın iç yüksekliği (px). */
   glassUnit: number
   glassCx: number
   /** Bardağın oturduğu y (tabak üstü). */
   glassBaseY: number
   saucer: { cx: number; y: number; w: number }
-  /** Demlik/çaydanlık eğildiğinde ağzın varacağı hedef noktalar. */
-  spoutTarget: { dem: { x: number; y: number }; su: { x: number; y: number } }
+  /** Demlik/çaydanlık: tezgâhta dinlenme noktası (alt orta) ve dökerken ağzın varacağı nokta. */
+  pots: { dem: { rest: Point; spout: Point }; su: { rest: Point; spout: Point } }
   potWidth: { demlik: number; caydanlik: number }
-  fillGauge: Rect
-  demGauge: Rect
   sugarBowl: { x: number; y: number; size: number }
   controls: { area: Rect; dem: Rect; serve: Rect; su: Rect }
-  /** Tablette kenarlarda dekor müşterileri için boş alan var mı. */
+  /** Tablette kolonun yanlarındaki boşluk. */
   sideSpace: number
 }
 
@@ -66,8 +76,8 @@ export interface BgSizes {
 }
 
 export const DEFAULT_BG_SIZES: BgSizes = {
-  phone: { w: 1080, h: 1920, counterY: 0.68 },
-  tablet: { w: 1536, h: 2048, counterY: 0.68 },
+  phone: { w: 1080, h: 2340, counterY: 0.5 },
+  tablet: { w: 1536, h: 2048, counterY: 0.5 },
 }
 
 /** Ekran oranına en yakın arka plan seçilir ve cover ölçeklenir. */
@@ -103,6 +113,8 @@ export function alignBackground(cover: BgPlacement, counterFrac: number, counter
   }
 }
 
+const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v))
+
 export function computeLayout(W: number, H: number, dpr: number, safeCss: InsetsPx, bgSizes: BgSizes = DEFAULT_BG_SIZES): Layout {
   const safe: InsetsPx = {
     top: safeCss.top * dpr,
@@ -120,23 +132,13 @@ export function computeLayout(W: number, H: number, dpr: number, safeCss: Insets
   const top = safe.top
   const bottom = H - safe.bottom
 
-  const hud: Rect = { x: colX + 16 * u, y: top + 10 * u, w: colW - 32 * u, h: 96 * u }
+  const hud: Rect = { x: colX + 16 * u, y: top + 10 * u, w: colW - 32 * u, h: 100 * u }
+  const hudBottom = hud.y + hud.h
 
-  // Tahta: tablette kolondan geniş olabilir (4 kart).
-  const boardMaxW = Math.min(W - safe.left - safe.right - 24 * u, colW * 1.25)
-  const boardW = Math.max(colW - 24 * u, boardMaxW)
-  const cardMinW = 262 * u
-  const cardSlots = (boardW - 60 * u) / 4 >= cardMinW ? 4 : 3
-  const boardH = Math.min(440 * u, H * 0.25)
-  const board: Rect = { x: cx - boardW / 2, y: hud.y + hud.h + 10 * u, w: boardW, h: boardH }
-
-  const cover = placeBackground(W, H, bgSizes)
-  const bgCounter = cover.y + bgSizes[cover.variant].counterY * cover.srcH * cover.scale
-
-  // Kontroller: ekranın alt %20'sinde, en az 56dp.
+  // Kontroller: ekranın altında, en az 56dp yükseklik.
   const minTouch = 56 * dpr
-  const ctrlH = Math.max(minTouch * 1.6, Math.min(170 * u, H * 0.13))
-  const ctrlY = bottom - ctrlH - 14 * u
+  const ctrlH = Math.max(minTouch * 1.6, Math.min(170 * u, H * 0.12))
+  const ctrlY = bottom - ctrlH - 18 * u
   const controlsArea: Rect = { x: colX + 20 * u, y: ctrlY, w: colW - 40 * u, h: ctrlH }
   const gap = 18 * u
   const sideW = (controlsArea.w - gap * 2) * 0.34
@@ -144,31 +146,46 @@ export function computeLayout(W: number, H: number, dpr: number, safeCss: Insets
   const controls = {
     area: controlsArea,
     dem: { x: controlsArea.x, y: ctrlY, w: sideW, h: ctrlH },
-    serve: { x: controlsArea.x + sideW + gap, y: ctrlY + ctrlH * 0.12, w: midW, h: ctrlH * 0.76 },
+    serve: { x: controlsArea.x + sideW + gap, y: ctrlY + ctrlH * 0.1, w: midW, h: ctrlH * 0.8 },
     su: { x: controlsArea.x + sideW + gap + midW + gap, y: ctrlY, w: sideW, h: ctrlH },
   }
 
-  // Tezgâh çizgisi arka plandan gelir; kontrollerle tahta arasında kalacak şekilde sınırlanır.
-  const minCounter = board.y + board.h + 380 * u
-  const maxCounter = ctrlY - 150 * u
-  const counterY = Math.max(minCounter, Math.min(maxCounter, bgCounter))
+  // Tezgâh arka kenarı: müşteriye yer kalsın, tezgâh üstüne de bardak sığsın.
+  const counterY = clamp(H * 0.42, hudBottom + 420 * u, ctrlY - 640 * u)
+  const glassBaseY = Math.min(counterY + (ctrlY - counterY) * 0.6, ctrlY - 240 * u)
+  const glassUnit = clamp((glassBaseY - counterY) * 0.86, 230 * u, 430 * u)
+  const glassTopY = glassBaseY - glassUnit * 1.12
+  const counterFrontY = Math.min(ctrlY - 40 * u, glassBaseY + 120 * u)
+
+  const cover = placeBackground(W, H, bgSizes)
   const bg = alignBackground(cover, bgSizes[cover.variant].counterY, counterY, W, H)
 
-  const saucerW = 300 * u
-  const saucerY = counterY - 6 * u
-  const glassBaseY = saucerY - 16 * u
-  const space = glassBaseY - (board.y + board.h)
-  const glassUnit = Math.max(170 * u, Math.min(330 * u, space * 0.5))
-
-  const glassTop = glassBaseY - glassUnit * 1.12
-  const spoutTarget = {
-    dem: { x: cx - 64 * u, y: glassTop - 96 * u },
-    su: { x: cx + 64 * u, y: glassTop - 96 * u },
+  // Müşteri: biraz sağda durur, alt kenarı tezgâhın arkasında kalır. Balon solunda, baş hizasında.
+  const custSize = clamp((counterY - hudBottom) * 1.05, 480 * u, 640 * u)
+  const custBottom = counterY + custSize * 0.12
+  const custTop = custBottom - custSize
+  const custCx = cx + 160 * u
+  const customer = { cx: custCx, bottom: custBottom, size: custSize }
+  const bw = 440 * u
+  const bh = 270 * u
+  const headY = custTop + custSize * 0.42
+  const bubble = {
+    x: colX + 22 * u,
+    y: clamp(headY - bh * 0.62, hudBottom + 8 * u, counterY - bh - 30 * u),
+    w: bw,
+    h: bh,
+    tailX: custCx - custSize * 0.14,
+    tailY: custTop + custSize * 0.55,
   }
 
-  const fillGauge: Rect = { x: cx + 205 * u, y: glassBaseY - glassUnit * 1.1, w: 26 * u, h: glassUnit * 1.1 }
-  const demGauge: Rect = { x: cx - 200 * u, y: counterY + 74 * u, w: 400 * u, h: 26 * u }
-  const sugarBowl = { x: cx + 360 * u, y: counterY - 4 * u, size: 150 * u }
+  const saucerW = Math.max(300 * u, glassUnit * 0.95)
+  const potRestY = glassBaseY - 30 * u
+  const spoutY = glassTopY - 80 * u
+  const pots = {
+    dem: { rest: { x: cx - 330 * u, y: potRestY }, spout: { x: cx - 50 * u, y: spoutY } },
+    su: { rest: { x: cx + 330 * u, y: potRestY }, spout: { x: cx + 50 * u, y: spoutY } },
+  }
+  const sugarBowl = { x: cx - 300 * u, y: Math.min(counterFrontY - 20 * u, glassBaseY + 70 * u), size: 150 * u }
 
   return {
     W,
@@ -179,18 +196,17 @@ export function computeLayout(W: number, H: number, dpr: number, safeCss: Insets
     col: { x: colX, w: colW, cx },
     isTablet,
     hud,
-    board,
-    cardSlots,
     bg,
     counterY,
+    counterFrontY,
+    customer,
+    bubble,
     glassUnit,
     glassCx: cx,
     glassBaseY,
-    saucer: { cx, y: saucerY, w: saucerW },
-    spoutTarget,
-    potWidth: { demlik: 300 * u, caydanlik: 330 * u },
-    fillGauge,
-    demGauge,
+    saucer: { cx, y: glassBaseY + 6 * u, w: saucerW },
+    pots,
+    potWidth: { demlik: 270 * u, caydanlik: 300 * u },
     sugarBowl,
     controls,
     sideSpace: Math.max(0, (W - colW) / 2),

@@ -3,8 +3,6 @@
  * Hacim birimi: bardak kapasitesinin oranı (0..1). Akış birimi: kapasite oranı / saniye.
  */
 
-import type { GlassProfileId } from '@/core/glassModel'
-
 export type PourSource = 'dem' | 'su'
 export type GaugeMode = 'numbers' | 'marks' | 'none'
 
@@ -72,75 +70,40 @@ export interface StageConfig {
   stage: number
   /** Bu aşamanın başladığı servis sayısı. */
   fromServed: number
+  /** Müşterinin bekleme süresi (sn, müşteri çarpanından önce). */
   patience: number
+  /** Bardaktaki rehber: numbers → dem + dolu çizgisi, marks → yalnız dolu çizgisi, none → göz kararı. */
   gauge: GaugeMode
-  glasses: GlassProfileId[]
   sugarChance: number
-  queue: number
-  trayAllowed: boolean
 }
 
 export const STAGES: StageConfig[] = [
-  { stage: 1, fromServed: 0, patience: 25, gauge: 'numbers', glasses: ['ince'], sugarChance: 0, queue: 1, trayAllowed: false },
-  { stage: 2, fromServed: 5, patience: 20, gauge: 'numbers', glasses: ['ince', 'duz'], sugarChance: 0.2, queue: 2, trayAllowed: false },
-  {
-    stage: 3,
-    fromServed: 15,
-    patience: 16,
-    gauge: 'marks',
-    glasses: ['ince', 'duz', 'kupa'],
-    sugarChance: 0.35,
-    queue: 3,
-    trayAllowed: false,
-  },
-  {
-    stage: 4,
-    fromServed: 30,
-    patience: 13,
-    gauge: 'marks',
-    glasses: ['ince', 'duz', 'kupa', 'fincan'],
-    sugarChance: 0.45,
-    queue: 3,
-    trayAllowed: false,
-  },
-  {
-    stage: 5,
-    fromServed: 50,
-    patience: 11,
-    gauge: 'none',
-    glasses: ['ince', 'duz', 'kupa', 'fincan'],
-    sugarChance: 0.5,
-    queue: 3,
-    trayAllowed: true,
-  },
+  { stage: 1, fromServed: 0, patience: 24, gauge: 'numbers', sugarChance: 0 },
+  { stage: 2, fromServed: 5, patience: 20, gauge: 'numbers', sugarChance: 0.2 },
+  { stage: 3, fromServed: 12, patience: 17, gauge: 'marks', sugarChance: 0.3 },
+  { stage: 4, fromServed: 24, patience: 15, gauge: 'marks', sugarChance: 0.4 },
+  { stage: 5, fromServed: 40, patience: 13, gauge: 'none', sugarChance: 0.45 },
 ]
 
 export const STAGE5 = {
   /** Aşama 5'te her servisle sabır bu kadar azalır… */
   patienceDecayPerServe: 0.05,
   /** …ama bunun altına inmez. */
-  minPatience: 8,
+  minPatience: 9,
 }
 
-/** Bardak tiplerinin seçilme ağırlıkları (açık olanlar arasından). */
-export const GLASS_WEIGHTS: Record<GlassProfileId, number> = { ince: 4, duz: 2, kupa: 1.5, fincan: 1.2 }
-
 export const PATIENCE = {
-  /** Kuyrukta bekleyen (aktif olmayan) kartların sabır azalma hızı. */
-  waitingRate: 0.35,
-  /** Bu oranın altında kart titrer, müşteri ikonu kızarır. */
-  warnBelow: 0.2,
+  /** Bu oranın altında müşteri sabırsızlanır (balon titrer, yüz kızarır). */
+  warnBelow: 0.25,
   /** Taksicinin sabır çarpanı (%40 daha kısa). */
   taksiciFactor: 0.6,
-  /** Tepsi siparişinde bardak başına sabır çarpanı. */
-  trayPerGlass: 0.75,
 }
 
 export const ARRIVAL = {
-  /** Kuyrukta boş yer varken yeni siparişin gelme gecikmesi (sn). */
-  delay: [1.2, 2.6] as [number, number],
-  /** Mesai başında ilk sipariş gecikmesi (sn). */
-  firstDelay: 0.8,
+  /** Bir müşteri gidince yenisinin gelme gecikmesi (sn). */
+  delay: [0.5, 1.1] as [number, number],
+  /** Mesai başında ilk müşteri gecikmesi (sn). */
+  firstDelay: 0.6,
 }
 
 export const RUSH = {
@@ -148,21 +111,13 @@ export const RUSH = {
   duration: 20,
   /** Puan çarpanı. */
   multiplier: 1.5,
-  /** Gelme gecikmesi çarpanı (siparişler sıklaşır). */
-  arrivalFactor: 0.45,
+  /** Yoğun saatte sabır bu kat hızlı azalır. */
+  patienceRate: 1.3,
   /** İki yoğun saat arası servis sayısı aralığı. */
   everyServes: [9, 14] as [number, number],
   /** Yoğun saat bu aşamadan önce başlamaz. */
   minStage: 2,
-  /** Yoğun saatte kuyruk kapasitesine eklenen kart (tablo genişliğiyle sınırlı). */
-  extraQueue: 1,
   names: ['Öğle arası', 'Maç akşamı', 'Pazar kalabalığı', 'İkindi çayı'],
-}
-
-export const TRAY = {
-  glasses: [3, 4] as [number, number],
-  /** Aşama 5'te esnafın tepsi siparişi verme olasılığı. */
-  chance: 0.8,
 }
 
 export const ANIM = {

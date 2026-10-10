@@ -75,11 +75,10 @@ describe('daily', () => {
     )
   })
 
-  it('günlük siparişte esnaf ve porselen yok, akış çarpanı sınırlı', () => {
+  it('günlük siparişte esnaf yok, akış çarpanı sınırlı', () => {
     for (let i = 0; i < 60; i++) {
       const c = dailyChallenge(addDays('2026-10-01', i))
       expect(c.order.customer).not.toBe('esnaf')
-      expect(['ince', 'duz', 'kupa']).toContain(c.order.glass)
       expect(c.flowScale.dem).toBeGreaterThanOrEqual(0.85)
       expect(c.flowScale.su).toBeLessThanOrEqual(1.2)
     }

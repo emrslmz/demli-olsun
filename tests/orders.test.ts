@@ -10,21 +10,21 @@ describe('difficulty', () => {
     expect(stageFor(0).stage).toBe(1)
     expect(stageFor(4).stage).toBe(1)
     expect(stageFor(5).stage).toBe(2)
-    expect(stageFor(15).stage).toBe(3)
-    expect(stageFor(30).stage).toBe(4)
-    expect(stageFor(50).stage).toBe(5)
+    expect(stageFor(12).stage).toBe(3)
+    expect(stageFor(24).stage).toBe(4)
+    expect(stageFor(40).stage).toBe(5)
     expect(stageFor(500).stage).toBe(5)
   })
 
-  it('aşama 5 sabrı 11 sn’den başlayıp en az 8’e iner', () => {
-    expect(basePatience(50)).toBe(11)
-    expect(basePatience(70)).toBeLessThan(11)
-    expect(basePatience(1000)).toBe(8)
+  it('aşama 5 sabrı 13 sn’den başlayıp en az 9’a iner', () => {
+    expect(basePatience(40)).toBe(13)
+    expect(basePatience(60)).toBeLessThan(13)
+    expect(basePatience(1000)).toBe(9)
   })
 
-  it('taksici %40 daha kısa sabırlı, tepsi bardak sayısıyla ölçeklenir', () => {
-    expect(orderPatience(0, 0.6)).toBeCloseTo(15)
-    expect(orderPatience(50, 1, 4)).toBeCloseTo(11 * 4 * 0.75)
+  it('taksici %40 daha kısa sabırlı', () => {
+    expect(orderPatience(0, 0.6)).toBeCloseTo(24 * 0.6)
+    expect(orderPatience(0, 1)).toBe(24)
   })
 
   it('renk körlüğü ve Usta Gözü göstergeyi rakamlı yapar', () => {
@@ -47,30 +47,23 @@ describe('orders', () => {
       expect(o.demTarget).toBeLessThanOrEqual(d1)
       expect(o.fillTarget).toBeGreaterThanOrEqual(f0)
       expect(o.fillTarget).toBeLessThanOrEqual(f1)
-      expect(stage.glasses).toContain(o.glass)
       if (stage.sugarChance === 0) expect(o.sugar).toBe(0)
       expect(o.sugar).toBeLessThanOrEqual(3)
     }
   })
 
-  it('esnaf aşama 5’ten önce gelmez; tepsi yalnızca aşama 5’te', () => {
+  it('esnaf aşama 3’ten önce gelmez, sonra gelir', () => {
     const rng = new Rng('esnaf')
     for (let i = 0; i < 200; i++) {
-      const o = generateOrder(rng, { served: 20, stage: stageFor(20), nextId: i })
+      const o = generateOrder(rng, { served: 6, stage: stageFor(6), nextId: i })
       expect(o.customer).not.toBe('esnaf')
-      expect(o.trayCount).toBe(1)
     }
-    let trays = 0
-    for (let i = 0; i < 400; i++) {
-      const o = generateOrder(rng, { served: 60, stage: stageFor(60), nextId: i })
-      if (o.trayCount > 1) {
-        trays++
-        expect(o.customer).toBe('esnaf')
-        expect(o.trayCount).toBeGreaterThanOrEqual(3)
-        expect(o.trayCount).toBeLessThanOrEqual(4)
-      }
+    let esnaf = 0
+    for (let i = 0; i < 300; i++) {
+      const o = generateOrder(rng, { served: 30, stage: stageFor(30), nextId: i })
+      if (o.customer === 'esnaf') esnaf++
     }
-    expect(trays).toBeGreaterThan(0)
+    expect(esnaf).toBeGreaterThan(0)
   })
 
   it('aynı seed aynı sipariş dizisini üretir', () => {

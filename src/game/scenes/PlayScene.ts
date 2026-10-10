@@ -1,9 +1,8 @@
 /**
- * Oynanan sahnelerin (Mesai, Günlük, Eğitim) ortak tabanı: arka plan, servis tezgâhı, tahta, efektler,
- * duraklatma, ses/titreşim köprüsü, hareket azaltma.
+ * Oynanan sahnelerin (Mesai, Günlük, Eğitim) ortak tabanı: arka plan + tezgâh, tezgâhın arkasındaki müşteri,
+ * servis istasyonu, efektler, duraklatma, ses/titreşim köprüsü, hareket azaltma.
  */
 
-import * as Phaser from 'phaser'
 import { DEV, type GaugeMode } from '@/config/gameplay'
 import type { GlassProfileId } from '@/core/glassModel'
 import { glassSkin } from '@/data/cosmetics'
@@ -14,11 +13,11 @@ import { useInventoryStore } from '@/stores/inventory'
 import { saveNow } from '@/stores/persist'
 import { useSettingsStore } from '@/stores/settings'
 import { CoinBurst } from '../fx/CoinBurst'
-import { FloatTexts, SpeechBubble, StarsPop } from '../fx/Popups'
+import { FloatTexts, StarsPop } from '../fx/Popups'
 import type { Layout } from '../layout'
 import { Background } from '../objects/Background'
 import { DebugOverlay } from '../objects/DebugOverlay'
-import { OrderBoard, type OrderCard } from '../objects/OrderBoard'
+import { CustomerView } from '../objects/CustomerView'
 import { Station } from '../objects/Station'
 import { ThemeFx } from '../objects/ThemeFx'
 import { runtime } from '../runtime'
@@ -27,13 +26,11 @@ import { BaseScene } from './BaseScene'
 export abstract class PlayScene extends BaseScene {
   protected bg!: Background
   protected station!: Station
-  protected board!: OrderBoard
-  protected bubble!: SpeechBubble
+  protected customer!: CustomerView
   protected floats!: FloatTexts
   protected starsPop!: StarsPop
   protected coins!: CoinBurst
   protected debug!: DebugOverlay
-  protected tray!: Phaser.GameObjects.Image
   protected themeFx!: ThemeFx
   protected reduced = false
   protected colorBlind = false
@@ -77,11 +74,8 @@ export abstract class PlayScene extends BaseScene {
       },
       L,
     )
-    this.board = new OrderBoard(this, L)
-    this.board.setReducedMotion(this.reduced)
-    this.tray = this.add.image(0, 0, 'prop_tepsi').setVisible(false)
-    this.bubble = new SpeechBubble(this)
-    this.bubble.setUnit(L.u)
+    this.customer = new CustomerView(this, L, inv.equipped.glass)
+    this.customer.setReducedMotion(this.reduced)
     this.floats = new FloatTexts(this)
     this.starsPop = new StarsPop(this)
     this.coins = new CoinBurst(this)
@@ -97,7 +91,7 @@ export abstract class PlayScene extends BaseScene {
       const s = useSettingsStore().data
       this.reduced = s.reducedMotion
       this.colorBlind = s.colorBlind
-      this.board.setReducedMotion(this.reduced)
+      this.customer.setReducedMotion(this.reduced)
       this.onSettingsChanged()
     })
     this.layoutPlay(L)
@@ -138,13 +132,11 @@ export abstract class PlayScene extends BaseScene {
     return g === this.gen && this.sys.isActive()
   }
 
-  /** Müşteri tepkisi: kart altında konuşma balonu. */
-  protected say(card: OrderCard | null, customer: CustomerId, bucket: LineBucket, rand?: () => number, overrideLine?: string): string {
+  /** Müşteri tepkisi: müşterinin balonunda replik ve emoji. */
+  protected say(customer: CustomerId, bucket: LineBucket, rand?: () => number, overrideLine?: string): string {
     const line = overrideLine ?? pickLine(customer, bucket, rand)
-    const L = this.L
-    const pos = card ? this.board.cardWorldBottom(card) : { x: L.col.cx, y: L.board.y + L.board.h }
     const tone = bucket === 'p95' || bucket === 'p85' ? 'good' : bucket === 'p70' || bucket === 'p50' ? 'neutral' : 'bad'
-    this.bubble.show(pos.x, pos.y + 4 * L.u, line, BUCKET_EMOJI[bucket], Math.min(L.col.w * 0.86, 640 * L.u), 1800, tone)
+    this.customer.say(line, BUCKET_EMOJI[bucket], tone, 1900)
     AudioService.play('pop', { rate: 0.9 + Math.random() * 0.2 })
     return line
   }
@@ -159,6 +151,7 @@ export abstract class PlayScene extends BaseScene {
     const dt = Math.min(0.05, deltaMs / 1000)
     this.checkFps(deltaMs)
     this.station.update(dt)
+    this.customer.update(dt)
     this.themeFx.update(dt)
     this.tick(dt)
     this.debug.update(dt, this, this.station, this.debugExtra())
@@ -188,9 +181,8 @@ export abstract class PlayScene extends BaseScene {
     this.bg.layout(L)
     this.themeFx.layout(L)
     this.station.layout(L)
-    this.board.layout(L)
-    this.bubble.setUnit(L.u)
-    this.debug.place(L.col.x + 10 * L.u, L.board.y + L.board.h + 10 * L.u, 22 * L.u)
+    this.customer.layout(L)
+    this.debug.place(L.col.x + 10 * L.u, L.hud.y + L.hud.h + 10 * L.u, 22 * L.u)
   }
 
   protected onResize(L: Layout): void {
@@ -201,8 +193,7 @@ export abstract class PlayScene extends BaseScene {
     this.gen++
     AudioService.pourSilence()
     this.station?.destroy()
-    this.board?.destroy()
-    this.bubble?.destroy()
+    this.customer?.destroy()
     this.floats?.destroy()
     this.starsPop?.destroy()
     this.coins?.destroy()

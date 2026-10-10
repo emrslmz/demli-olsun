@@ -11,127 +11,127 @@
   },
   "assets": {
     "bg_mahalle_phone": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_mahalle_phone.jpg",
       "w": 1080,
-      "h": 1920
+      "h": 2340
     },
     "bg_mahalle_tablet": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_mahalle_tablet.jpg",
       "w": 1536,
       "h": 2048
     },
     "bg_sahil_phone": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_sahil_phone.jpg",
       "w": 1080,
-      "h": 1920
+      "h": 2340
     },
     "bg_sahil_tablet": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_sahil_tablet.jpg",
       "w": 1536,
       "h": 2048
     },
     "bg_rize_phone": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_rize_phone.jpg",
       "w": 1080,
-      "h": 1920
+      "h": 2340
     },
     "bg_rize_tablet": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_rize_tablet.jpg",
       "w": 1536,
       "h": 2048
     },
     "bg_bogaz_phone": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_bogaz_phone.jpg",
       "w": 1080,
-      "h": 1920
+      "h": 2340
     },
     "bg_bogaz_tablet": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_bogaz_tablet.jpg",
       "w": 1536,
       "h": 2048
     },
     "char_riza_neutral": {
       "file": "char/char_riza_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_riza_happy": {
       "file": "char/char_riza_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_riza_angry": {
       "file": "char/char_riza_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_muhtar_neutral": {
       "file": "char/char_muhtar_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_muhtar_happy": {
       "file": "char/char_muhtar_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_muhtar_angry": {
       "file": "char/char_muhtar_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_taksici_neutral": {
       "file": "char/char_taksici_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_taksici_happy": {
       "file": "char/char_taksici_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_taksici_angry": {
       "file": "char/char_taksici_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_ogrenci_neutral": {
       "file": "char/char_ogrenci_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_ogrenci_happy": {
       "file": "char/char_ogrenci_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_ogrenci_angry": {
       "file": "char/char_ogrenci_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_esnaf_neutral": {
       "file": "char/char_esnaf_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_esnaf_happy": {
       "file": "char/char_esnaf_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_esnaf_angry": {
       "file": "char/char_esnaf_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "logo_emblem": {
       "file": "logo/logo_emblem.png",
@@ -139,74 +139,71 @@
       "h": 1024
     },
     "pot_demlik_celik": {
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ],
       "file": "pot/pot_demlik_celik.png",
       "w": 768,
-      "h": 620,
-      "pivot": [
-        0.469,
-        0.835
-      ],
-      "spout": [
-        0.958,
-        0.365
-      ]
+      "h": 620
     },
     "pot_caydanlik_celik": {
+      "pivot": [
+        0.458,
+        0.872
+      ],
+      "spout": [
+        0.961,
+        0.385
+      ],
       "file": "pot/pot_caydanlik_celik.png",
       "w": 768,
-      "h": 768,
-      "pivot": [
-        0.458,
-        0.872
-      ],
-      "spout": [
-        0.961,
-        0.385
-      ]
+      "h": 768
     },
     "pot_demlik_emaye": {
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ],
       "file": "pot/pot_demlik_emaye.png",
       "w": 768,
-      "h": 620,
-      "pivot": [
-        0.469,
-        0.835
-      ],
-      "spout": [
-        0.958,
-        0.365
-      ]
+      "h": 620
     },
     "pot_caydanlik_emaye": {
+      "pivot": [
+        0.458,
+        0.872
+      ],
+      "spout": [
+        0.961,
+        0.385
+      ],
       "file": "pot/pot_caydanlik_emaye.png",
       "w": 768,
-      "h": 768,
-      "pivot": [
-        0.458,
-        0.872
-      ],
-      "spout": [
-        0.961,
-        0.385
-      ]
+      "h": 768
     },
     "pot_demlik_porselen": {
+      "pivot": [
+        0.469,
+        0.835
+      ],
+      "spout": [
+        0.958,
+        0.365
+      ],
       "file": "pot/pot_demlik_porselen.png",
       "w": 768,
-      "h": 620,
-      "pivot": [
-        0.469,
-        0.835
-      ],
-      "spout": [
-        0.958,
-        0.365
-      ]
+      "h": 620
     },
     "pot_caydanlik_porselen": {
-      "file": "pot/pot_caydanlik_porselen.png",
-      "w": 768,
-      "h": 768,
       "pivot": [
         0.458,
         0.872
@@ -214,12 +211,12 @@
       "spout": [
         0.961,
         0.385
-      ]
+      ],
+      "file": "pot/pot_caydanlik_porselen.png",
+      "w": 768,
+      "h": 768
     },
     "pot_demlik_bakir": {
-      "file": "pot/pot_demlik_bakir.png",
-      "w": 768,
-      "h": 620,
       "pivot": [
         0.469,
         0.835
@@ -227,12 +224,12 @@
       "spout": [
         0.958,
         0.365
-      ]
+      ],
+      "file": "pot/pot_demlik_bakir.png",
+      "w": 768,
+      "h": 620
     },
     "pot_caydanlik_bakir": {
-      "file": "pot/pot_caydanlik_bakir.png",
-      "w": 768,
-      "h": 768,
       "pivot": [
         0.458,
         0.872
@@ -240,7 +237,10 @@
       "spout": [
         0.961,
         0.385
-      ]
+      ],
+      "file": "pot/pot_caydanlik_bakir.png",
+      "w": 768,
+      "h": 768
     },
     "prop_tabak": {
       "file": "prop/prop_tabak.png",
@@ -267,32 +267,15 @@
       "w": 768,
       "h": 768
     },
-    "ui_board": {
-      "slice": [
-        0.06,
-        0.06,
-        0.08,
-        0.08
-      ],
-      "file": "ui/ui_board.png",
-      "w": 1536,
-      "h": 640
+    "prop_tezgah_ust": {
+      "file": "prop/prop_tezgah_ust.jpg",
+      "w": 1080,
+      "h": 560
     },
-    "ui_card": {
-      "file": "ui/ui_card.png",
-      "w": 512,
-      "h": 640
-    },
-    "ui_panel": {
-      "slice": [
-        0.09,
-        0.09,
-        0.09,
-        0.09
-      ],
-      "file": "ui/ui_panel.png",
-      "w": 1024,
-      "h": 1024
+    "prop_tezgah_on": {
+      "file": "prop/prop_tezgah_on.jpg",
+      "w": 1080,
+      "h": 720
     },
     "icon_coin": {
       "file": "icon/icon_coin.png",

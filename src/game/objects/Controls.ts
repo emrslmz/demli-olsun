@@ -50,9 +50,10 @@ export class ChunkyButton {
       fontFamily: FONTS.ui,
       fontStyle: '900',
       fontSize: '32px',
-      color: opts.textColor ?? '#FFF6E6',
+      color: opts.textColor ?? '#FFFFFF',
       stroke: opts.textColor === '#3B2416' ? '#FFF6E6' : '#3B2416',
       strokeThickness: 6,
+      shadow: { offsetX: 0, offsetY: 3, color: '#3B2416', blur: 0, fill: true, stroke: true },
     })
     this.label.setOrigin(0.5)
     this.container.add([this.bg, ...(this.icon ? [this.icon] : []), this.label])
@@ -131,30 +132,41 @@ export class ChunkyButton {
     const g = this.bg
     const { w, h } = this.rect
     const u = this.u
-    const rad = Math.min(h, w) * 0.24
-    const depth = 9 * u
+    const rad = Math.min(h, w) * 0.28
+    const depth = 10 * u
     const off = this.pressed ? depth * 0.7 : 0
+    const base = this.pressed ? shade(this.color, 0.9) : this.color
     g.clear()
     g.setPosition(0, 0)
-    // Gölge (alt kalınlık)
+    // Kalın alt gölge (basılınca kısalır)
     g.fillStyle(DARK, 1)
-    g.fillRoundedRect(-w / 2 - 3 * u, -h / 2 - 3 * u + depth, w + 6 * u, h + 6 * u, rad + 3 * u)
-    // Gövde
+    g.fillRoundedRect(-w / 2 - 4 * u, -h / 2 - 4 * u + depth, w + 8 * u, h + 8 * u, rad + 4 * u)
     g.fillStyle(DARK, 1)
-    g.fillRoundedRect(-w / 2 - 3 * u, -h / 2 - 3 * u + off, w + 6 * u, h + 6 * u, rad + 3 * u)
-    const base = this.pressed ? shade(this.color, 0.86) : this.color
-    g.fillStyle(base, 1)
+    g.fillRoundedRect(-w / 2 - 4 * u, -h / 2 - 4 * u + off, w + 8 * u, h + 8 * u, rad + 4 * u)
+    // Gövde: alt koyu, üst açık bant (gradyan etkisi)
+    g.fillStyle(shade(base, 0.82), 1)
     g.fillRoundedRect(-w / 2, -h / 2 + off, w, h, rad)
-    // Üst parlama
-    g.fillStyle(0xffffff, 0.18 + 0.12 * this.highlight)
-    g.fillRoundedRect(-w / 2 + 6 * u, -h / 2 + off + 5 * u, w - 12 * u, h * 0.38, rad * 0.8)
+    g.fillStyle(base, 1)
+    g.fillRoundedRect(-w / 2, -h / 2 + off, w, h - 8 * u, rad)
+    g.fillStyle(shade(base, 1.16), 1)
+    g.fillRoundedRect(-w / 2 + 3 * u, -h / 2 + off + 3 * u, w - 6 * u, h * 0.5, {
+      tl: rad * 0.9,
+      tr: rad * 0.9,
+      bl: rad * 0.4,
+      br: rad * 0.4,
+    })
+    // Parlak hap
+    g.fillStyle(0xffffff, 0.4 + 0.15 * this.highlight)
+    g.fillRoundedRect(-w / 2 + 14 * u, -h / 2 + off + 9 * u, w * 0.42, Math.max(6 * u, h * 0.1), h * 0.05)
+    g.fillStyle(0xffffff, 0.3)
+    g.fillCircle(w / 2 - 22 * u, -h / 2 + off + 18 * u, 6 * u)
     if (this.highlight > 0) {
-      g.lineStyle(5 * u, 0xfff6e6, 0.6 * this.highlight)
-      g.strokeRoundedRect(-w / 2 + 4 * u, -h / 2 + off + 4 * u, w - 8 * u, h - 8 * u, rad * 0.85)
+      g.lineStyle(6 * u, 0xfff6e6, 0.7 * this.highlight)
+      g.strokeRoundedRect(-w / 2 + 5 * u, -h / 2 + off + 5 * u, w - 10 * u, h - 14 * u, rad * 0.85)
     }
     this.icon?.setY((this.rect.h > this.rect.w * 0.75 ? -this.rect.h * 0.12 : 0) + off)
     this.label.setY((this.icon ? (this.rect.h > this.rect.w * 0.75 ? this.rect.h * 0.28 : 0) : 0) + off)
-    this.container.setAlpha(this.enabled ? 1 : 0.5)
+    this.container.setAlpha(this.enabled ? 1 : 0.55)
   }
 
   private setPressed(p: boolean): void {

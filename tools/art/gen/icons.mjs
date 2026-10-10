@@ -1,257 +1,229 @@
-// İkonlar (256×256, saydam). Tıknaz, kalın konturlu, tek parlama. Yazı yok (bilgi ikonu çizilmiş bir şekildir).
+// v2 ikonlar (256×256, saydam): kalın kontur, parlak gradyan, keskin beyaz parlama.
 
 import { register } from './index.mjs'
-import { C, cel, ellipsePath, f, line, rrectPath, shade, silhouette, smoothPath, starPath, svg } from '../lib/svg.mjs'
-import { sugarCubeSvg } from './props.mjs'
+import { C, ellipsePath, f, rrectPath, shade, smoothPath, starPath, svg } from '../lib/svg.mjs'
+import { contactShadow, lg, toon } from '../lib/toon.mjs'
+import { teaGlass } from '../lib/teaGlass.mjs'
 
 const S = 256
+const OUT = C.out
+const SW = 10
 
-/** İnce belli bardak (çaylı) — küçük ikonlar için basit profil. */
+/** Eski API: tabaklı ince belli bardak (rozet, dekor). */
 export function tulipGlass(cx, baseY, h, opts = {}) {
-  const { tea = '#B5401A', broken = false, empty = false, saucer = true } = opts
-  const w = h * 0.62
-  const rimY = baseY - h
-  const P = (t, k) => [cx + k * w * 0.5 * t[0], rimY + t[1] * h]
-  // [yarıçap oranı, yükseklik oranı]
-  const prof = [
-    [1, 0],
-    [0.92, 0.2],
-    [0.66, 0.5],
-    [0.74, 0.68],
-    [0.8, 0.86],
-    [0.66, 1],
-  ]
-  const right = prof.map((t) => P(t, 1))
-  const left = prof.map((t) => P(t, -1)).reverse()
-  const body = 'M' + right.map((p) => `${f(p[0])} ${f(p[1])}`).join('L') + 'L' + left.map((p) => `${f(p[0])} ${f(p[1])}`).join('L') + 'Z'
-  const bodySmooth = smoothPath([...right, ...left], true, 0.35)
-  const teaTop = rimY + h * 0.18
-  const cid = `tg${Math.round(cx)}${Math.round(baseY)}${broken ? 'b' : ''}`
-  let s = ''
-  if (saucer) s += cel(ellipsePath(cx, baseY + h * 0.04, w * 0.95, w * 0.2), '#F7F7F4', { sw: Math.max(3, h * 0.035), hl: [cx - w * 0.4, baseY, w * 0.3, w * 0.06] })
-  s += `<clipPath id="${cid}"><path d="${bodySmooth}"/></clipPath>`
-  s += `<path d="${bodySmooth}" fill="#E8F4F7" fill-opacity=".65"/>`
-  if (!empty) {
-    s += `<g clip-path="url(#${cid})"><rect x="${cx - w}" y="${teaTop}" width="${w * 2}" height="${h}" fill="${tea}"/>
-      <ellipse cx="${cx}" cy="${teaTop}" rx="${w * 0.47}" ry="${w * 0.1}" fill="${shade(tea, 1.25)}"/>
-      <rect x="${cx - w * 0.12}" y="${teaTop + h * 0.1}" width="${w * 0.24}" height="${h * 0.7}" fill="#FFB36B" opacity=".35" filter="url(#b4)"/></g>`
-  }
-  s += `<g clip-path="url(#${cid})"><path d="M${f(cx - w * 0.32)} ${f(rimY + h * 0.12)} Q${f(cx - w * 0.18)} ${f(rimY + h * 0.5)} ${f(cx - w * 0.3)} ${f(rimY + h * 0.86)}" stroke="#fff" stroke-width="${f(h * 0.06)}" opacity=".7" fill="none" stroke-linecap="round"/></g>`
-  s += `<path d="${bodySmooth}" fill="none" stroke="${C.out}" stroke-width="${f(Math.max(4, h * 0.05))}" stroke-linejoin="round"/>`
-  s += `<path d="${ellipsePath(cx, rimY, w * 0.5, w * 0.11)}" fill="#F4FBFD" fill-opacity=".6" stroke="${C.out}" stroke-width="${f(Math.max(3, h * 0.04))}"/>`
-  if (broken) {
-    s += line(`M${f(cx + w * 0.1)} ${f(rimY)} L${f(cx - w * 0.06)} ${f(rimY + h * 0.3)} L${f(cx + w * 0.14)} ${f(rimY + h * 0.45)} L${f(cx - w * 0.02)} ${f(rimY + h * 0.75)}`, Math.max(4, h * 0.05), C.out)
-    s += line(`M${f(cx - w * 0.06)} ${f(rimY + h * 0.3)} L${f(cx - w * 0.3)} ${f(rimY + h * 0.36)}`, Math.max(3, h * 0.04), C.out)
-  }
-  void body
-  return s
+  return teaGlass(cx, baseY, h, { saucer: opts.saucer ?? false, tea: opts.tea, fill: opts.broken ? 0 : 0.84, cracked: !!opts.broken, shadow: false, sw: Math.max(4, h * 0.035) })
 }
 
 function coin() {
-  const cx = 128
-  const cy = 128
-  let s = silhouette([ellipsePath(cx, cy, 104, 104)], 14)
-  s += cel(ellipsePath(cx, cy, 104, 104), '#E2B33C', {
-    sw: 8,
-    off: [12, 12],
-    hl: [cx - 44, cy - 50, 34, 18],
-    hlOpacity: 0.6,
-    inner: `<circle cx="${cx}" cy="${cy}" r="78" fill="none" stroke="#B68A1E" stroke-width="7"/>`,
-  })
-  // Kabartma: ince belli bardak silüeti
-  const g = tulipGlass(cx, cy + 50, 96, { tea: '#C9971F', saucer: false })
-  s += `<g opacity=".95" filter="url(#emb)">${g.replace(/#E8F4F7/g, '#D4A52A').replace(/#F4FBFD/g, '#E6BC4A').replace(/stroke="#3B2416"/g, 'stroke="#8E6A12"')}</g>`
-  return svg(S, S, s, `<filter id="emb"><feDropShadow dx="-2" dy="-2" stdDeviation="0" flood-color="#FFF1B8" flood-opacity=".7"/></filter>`)
+  let s = contactShadow(128, 232, 84, 12, 0.3)
+  s += toon(ellipsePath(128, 136, 104, 104), '#C9971F', { sw: SW, band: [0, 0], rim: false })
+  s += toon(ellipsePath(122, 126, 102, 102), '#F2C230', { sw: SW, band: [10, 10], light: 1.3, spec: [[78, 76, 26, 12, -40, 0.85]] })
+  s += `<circle cx="122" cy="126" r="76" fill="none" stroke="#C9971F" stroke-width="8"/>`
+  s += teaGlass(122, 182, 104, { fill: 0, shadow: false, sw: 7, glass: '#FFE38A', outline: '#9A6A10', rim: '#FFF3C0' }).replace(/opacity="\.45"/g, 'opacity=".2"')
+  s += `<circle cx="168" cy="82" r="10" fill="#fff" opacity=".9"/>`
+  return s
 }
 
-function life(broken = false) {
-  let s = tulipGlass(128, 214, 176, { broken, tea: broken ? '#7A6A60' : '#B5401A' })
-  if (broken) s = `<g opacity=".9">${s}</g>`
-  return svg(S, S, s)
+function life(broken) {
+  if (broken)
+    return `<g opacity=".55">${teaGlass(128, 226, 196, { saucer: true, fill: 0, cracked: true, sw: 9, glass: '#CFD6DB', shadow: false })}</g>`
+  return teaGlass(128, 226, 196, { saucer: true, fill: 0.84, sw: 9, shadow: false })
 }
 
-function star(empty = false) {
-  const d = starPath(128, 136, 112, 50, 5)
-  if (empty) {
-    return svg(S, S, silhouette([d], 12) + cel(d, '#8B8F95', { sw: 8, noShadow: true, inner: `<path d="${starPath(128, 140, 70, 30, 5)}" fill="#6E7279"/>` }))
+function star(empty) {
+  const d = starPath(128, 136, 112, 52, 5)
+  const pts = []
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? 108 : 52
+    const a = -Math.PI / 2 + (i * Math.PI) / 5
+    pts.push([128 + Math.cos(a) * r, 136 + Math.sin(a) * r])
   }
-  return svg(S, S, silhouette([d], 14) + cel(d, '#F6C445', { sw: 8, off: [10, 12], hl: [100, 90, 26, 16], hlOpacity: 0.7 }))
+  const round = smoothPath(pts, true, 0.18)
+  if (empty) return toon(round, '#8C8A86', { sw: SW, band: [8, 8], light: 1.1, rim: false }) + `<path d="${round}" fill="#3B2416" opacity=".15"/>`
+  return toon(round, '#FFC93C', { sw: SW, band: [10, 10], light: 1.3, spec: [[96, 98, 20, 10, -30, 0.9]] }) + `<path d="${d}" fill="none"/>`
+}
+
+function sugar() {
+  const p = (x, y) => `${f(x)} ${f(y)}`
+  const top = `M${p(128, 30)} L${p(222, 72)} L${p(128, 114)} L${p(34, 72)}Z`
+  const left = `M${p(34, 72)} L${p(128, 114)} L${p(128, 226)} L${p(34, 184)}Z`
+  const right = `M${p(222, 72)} L${p(128, 114)} L${p(128, 226)} L${p(222, 184)}Z`
+  return (
+    contactShadow(128, 222, 100, 16, 0.3) +
+    `<path d="${left}" fill="#EFEAE0"/><path d="${right}" fill="#D3CBBA"/><path d="${top}" fill="#FFFFFF"/>` +
+    `<path d="M${p(64, 70)} L${p(124, 46)}" stroke="#fff" stroke-width="12" stroke-linecap="round"/>` +
+    `<path d="${top} ${left} ${right}" fill="none" stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"/>`
+  )
 }
 
 function fire() {
-  const outer = smoothPath([[128, 16], [170, 74], [206, 130], [200, 196], [128, 238], [56, 196], [50, 130], [86, 90], [100, 120], [112, 70]], true, 0.6)
-  const mid = smoothPath([[132, 90], [164, 138], [170, 190], [128, 222], [86, 190], [92, 150], [112, 160]], true, 0.6)
-  const core = smoothPath([[128, 150], [148, 182], [128, 214], [108, 184]], true, 0.6)
-  return svg(S, S, silhouette([outer], 14) + cel(outer, '#E8501E', { sw: 8, hl: [96, 110, 20, 30], hlOpacity: 0.35 }) + cel(mid, '#F79A2A', { sw: 0 }) + cel(core, '#FFE07A', { sw: 0, noShadow: true }))
+  const d = `M128 18 C150 70 214 92 206 160 C200 214 160 238 128 238 C88 238 52 212 52 160 C52 118 80 104 92 64 C108 90 118 92 120 78 C122 60 116 40 128 18Z`
+  const inner = `M128 108 C142 140 172 154 166 192 C162 218 146 228 128 228 C108 228 90 214 90 190 C90 166 108 158 114 132 C122 146 128 140 128 108Z`
+  return toon(d, '#F2602A', { sw: SW, band: [8, 6], light: 1.2 }) + toon(inner, '#FFC93C', { sw: 0, band: null, rim: false, spec: [[112, 186, 8, 18, 0, 0.8]] })
 }
 
 function gift() {
-  const box = rrectPath(40, 110, 176, 120, 14)
-  const lid = rrectPath(28, 80, 200, 46, 12)
-  let s = silhouette([box, lid], 14)
-  s += cel(box, '#C0392B', { sw: 8, inner: `<rect x="112" y="100" width="32" height="140" fill="#F6C445"/>` })
-  s += cel(lid, '#D84A3B', { sw: 8, hl: [80, 92, 30, 8], inner: `<rect x="110" y="70" width="36" height="60" fill="#F6C445"/>` })
-  const bowL = smoothPath([[128, 80], [96, 30], [62, 46], [80, 80]], true)
-  const bowR = smoothPath([[128, 80], [160, 30], [194, 46], [176, 80]], true)
-  s += cel(bowL, '#F6C445', { sw: 7 }) + cel(bowR, '#F6C445', { sw: 7 }) + cel(ellipsePath(128, 80, 18, 16), '#E2B33C', { sw: 7 })
-  return svg(S, S, s)
+  let s = contactShadow(128, 232, 96, 12, 0.3)
+  s += toon(rrectPath(42, 110, 172, 118, 14), '#E8392F', { sw: SW, band: [10, 6], inner: `<rect x="112" y="100" width="32" height="140" fill="#FFC93C"/>` })
+  s += toon(rrectPath(30, 80, 196, 48, 12), '#F2504A', { sw: SW, band: [0, 8], inner: `<rect x="108" y="70" width="40" height="70" fill="#FFC93C"/>`, spec: [[70, 92, 22, 6, 0, 0.7]] })
+  for (const side of [-1, 1]) s += toon(`M128 82 C${128 + side * 20} 30 ${128 + side * 86} 34 ${128 + side * 66} 70 C${128 + side * 56} 88 ${128 + side * 26} 86 128 82Z`, '#FFC93C', { sw: SW - 2, band: [4, 4] })
+  s += toon(ellipsePath(128, 80, 20, 16), '#F2B020', { sw: SW - 2, band: [3, 3], rim: false })
+  return s
 }
 
 function lock() {
-  const body = rrectPath(46, 112, 164, 124, 22)
-  let s = line('M84 116 V82 a44 44 0 0 1 88 0 V116', 34, C.out) + line('M84 116 V82 a44 44 0 0 1 88 0 V116', 20, '#AEB8C2') + line('M78 100 V84 a42 42 0 0 1 30 -40', 6, '#fff', 'opacity=".6"')
-  s += silhouette([body], 12) + cel(body, '#D9B13A', { sw: 8, hl: [90, 132, 30, 10], hlOpacity: 0.6 })
-  s += `<circle cx="128" cy="164" r="16" fill="${C.out}"/><path d="M120 170 L136 170 L132 204 L124 204Z" fill="${C.out}"/>`
-  return svg(S, S, s)
+  let s = contactShadow(128, 234, 86, 12, 0.3)
+  s += `<path d="M78 116 V82 a50 50 0 0 1 100 0 V116" fill="none" stroke="${OUT}" stroke-width="40" stroke-linecap="round"/><path d="M78 116 V82 a50 50 0 0 1 100 0 V116" fill="none" stroke="#B9C2CB" stroke-width="22" stroke-linecap="round"/>`
+  s += toon(rrectPath(44, 108, 168, 120, 22), '#F2C230', { sw: SW, band: [10, 8], light: 1.25, spec: [[80, 130, 20, 8, 0, 0.8]] })
+  s += `<circle cx="128" cy="158" r="16" fill="${OUT}"/><path d="M128 160 V196" stroke="${OUT}" stroke-width="14" stroke-linecap="round"/>`
+  return s
 }
 
 function ad() {
-  const screen = rrectPath(22, 50, 212, 156, 26)
-  let s = silhouette([screen], 14) + cel(screen, C.cobalt, { sw: 8, hl: [70, 74, 40, 12] })
-  s += cel('M104 92 L176 128 L104 164Z', '#FFFFFF', { sw: 7, noShadow: true })
-  s += `<rect x="40" y="186" width="176" height="8" rx="4" fill="${shade(C.cobalt, 0.7)}"/><rect x="40" y="186" width="70" height="8" rx="4" fill="#F6C445"/>`
-  return svg(S, S, s)
+  let s = contactShadow(128, 230, 100, 12, 0.3)
+  s += toon(rrectPath(26, 52, 204, 150, 26), '#1F4E8C', { sw: SW, band: [8, 8], light: 1.3 })
+  s += `<path d="${rrectPath(44, 68, 168, 118, 14)}" fill="#163A6A"/>`
+  s += toon(`M108 92 L168 128 L108 164Z`, '#FFFFFF', { sw: SW - 2, band: [4, 4], rim: false, light: 1 })
+  s += `<rect x="58" y="78" width="40" height="8" rx="4" fill="#fff" opacity=".35"/>`
+  return s
 }
 
 function trophy() {
-  const cup = `M64 38 H192 V92 C192 150 160 176 128 180 C96 176 64 150 64 92Z`
-  const stem = `M112 176 H144 L150 206 H106Z`
-  const base = rrectPath(68, 204, 120, 34, 8)
-  let s = line('M66 62 C20 62 26 132 82 136', 16, C.out) + line('M66 62 C20 62 26 132 82 136', 8, '#E2B33C')
-  s += line('M190 62 C236 62 230 132 174 136', 16, C.out) + line('M190 62 C236 62 230 132 174 136', 8, '#E2B33C')
-  s += silhouette([cup, stem, base], 12)
-  s += cel(base, '#8A5A33', { sw: 7 }) + cel(stem, '#C9A227', { sw: 7 }) + cel(cup, '#F6C445', { sw: 8, hl: [96, 70, 18, 30], hlOpacity: 0.6, inner: `<path d="${starPath(128, 100, 26, 11)}" fill="#E2A92C" stroke="#B68A1E" stroke-width="3"/>` })
-  return svg(S, S, s)
+  let s = contactShadow(128, 236, 80, 12, 0.3)
+  for (const side of [-1, 1]) s += `<path d="M${128 + side * 64} 66 q${side * 56} 0 ${side * 46} 48 q${-side * 8} 30 ${-side * 44} 36" fill="none" stroke="${OUT}" stroke-width="26" stroke-linecap="round"/><path d="M${128 + side * 64} 66 q${side * 56} 0 ${side * 46} 48 q${-side * 8} 30 ${-side * 44} 36" fill="none" stroke="#F2C230" stroke-width="12" stroke-linecap="round"/>`
+  s += toon(`M58 40 H198 Q198 150 128 164 Q58 150 58 40Z`, '#F2C230', { sw: SW, band: [12, 6], light: 1.3, spec: [[90, 70, 12, 36, -8, 0.8]] })
+  s += toon(rrectPath(112, 160, 32, 30, 6), '#D9A93A', { sw: SW - 2, band: [4, 0], rim: false })
+  s += toon(rrectPath(70, 188, 116, 36, 10), '#8A5A33', { sw: SW, band: [0, 6] })
+  s += `<path d="${starPath(128, 96, 30, 13, 5)}" fill="#FFF3C0" stroke="#C9971F" stroke-width="5"/>`
+  return s
 }
 
 function share() {
   const pts = [
     [70, 128],
-    [186, 64],
-    [186, 192],
+    [184, 62],
+    [184, 194],
   ]
-  let s = line('M70 128 L186 64 M70 128 L186 192', 22, C.out) + line('M70 128 L186 64 M70 128 L186 192', 10, '#F5F1E8')
-  for (const [x, y] of pts) s += silhouette([ellipsePath(x, y, 36, 36)], 10) + cel(ellipsePath(x, y, 36, 36), C.turq, { sw: 7, hl: [x - 12, y - 14, 10, 7] })
-  return svg(S, S, s)
+  let s = `<path d="M70 128 L184 62 M70 128 L184 194" stroke="${OUT}" stroke-width="30" stroke-linecap="round"/><path d="M70 128 L184 62 M70 128 L184 194" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>`
+  for (const [x, y] of pts) s += toon(ellipsePath(x, y, 36, 36), '#1E9AA8', { sw: SW, band: [6, 6], spec: [[x - 12, y - 12, 9, 6, -30, 0.8]] })
+  return s
 }
 
 function pause() {
-  const a = rrectPath(62, 46, 48, 164, 18)
-  const b = rrectPath(146, 46, 48, 164, 18)
-  return svg(S, S, silhouette([a, b], 12) + cel(a, '#FFF6E6', { sw: 8, hl: [78, 70, 8, 20] }) + cel(b, '#FFF6E6', { sw: 8, hl: [162, 70, 8, 20] }))
+  return [80, 152].map((x) => toon(rrectPath(x, 48, 48, 160, 18), '#FFF6E6', { sw: SW, band: [8, 6], light: 1, spec: [[x + 14, 80, 6, 18, 0, 0.8]] })).join('')
 }
 
-function settings() {
+function gear() {
   const pts = []
-  const teeth = 8
-  for (let i = 0; i < teeth * 4; i++) {
-    const a = (i / (teeth * 4)) * Math.PI * 2
+  const n = 8
+  for (let i = 0; i < n * 4; i++) {
+    const a = (i / (n * 4)) * Math.PI * 2
     const r = i % 4 < 2 ? 108 : 84
     pts.push([128 + Math.cos(a) * r, 128 + Math.sin(a) * r])
   }
-  const gear = 'M' + pts.map((p) => `${f(p[0])} ${f(p[1])}`).join('L') + 'Z'
-  const hole = ellipsePath(128, 128, 36, 36)
-  return svg(S, S, silhouette([gear], 12) + cel(`${gear} ${hole}`, '#AEB8C2', { sw: 8, fillRule: 'evenodd', hl: [90, 80, 26, 14] }) + `<circle cx="128" cy="128" r="58" fill="none" stroke="#8B96A1" stroke-width="6"/>`)
+  const d = 'M' + pts.map((p) => `${f(p[0])} ${f(p[1])}`).join('L') + 'Z ' + ellipsePath(128, 128, 38, 38)
+  return toon(d, '#AEB8C2', { sw: SW, band: [8, 8], light: 1.3, fillRule: 'evenodd', spec: [[86, 76, 16, 7, -40, 0.8]] })
 }
 
 function shop() {
-  // Çarşı tentesi: çizgili tente + küçük tezgâh
-  const stall = rrectPath(44, 130, 168, 98, 10)
-  const aw = `M24 70 L232 70 L222 130 Q206 150 190 130 Q174 150 158 130 Q142 150 126 130 Q110 150 94 130 Q78 150 62 130 Q46 150 34 130Z`
-  const stripes = [0, 1, 2, 3, 4, 5].map((i) => `<path d="M${24 + i * 34.6} 60 L${44 + i * 34.6} 60 L${38 + i * 34.6} 150 L${18 + i * 34.6} 150Z" fill="#FFF6E6"/>`).join('')
-  let s = silhouette([stall, aw], 12)
-  s += cel(stall, '#8A5A33', { sw: 8, inner: `<rect x="62" y="150" width="132" height="58" rx="6" fill="#5E3A1E"/><circle cx="96" cy="176" r="16" fill="#E8501E" stroke="${C.out}" stroke-width="4"/><circle cx="128" cy="180" r="16" fill="#F6C445" stroke="${C.out}" stroke-width="4"/><circle cx="160" cy="176" r="16" fill="#4E9A3A" stroke="${C.out}" stroke-width="4"/>` })
-  s += line('M44 70 V40 H212 V70', 12, C.out) + line('M44 70 V40 H212 V70', 4, '#C9A227')
-  s += cel(aw, '#C0392B', { sw: 8, inner: stripes })
-  return svg(S, S, s)
+  let s = contactShadow(128, 234, 100, 12, 0.3)
+  s += toon(rrectPath(46, 112, 164, 112, 10), '#C98A50', { sw: SW, band: [8, 6] })
+  s += toon(rrectPath(70, 140, 116, 50, 8), '#5A3418', { sw: SW - 2, band: [0, 0], rim: false })
+  for (const [x, c] of [
+    [92, '#E8392F'],
+    [128, '#4E9A3A'],
+    [164, '#F2C230'],
+  ])
+    s += toon(ellipsePath(x, 160, 15, 15), c, { sw: 6, band: [3, 3], rim: false, spec: [[x - 5, 155, 4, 3, 0, 0.8]] })
+  const awn = `M30 60 H226 L214 118 Q196 136 178 118 Q160 136 142 118 Q124 136 106 118 Q88 136 70 118 Q52 136 42 118Z`
+  s += toon(awn, '#FFFFFF', {
+    sw: SW,
+    band: [0, 6],
+    inner: [0, 1, 2].map((i) => `<rect x="${58 + i * 62}" y="50" width="31" height="100" fill="#E8392F"/>`).join(''),
+  })
+  return s
 }
 
 function music() {
-  let s = line('M96 186 V58 L196 38 V160', 22, C.out) + line('M96 186 V58 L196 38 V160', 10, '#FFF6E6')
-  s += cel('M92 56 L200 34 L200 70 L92 92Z', '#FFF6E6', { sw: 7, noShadow: true })
-  s += cel(ellipsePath(76, 190, 34, 26), '#FFF6E6', { sw: 8, hl: [64, 180, 10, 6] }) + cel(ellipsePath(176, 164, 34, 26), '#FFF6E6', { sw: 8, hl: [164, 154, 10, 6] })
-  return svg(S, S, s)
+  let s = `<path d="M100 186 V60 L196 40 V160" fill="none" stroke="${OUT}" stroke-width="30" stroke-linejoin="round"/><path d="M100 186 V60 L196 40 V160" fill="none" stroke="#FFF6E6" stroke-width="14" stroke-linejoin="round"/>`
+  for (const [x, y] of [
+    [74, 190],
+    [170, 166],
+  ])
+    s += toon(ellipsePath(x, y, 34, 26), '#FFF6E6', { sw: SW, band: [5, 5], light: 1 })
+  return s
 }
 
 function sfx() {
-  const sp = 'M40 98 H84 L140 50 V206 L84 158 H40Z'
-  let s = silhouette([sp], 12) + cel(sp, '#FFF6E6', { sw: 8, hl: [70, 110, 14, 10] })
-  s += line('M168 98 Q186 128 168 158', 14, C.out) + line('M168 98 Q186 128 168 158', 6, '#FFF6E6')
-  s += line('M194 74 Q228 128 194 182', 14, C.out) + line('M194 74 Q228 128 194 182', 6, '#FFF6E6')
-  return svg(S, S, s)
+  let s = toon(`M40 100 H84 L140 54 V202 L84 156 H40Z`, '#FFF6E6', { sw: SW, band: [8, 6], light: 1 })
+  for (const r of [40, 72]) s += `<path d="M${150 + r * 0.3} ${128 - r} q${r} ${r} 0 ${r * 2}" fill="none" stroke="${OUT}" stroke-width="22" stroke-linecap="round"/><path d="M${150 + r * 0.3} ${128 - r} q${r} ${r} 0 ${r * 2}" fill="none" stroke="#FFF6E6" stroke-width="10" stroke-linecap="round"/>`
+  return s
 }
 
 function vibration() {
-  const phone = rrectPath(84, 34, 88, 188, 18)
-  let s = silhouette([phone], 12) + cel(phone, '#30363D', { sw: 8, inner: `<rect x="96" y="54" width="64" height="136" rx="6" fill="${C.turq}"/><circle cx="128" cy="204" r="7" fill="#596270"/>` })
-  for (const [x, d] of [
-    [56, -1],
-    [200, 1],
-  ]) {
-    s += line(`M${x} 84 l${-12 * d} 16 l${12 * d} 16 l${-12 * d} 16 l${12 * d} 16 l${-12 * d} 16`, 14, C.out) + line(`M${x} 84 l${-12 * d} 16 l${12 * d} 16 l${-12 * d} 16 l${12 * d} 16 l${-12 * d} 16`, 6, '#FFF6E6')
-  }
-  return svg(S, S, s)
+  let s = toon(rrectPath(84, 34, 88, 188, 18), '#1E9AA8', { sw: SW, band: [8, 6], inner: `<rect x="98" y="54" width="60" height="130" rx="6" fill="#BFF0F4"/>` })
+  for (const side of [-1, 1]) s += `<path d="M${128 + side * 66} 84 l${side * 16} 22 l${-side * 16} 22 l${side * 16} 22" fill="none" stroke="${OUT}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`
+  return s
 }
 
 function back() {
-  const d = 'M30 128 L118 48 L118 92 L220 92 L220 164 L118 164 L118 208Z'
-  return svg(S, S, silhouette([d], 12) + cel(d, '#FFF6E6', { sw: 8, hl: [96, 100, 30, 10] }))
+  const d = `M36 128 L118 52 V96 H214 V160 H118 V204Z`
+  return toon(d, '#FFF6E6', { sw: SW + 2, band: [8, 6], light: 1, spec: [[150, 112, 40, 6, 0, 0.6]] })
 }
 
 function close() {
-  const d = 'M64 40 L128 104 L192 40 L216 64 L152 128 L216 192 L192 216 L128 152 L64 216 L40 192 L104 128 L40 64Z'
-  return svg(S, S, silhouette([d], 12) + cel(d, '#E35D4F', { sw: 8, hl: [70, 64, 14, 10] }))
+  return toon(`M70 48 L128 106 L186 48 L208 70 L150 128 L208 186 L186 208 L128 150 L70 208 L48 186 L106 128 L48 70Z`, '#E8392F', {
+    sw: SW,
+    band: [8, 6],
+    light: 1.3,
+  })
 }
 
 function clock() {
-  let s = silhouette([ellipsePath(128, 128, 106, 106)], 12)
-  s += cel(ellipsePath(128, 128, 106, 106), '#C9A227', { sw: 8, hl: [84, 72, 30, 14] })
-  s += cel(ellipsePath(128, 128, 82, 82), '#FFF6E6', { sw: 6, noShadow: true })
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2
-    s += `<circle cx="${f(128 + Math.cos(a) * 66)}" cy="${f(128 + Math.sin(a) * 66)}" r="${i % 3 === 0 ? 7 : 4}" fill="${C.out}"/>`
-  }
-  s += line('M128 128 L128 76', 12) + line('M128 128 L168 150', 10) + `<circle cx="128" cy="128" r="10" fill="${C.tea}" stroke="${C.out}" stroke-width="4"/>`
-  return svg(S, S, s)
-}
-
-function dem() {
-  // Demlik silüeti
-  const body = smoothPath([[78, 96], [52, 120], [44, 160], [60, 200], [128, 214], [196, 200], [212, 160], [204, 120], [178, 96]], false)
-  const bodyD = body + 'Z'
-  const lid = `M84 98 C90 62 166 62 172 98Z`
-  const spout = 'M196 150 C222 146 230 116 244 90 L250 98 C238 130 232 168 200 182Z'
-  const handle = 'M56 120 C14 118 14 196 60 190 L64 176 C34 178 34 134 62 138Z'
-  let s = silhouette([bodyD, lid, spout, handle], 12)
-  s += cel(handle, C.out, { sw: 6, noShadow: true }) + cel(spout, C.tea, { sw: 7 }) + cel(bodyD, C.tea, { sw: 8, hl: [96, 128, 24, 18], hlOpacity: 0.45 }) + cel(lid, shade(C.tea, 1.15), { sw: 7 })
-  s += cel(ellipsePath(128, 56, 16, 14), C.out, { sw: 5, noShadow: true })
-  return svg(S, S, s)
-}
-
-function water() {
-  const d = 'M128 18 C150 58 204 112 204 160 A76 76 0 0 1 52 160 C52 112 106 58 128 18Z'
-  return svg(S, S, silhouette([d], 12) + cel(d, '#5BB8E6', { sw: 8, off: [12, 10], hl: [100, 130, 18, 30], hlOpacity: 0.7 }))
-}
-
-function serve() {
-  const tray = ellipsePath(128, 196, 112, 30)
-  let s = silhouette([tray], 12) + cel(tray, '#D9B13A', { sw: 8, hl: [90, 186, 40, 8], inner: `<path d="${ellipsePath(128, 198, 90, 22)}" fill="#C99F2C"/>` })
-  s += tulipGlass(128, 196, 140, { saucer: true })
-  return svg(S, S, s)
+  let s = toon(ellipsePath(128, 132, 100, 100), '#F2C230', { sw: SW, band: [8, 8], light: 1.3 })
+  s += `<circle cx="128" cy="132" r="78" fill="#FFF8E7" stroke="${OUT}" stroke-width="7"/>`
+  s += `<path d="M128 132 V80 M128 132 L164 150" stroke="${OUT}" stroke-width="12" stroke-linecap="round"/><circle cx="128" cy="132" r="9" fill="#E8392F" stroke="${OUT}" stroke-width="4"/>`
+  return s
 }
 
 function info() {
-  let s = silhouette([ellipsePath(128, 128, 106, 106)], 12) + cel(ellipsePath(128, 128, 106, 106), C.cobalt, { sw: 8, hl: [88, 76, 30, 14] })
-  s += `<circle cx="128" cy="76" r="16" fill="#FFF6E6" stroke="${C.out}" stroke-width="5"/>`
-  s += cel(rrectPath(112, 104, 32, 92, 12), '#FFF6E6', { sw: 6, noShadow: true })
-  return svg(S, S, s)
+  let s = toon(ellipsePath(128, 128, 104, 104), '#1F4E8C', { sw: SW, band: [8, 8], light: 1.35, spec: [[80, 76, 22, 10, -40, 0.7]] })
+  s += `<circle cx="128" cy="80" r="16" fill="#fff"/><rect x="112" y="108" width="32" height="88" rx="12" fill="#fff"/>`
+  return s
+}
+
+function dem() {
+  let s = contactShadow(120, 222, 86, 12, 0.3)
+  const body = smoothPath([
+    [64, 112],
+    [70, 190],
+    [120, 214],
+    [170, 190],
+    [176, 112],
+    [120, 92],
+  ])
+  s += `<path d="M168 136 Q238 120 232 64" fill="none" stroke="${OUT}" stroke-width="26" stroke-linecap="round"/><path d="M168 136 Q238 120 232 64" fill="none" stroke="#C0392B" stroke-width="12" stroke-linecap="round"/>`
+  s += `<path d="M70 130 q-44 10 -30 50 q8 20 36 18" fill="none" stroke="${OUT}" stroke-width="24"/><path d="M70 130 q-44 10 -30 50 q8 20 36 18" fill="none" stroke="#C0392B" stroke-width="10"/>`
+  s += toon(body, '#C0392B', { sw: SW, band: [10, 8], light: 1.3, spec: [[92, 136, 12, 24, -10, 0.8]] })
+  s += toon(ellipsePath(120, 100, 52, 16), '#A52F22', { sw: SW - 2, band: [0, 4], rim: false })
+  s += toon(ellipsePath(120, 80, 16, 14), '#E2B33C', { sw: SW - 2, band: [3, 3], rim: false })
+  return s
+}
+
+function water() {
+  const d = `M128 26 C150 76 206 120 206 166 C206 210 170 236 128 236 C86 236 50 210 50 166 C50 120 106 76 128 26Z`
+  return contactShadow(128, 238, 70, 10, 0.25) + toon(d, '#4FB3E8', { sw: SW, band: [10, 8], light: 1.3, spec: [[96, 160, 12, 28, -20, 0.85]] })
+}
+
+function serve() {
+  return teaGlass(128, 214, 170, { saucer: true, fill: 0.84, sw: 8, shadow: false, steam: true })
 }
 
 const ICONS = {
   icon_coin: coin,
   icon_life: () => life(false),
   icon_life_broken: () => life(true),
-  icon_sugar: () => svg(S, S, `<g transform="translate(16 14) scale(1.75)">${sugarCubeSvg(128)}</g>`),
+  icon_sugar: sugar,
   icon_star: () => star(false),
   icon_star_empty: () => star(true),
   icon_fire: fire,
@@ -261,7 +233,7 @@ const ICONS = {
   icon_trophy: trophy,
   icon_share: share,
   icon_pause: pause,
-  icon_settings: settings,
+  icon_settings: gear,
   icon_shop: shop,
   icon_music: music,
   icon_sfx: sfx,
@@ -277,5 +249,7 @@ const ICONS = {
 
 register(
   (id) => id in ICONS,
-  (a) => ICONS[a.id](),
+  (a) => svg(a.w, a.h, `<g transform="scale(${a.w / S})">${ICONS[a.id]()}</g>`),
 )
+
+export { shade }

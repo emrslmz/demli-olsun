@@ -1,11 +1,13 @@
 /**
  * Demlik / çaydanlık. Görselde ağız sağa bakar; sağdaki çaydanlık yatay aynalanır (pivot ve spout da).
- * Basılınca ~35° eğilir (pivot etrafında), bırakınca ease ile geri döner.
+ * Tezgâhta dinlenir; basılınca kalkıp bardağın üstüne gelir ve ~35° eğilir, bırakınca düzelir,
+ * artık akış bitince tezgâhtaki yerine döner.
  */
 
 import * as Phaser from 'phaser'
 import { ANIM } from '@/config/gameplay'
 import { ThemeService } from '@/services/theme/ThemeService'
+import type { Point } from '../layout'
 
 export class Teapot {
   readonly image: Phaser.GameObjects.Image
@@ -13,12 +15,14 @@ export class Teapot {
   readonly mirrored: boolean
   private pivot: [number, number] = [0.5, 0.8]
   private spout: [number, number] = [0.96, 0.36]
-  private tween: Phaser.Tweens.Tween | null = null
-  private restX = 0
-  private restY = 0
+  private tiltTween: Phaser.Tweens.Tween | null = null
+  private poseTween: Phaser.Tweens.Tween | null = null
+  private rest = { x: 0, y: 0 }
+  private pour = { x: 0, y: 0 }
   private tilt = 0
-  private lean = 0
-  private idleT = Math.random() * 10
+  /** 0: tezgâhta, 1: bardağın üstünde. */
+  private pose = 0
+  private baseScale = 1
   pouring = false
 
   constructor(scene: Phaser.Scene, key: string, mirrored: boolean) {
@@ -63,55 +67,90 @@ export class Teapot {
   }
 
   /**
-   * Eğildiğinde ağız ucu `target`a gelecek şekilde yerleştirir.
+   * rest: tezgâhta dinlenirken gövdenin alt ortası. spoutTarget: dökerken (eğik) ağız ucunun varacağı nokta.
    * width: görüntülenen genişlik (px).
    */
-  layout(target: { x: number; y: number }, width: number): void {
+  layout(rest: Point, spoutTarget: Point, width: number): void {
     const tex = this.image.texture.getSourceImage() as { width: number; height: number }
     const aspect = tex.height / Math.max(1, tex.width)
     this.image.setDisplaySize(width, width * aspect)
+    this.baseScale = this.image.scaleX
+    const h = this.image.displayHeight
+    this.rest = { x: rest.x, y: rest.y - (1 - this.pivot[1]) * h }
     const s = this.spoutLocal()
     const a = Phaser.Math.DegToRad(ANIM.potTilt) * this.tiltSign
     const cos = Math.cos(a)
     const sin = Math.sin(a)
-    const rx = s.x * cos - s.y * sin
-    const ry = s.x * sin + s.y * cos
-    this.restX = target.x - rx
-    this.restY = target.y - ry
+    this.pour = { x: spoutTarget.x - (s.x * cos - s.y * sin), y: spoutTarget.y - (s.x * sin + s.y * cos) }
     this.applyTransform()
   }
 
   private applyTransform(): void {
-    const leanX = this.lean * this.tiltSign * this.image.displayWidth * 0.04
-    const bob = this.pouring ? 0 : Math.sin(this.idleT * 1.4) * this.image.displayHeight * 0.006
-    this.image.setPosition(this.restX + leanX, this.restY + bob - this.lean * this.image.displayHeight * 0.02)
+    const p = this.pose
+    // Kalkarken hafif kavis (yukarı doğru tümsek) ve küçük büyüme (kameraya yaklaşır)
+    const arc = Math.sin(p * Math.PI) * this.image.displayHeight * 0.18
+    const x = this.rest.x + (this.pour.x - this.rest.x) * p
+    const y = this.rest.y + (this.pour.y - this.rest.y) * p - arc
+    this.image.setPosition(x, y)
     this.image.setRotation(this.tilt)
+    this.image.setScale(this.baseScale * (1 + 0.06 * p))
   }
 
   setPouring(on: boolean, reducedMotion = false): void {
     if (this.pouring === on) return
     this.pouring = on
-    this.tween?.stop()
-    const target = on ? Phaser.Math.DegToRad(ANIM.potTilt) * this.tiltSign : 0
-    const state = { tilt: this.tilt, lean: this.lean }
-    this.tween = this.scene.tweens.add({
+    const k = reducedMotion ? 0.5 : 1
+    if (on) this.movePose(1, 150 * k)
+    this.tiltTween?.stop()
+    const state = { tilt: this.tilt }
+    this.tiltTween = this.scene.tweens.add({
       targets: state,
-      tilt: target,
-      lean: on ? 1 : 0,
-      duration: (on ? ANIM.potTiltIn : ANIM.potTiltOut) * 1000 * (reducedMotion ? 0.5 : 1),
+      tilt: on ? Phaser.Math.DegToRad(ANIM.potTilt) * this.tiltSign : 0,
+      duration: (on ? ANIM.potTiltIn : ANIM.potTiltOut) * 1000 * k,
+      delay: on ? 60 * k : 0,
       ease: on ? 'Back.easeOut' : 'Sine.easeInOut',
       onUpdate: () => {
         this.tilt = state.tilt
-        this.lean = state.lean
         this.applyTransform()
       },
     })
   }
 
-  update(dt: number): void {
-    this.idleT += dt
-    if (!this.pouring && !this.tween?.isPlaying()) this.applyTransform()
+  /** Döküm bitti (artık akış dahil): tezgâhtaki yerine döner. */
+  park(reducedMotion = false): void {
+    if (this.pouring || this.pose === 0) return
+    if (this.poseTween?.isPlaying() && this.poseTarget === 0) return
+    this.movePose(0, reducedMotion ? 120 : 260)
   }
+
+  private poseTarget = 0
+  private movePose(target: number, duration: number): void {
+    this.poseTarget = target
+    this.poseTween?.stop()
+    const state = { p: this.pose }
+    this.poseTween = this.scene.tweens.add({
+      targets: state,
+      p: target,
+      duration,
+      ease: target > 0 ? 'Cubic.easeOut' : 'Cubic.easeInOut',
+      onUpdate: () => {
+        this.pose = state.p
+        this.applyTransform()
+      },
+    })
+  }
+
+  /** Anında tezgâha (yeni bardak, sahne başı). */
+  snapToRest(): void {
+    this.poseTween?.stop()
+    this.tiltTween?.stop()
+    this.pouring = false
+    this.pose = 0
+    this.tilt = 0
+    this.applyTransform()
+  }
+
+  update(_dt: number): void {}
 
   /** Ağız ucunun şu anki dünya konumu. */
   spoutWorld(out: Phaser.Math.Vector2): Phaser.Math.Vector2 {
@@ -135,8 +174,13 @@ export class Teapot {
     return Math.abs(this.tilt) / Phaser.Math.DegToRad(ANIM.potTilt)
   }
 
+  get atRest(): boolean {
+    return this.pose < 0.02
+  }
+
   destroy(): void {
-    this.tween?.stop()
+    this.tiltTween?.stop()
+    this.poseTween?.stop()
     this.image.destroy()
   }
 }

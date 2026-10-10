@@ -1,6 +1,7 @@
 /**
- * Mesai (ana mod, sonsuz): siparişler geldikçe zorlaşır. Sipariş tablosu, müşteriler, replikler, sabır, can,
- * zorluk aşamaları, şeker, bardak tipleri, yoğun saat, HUD ve oyun sonu.
+ * Mesai (ana mod, sonsuz): müşteriler tek tek tezgâha gelir, balonda ne istediklerini gösterir.
+ * Çayı doldur, servis et; isabet ve hız puan, kombo ve bahşiş getirir. Bekletilen, taşan ya da beğenilmeyen
+ * çay can götürür. Zorluk aşamalarla artar (bardaktaki çizgiler azalır, sabır kısalır, şeker istenir).
  */
 
 import * as Phaser from 'phaser'
@@ -13,37 +14,38 @@ import { Rng } from '@/core/rng'
 import { comboMultiplier, evaluateServe, nextStreak, round1, servePoints, tipFor } from '@/core/scoring'
 import { CUSTOMERS, CUSTOMER_IDS, customerImageId, type CustomerId } from '@/data/customers'
 import { bucketFor, COMBO_TEXTS } from '@/data/lines'
-import { pct1 } from '@/i18n/tr'
+import { pct1, tr } from '@/i18n/tr'
+import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
-import { services } from '@/services'
 import { useEconomyStore } from '@/stores/economy'
+import { useInventoryStore } from '@/stores/inventory'
 import type { Layout } from '../layout'
-import { runtime } from '../runtime'
+import { DEPTH } from '../objects/Background'
 import { Hud } from '../objects/Hud'
-import type { OrderCard } from '../objects/OrderBoard'
+import { runtime } from '../runtime'
 import { PlayScene } from './PlayScene'
 
 interface ActiveOrder {
   order: Order
-  card: OrderCard
   patience: number
   max: number
-  trayServed: number
   warned: boolean
+  /** Müşteri yürüyüp tezgâha vardı mı (sabır o zaman işlemeye başlar). */
+  arrived: boolean
 }
 
 const STAGE_NOTES: Record<number, string> = {
-  2: 'Aşama 2 · Düz bardak geldi, şeker istenebilir',
-  3: 'Aşama 3 · Göstergelerde sadece işaret',
-  4: 'Aşama 4 · Porselen fincan: kulağına güven',
-  5: 'Aşama 5 · Göz kararı! Tepsi siparişleri başladı',
+  2: 'Şeker isteyenler geldi!',
+  3: 'Artık sadece dolu çizgisi var',
+  4: 'Müşteriler acele ediyor',
+  5: 'Göz kararı! Çizgi yok',
 }
 
 export class ShiftScene extends PlayScene {
   private hud!: Hud
   private rng = new Rng(1)
-  private orders: ActiveOrder[] = []
+  private current: ActiveOrder | null = null
   private nextId = 1
   private lastCustomer: CustomerId | undefined
   private arrivalIn = 0
@@ -77,7 +79,7 @@ export class ShiftScene extends PlayScene {
   create(data: ShiftStartOptions) {
     this.rng = new Rng(Date.now())
     this.boosters = new Set(data?.boosters ?? [])
-    this.orders = []
+    this.current = null
     this.nextId = 1
     this.lastCustomer = undefined
     this.arrivalIn = ARRIVAL.firstDelay
@@ -99,7 +101,7 @@ export class ShiftScene extends PlayScene {
     this.gaugeOverride = null
     this.crowd = []
     this.stage = stageFor(0)
-    this.rush = { active: false, left: 0, nextAt: this.rng.int(RUSH.everyServes[0], RUSH.everyServes[1]) + 5, name: '' }
+    this.rush = { active: false, left: 0, nextAt: this.rng.int(RUSH.everyServes[0], RUSH.everyServes[1]) + 4, name: '' }
     this.gauge = this.computeGauge()
     this.createPlay({ glass: 'ince', gauge: this.gauge, seedRand: () => this.rng.next() })
     this.hud = new Hud(this, this.L)
@@ -112,11 +114,10 @@ export class ShiftScene extends PlayScene {
     this.station.setHasOrder(false)
     this.station.events.on('serve', () => void this.onServe())
     this.station.events.on('overflow', () => void this.onOverflow())
-    this.station.events.on('sugar', (n: number) => this.orders[0]?.card.setSugarGiven(n))
     this.onBus('game:continue', ({ granted }) => this.onContinue(granted))
     this.onBus('game:end-request', () => this.endShift())
     this.onBus('dev:stage', (stage) => {
-      const target = [0, 0, 5, 15, 30, 50][stage] ?? 0
+      const target = [0, 0, 5, 12, 24, 40][stage] ?? 0
       this.served = target
       this.refreshStage(true)
     })
@@ -131,7 +132,7 @@ export class ShiftScene extends PlayScene {
   private showBoosterNote(): void {
     const names: Record<BoosterId, string> = { ustaGozu: 'Usta Gözü', sabirTasi: 'Sabır Taşı', yedekBardak: 'Yedek Bardak' }
     const text = [...this.boosters].map((b) => names[b]).join(' · ')
-    this.floats.burst(this.L.col.cx, this.L.counterY - this.L.glassUnit * 1.6, text, 44 * this.L.u, '#9FE3B0')
+    this.floats.burst(this.L.col.cx, this.L.counterY - 60 * this.L.u, text, 44 * this.L.u, '#9FE3B0')
   }
 
   // ---------- Zorluk ----------
@@ -152,25 +153,27 @@ export class ShiftScene extends PlayScene {
 
   private refreshStage(announce: boolean): void {
     const s = stageFor(this.served)
-    if (s.stage !== this.stage.stage) {
-      this.stage = s
-      this.applyGauge()
-      const note = STAGE_NOTES[s.stage]
-      if (announce && note) {
-        this.floats.burst(this.L.col.cx, this.L.board.y + this.L.board.h + 70 * this.L.u, note, 36 * this.L.u, '#FFF6E6')
-        AudioService.play('chalk')
-      }
+    if (s.stage === this.stage.stage) return
+    this.stage = s
+    this.applyGauge()
+    const note = STAGE_NOTES[s.stage]
+    if (announce && note) {
+      this.floats.burst(this.L.col.cx, this.L.counterY - 40 * this.L.u, note, 40 * this.L.u, '#FFF6E6')
+      AudioService.play('pop')
     }
   }
 
-  private get capacity(): number {
-    const extra = this.rush.active ? RUSH.extraQueue : 0
-    return Math.min(this.board.capacity, this.stage.queue + extra)
+  // ---------- Müşteriler ----------
+
+  private patienceRate(): number {
+    let r = this.rush.active ? RUSH.patienceRate : 1
+    const sabir = BOOSTERS.sabirTasi
+    if (this.boosters.has('sabirTasi') && this.elapsed < (sabir.durationSec ?? 60)) r /= 1 + (sabir.patienceBonus ?? 0.5)
+    return r
   }
 
-  // ---------- Siparişler ----------
-
-  private spawnOrder(): void {
+  private async spawnCustomer(): Promise<void> {
+    const g = this.gen
     const order = generateOrder(this.rng, {
       served: this.served,
       stage: this.stage,
@@ -178,38 +181,17 @@ export class ShiftScene extends PlayScene {
       lastCustomer: this.lastCustomer,
     })
     this.lastCustomer = order.customer
-    const card = this.board.addCard(order)
-    const ao: ActiveOrder = { order, card, patience: order.patience, max: order.patience, trayServed: 0, warned: false }
-    this.orders.push(ao)
-    AudioService.play('chalk', { rate: 1.1 })
-    if (this.orders.length === 1) this.activateHead()
-    else card.setActive(false, this.reduced)
-  }
-
-  /** İlk sipariş aktif olur: bardak tipi, hedefler, şeker göstergesi. */
-  private activateHead(): void {
-    const head = this.orders[0]
-    this.orders.forEach((o, i) => o.card.setActive(i === 0, this.reduced))
-    if (!head) {
-      this.station.setTargets(null, null)
-      this.station.setHasOrder(false)
-      return
+    const ao: ActiveOrder = { order, patience: order.patience, max: order.patience, warned: false, arrived: false }
+    this.current = ao
+    this.station.setTargets(order.demTarget, order.fillTarget)
+    await this.customer.enter(order, useInventoryStore().equipped.glass)
+    if (!this.alive(g) || this.current !== ao) return
+    ao.arrived = true
+    AudioService.play('pop', { rate: 0.9 })
+    if (!this.busy && !this.over && !this.awaitingContinue) {
+      this.station.setHasOrder(true)
+      this.station.setInputEnabled(true)
     }
-    const st = this.station
-    if (st.dem + st.su <= 0.0005 && st.sugar === 0) {
-      if (st.glass.type !== head.order.glass) st.setGlass(head.order.glass)
-    }
-    st.setTargets(head.order.demTarget, head.order.fillTarget)
-    st.setHasOrder(!this.busy && !this.over)
-    head.card.setSugarGiven(st.sugar)
-    head.card.setTrayServed(head.trayServed)
-  }
-
-  private patienceRate(index: number): number {
-    let r = index === 0 ? 1 : PATIENCE.waitingRate
-    const sabir = BOOSTERS.sabirTasi
-    if (this.boosters.has('sabirTasi') && this.elapsed < (sabir.durationSec ?? 60)) r /= 1 + (sabir.patienceBonus ?? 0.5)
-    return r
   }
 
   protected tick(dt: number): void {
@@ -217,34 +199,26 @@ export class ShiftScene extends PlayScene {
     if (this.over || this.awaitingContinue) return
     this.elapsed += dt
 
-    // Gelen siparişler
-    if (this.orders.length < this.capacity) {
-      this.arrivalIn -= dt * (this.rush.active ? 1 / RUSH.arrivalFactor : 1) * (this.orders.length === 0 ? 2.5 : 1)
-      if (this.arrivalIn <= 0) {
-        this.spawnOrder()
-        this.arrivalIn = this.rng.float(ARRIVAL.delay[0], ARRIVAL.delay[1])
-      }
+    if (!this.current && !this.busy) {
+      this.arrivalIn -= dt
+      if (this.arrivalIn <= 0) void this.spawnCustomer()
     }
 
-    // Sabır
-    for (let i = this.orders.length - 1; i >= 0; i--) {
-      const o = this.orders[i] as ActiveOrder
-      if (i === 0 && this.busy) continue
-      o.patience -= dt * this.patienceRate(i)
-      const ratio = o.patience / o.max
-      o.card.setPatience(ratio)
-      if (!o.warned && ratio < PATIENCE.warnBelow) {
-        o.warned = true
-        this.say(o.card, o.order.customer, 'impatient', () => this.rng.next())
+    const ao = this.current
+    if (ao && ao.arrived && !this.busy) {
+      ao.patience -= dt * this.patienceRate()
+      const ratio = ao.patience / ao.max
+      this.customer.setPatience(ratio)
+      if (!ao.warned && ratio < PATIENCE.warnBelow) {
+        ao.warned = true
         AudioService.play('tick')
       }
-      if (o.patience <= 0) this.customerLeft(i)
+      if (ao.patience <= 0) void this.customerLeft()
     }
 
-    // Yoğun saat
     if (this.rush.active) {
       this.rush.left -= dt
-      this.board.setRushProgress(this.rush.left / RUSH.duration)
+      this.hud.setRushProgress(this.rush.left / RUSH.duration)
       if (this.rush.left <= 0) this.endRush()
     } else if (this.stage.stage >= RUSH.minStage && this.served >= this.rush.nextAt) {
       this.startRush()
@@ -252,19 +226,19 @@ export class ShiftScene extends PlayScene {
   }
 
   protected inputAllowed(): boolean {
-    return !this.busy && !this.over && !this.awaitingContinue
+    return !this.busy && !this.over && !this.awaitingContinue && !!this.current?.arrived
   }
 
   // ---------- Servis ----------
 
   private async onServe(): Promise<void> {
-    const ao = this.orders[0]
+    const ao = this.current
     if (!ao || this.busy || this.over) return
     const g = this.gen
     this.busy = true
-    this.station.setInputEnabled(false)
-    this.station.setBusy(true)
     const st = this.station
+    st.setInputEnabled(false)
+    st.setBusy(true)
     const o = ao.order
     const ev = evaluateServe({
       demPct: st.demPct,
@@ -280,8 +254,8 @@ export class ShiftScene extends PlayScene {
 
     const bucket = bucketFor(ev.accuracy, ev.accepted)
     const happy = ev.accepted && (o.customer === 'riza' ? ev.stars === 3 : ev.stars >= 2)
-    ao.card.setExpression(ev.accepted ? (happy ? 'happy' : 'neutral') : 'angry')
-    this.say(ao.card, o.customer, bucket, () => this.rng.next())
+    this.customer.setExpression(ev.accepted ? (happy ? 'happy' : 'neutral') : 'angry')
+    this.say(o.customer, bucket, () => this.rng.next())
 
     const L = this.L
     const glassTop = st.glass.topWorldY
@@ -289,11 +263,10 @@ export class ShiftScene extends PlayScene {
       this.streak = nextStreak(this.streak, ev.accuracy)
       this.bestStreak = Math.max(this.bestStreak, this.streak)
       const combo = comboMultiplier(this.streak)
-      const gaugeForScore: GaugeMode = this.gauge
       const points = servePoints({
         accuracy: ev.accuracy,
         combo,
-        gauge: gaugeForScore,
+        gauge: this.gauge,
         patienceRatio: ao.patience / ao.max,
         rushMultiplier: this.rush.active ? RUSH.multiplier : 1,
         accepted: true,
@@ -304,170 +277,148 @@ export class ShiftScene extends PlayScene {
       this.accN++
       if (ev.stars === 3) this.stars3++
       this.tipsEarned += tips
-      ao.trayServed++
-      ao.card.setTrayServed(ao.trayServed)
       bus.emit('shift:served', { accuracy: ev.accuracy, stars: ev.stars, tips })
       AudioService.play(ev.stars === 3 ? 'star' : 'serve')
       if (ev.stars === 3) HapticsService.trigger('stars3')
-      // Önce replik, ardından puan sayarak gelir.
-      void this.wait(380).then(() => {
-        if (!this.alive(g)) return
-        this.floats.float(L.col.cx, glassTop - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 56 * L.u, '#FFF6E6', 70 * L.u, 1100)
-        this.starsPop.show(L.col.cx, glassTop - 120 * L.u, ev.stars, 70 * L.u, (i) =>
-          AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }),
-        )
-        this.floats.fly(
-          L.col.cx + 120 * L.u,
-          glassTop + 20 * L.u,
-          `+${points}`,
+      this.floats.float(L.col.cx, glassTop - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 60 * L.u, '#FFF6E6', 70 * L.u, 1100)
+      this.starsPop.show(L.col.cx, glassTop - 130 * L.u, ev.stars, 76 * L.u, (i) =>
+        AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }),
+      )
+      this.floats.fly(
+        L.col.cx + 120 * L.u,
+        glassTop + 20 * L.u,
+        `+${points}`,
+        54 * L.u,
+        this.hud.scoreTarget(),
+        () => {
+          this.score += points
+          this.hud.setScore(this.score)
+        },
+        '#F6C445',
+      )
+      if (tips > 0) {
+        const econ = useEconomyStore()
+        this.coins.burst(
+          { x: L.customer.cx, y: L.counterY - 80 * L.u },
+          this.hud.coinTarget(),
+          Math.ceil(tips / 2),
           50 * L.u,
-          this.hud.scoreTarget(),
-          () => {
-            this.score += points
-            this.hud.setScore(this.score)
+          (i) => {
+            AudioService.play('coin', { rate: 1 + (i % 4) * 0.08, volume: 0.6 })
+            this.hud.bumpCoin()
           },
-          '#F6C445',
+          this.reduced,
         )
-        if (tips > 0) {
-          const econ = useEconomyStore()
-          this.coins.burst(
-            { x: L.col.cx - 60 * L.u, y: glassTop },
-            this.hud.coinTarget(),
-            Math.ceil(tips / 2),
-            48 * L.u,
-            (i) => {
-              AudioService.play('coin', { rate: 1 + (i % 4) * 0.08, volume: 0.6 })
-              this.hud.bumpCoin()
-            },
-            this.reduced,
-          )
-          this.hud.setTips(econ.tips + this.tipsEarned)
-        }
-        if (this.streak >= 2) {
-          const text = `${COMBO_TEXTS[(this.streak - 2) % COMBO_TEXTS.length]} ×${combo.toFixed(1).replace('.', ',')}`
-          this.floats.burst(L.col.cx, glassTop - 220 * L.u, text, 52 * L.u)
-          AudioService.play('combo', { rate: 1 + Math.min(0.5, this.streak * 0.04) })
-          HapticsService.trigger('combo')
-        }
-        this.hud.setCombo(combo)
-      })
+        this.hud.setTips(econ.tips + this.tipsEarned)
+      }
+      if (this.streak >= 2) {
+        const text = `${COMBO_TEXTS[(this.streak - 2) % COMBO_TEXTS.length]} ×${combo.toFixed(1).replace('.', ',')}`
+        this.floats.burst(L.col.cx, glassTop - 230 * L.u, text, 54 * L.u)
+        AudioService.play('combo', { rate: 1 + Math.min(0.5, this.streak * 0.04) })
+        HapticsService.trigger('combo')
+      }
+      this.hud.setCombo(combo)
+      await this.wait(500)
+      if (!this.alive(g)) return
+      // Bardak müşteriye gider, müşteri memnun ayrılır.
+      await st.serveTo(this.customer.servePoint())
+      if (!this.alive(g)) return
+      void this.customer.leave(true)
     } else {
       this.streak = 0
       this.hud.setCombo(1)
       AudioService.play('reject')
       HapticsService.trigger('error')
-      ao.card.showX()
-      this.board.shake()
+      this.shakeCamera()
       this.loseLife()
+      await this.wait(900)
+      if (!this.alive(g)) return
+      void this.customer.leave(false)
+      await st.slideOut()
+      if (!this.alive(g)) return
     }
+    await this.nextGlass(g)
+  }
 
-    await this.wait(ev.accepted ? 650 : 900)
-    if (!this.alive(g)) return
-    await st.slideOut(ev.accepted ? this.tray : null)
-    if (!this.alive(g)) return
+  /** Yeni boş bardak gelir; sıradaki müşteri kısa süre sonra. */
+  private async nextGlass(g: number): Promise<void> {
+    const st = this.station
+    this.current = null
+    st.setHasOrder(false)
+    st.setTargets(null, null)
     st.resetContents()
-
-    const done = !ev.accepted || ao.trayServed >= o.trayCount
-    if (done) {
-      this.board.removeCard(ao.card, ev.accepted)
-      const idx = this.orders.indexOf(ao)
-      if (idx >= 0) this.orders.splice(idx, 1)
-    }
     this.refreshStage(true)
-    const next = this.orders[0]
-    st.setGlass(next ? next.order.glass : 'ince')
     await st.slideIn()
     if (!this.alive(g)) return
     this.busy = false
     st.setBusy(false)
-    st.setInputEnabled(this.inputAllowed())
-    this.activateHead()
+    this.arrivalIn = this.rng.float(ARRIVAL.delay[0], ARRIVAL.delay[1])
   }
 
   private async onOverflow(): Promise<void> {
-    if (this.over) return
+    if (this.over || this.busy) return
     const g = this.gen
-    const ao = this.orders[0]
+    const ao = this.current
     this.busy = true
-    this.station.setInputEnabled(false)
-    this.station.setBusy(true)
-    this.station.spill()
+    const st = this.station
+    st.setInputEnabled(false)
+    st.setBusy(true)
+    st.spill()
     this.shakeCamera()
     AudioService.play('overflow')
     HapticsService.trigger('error')
     this.streak = 0
     this.hud.setCombo(1)
     if (ao) {
-      ao.card.showX()
-      ao.card.setExpression('angry')
-      this.say(ao.card, ao.order.customer, 'overflow', () => this.rng.next())
+      this.customer.setExpression('angry')
+      this.say(ao.order.customer, 'overflow', () => this.rng.next())
       if (ao.order.customer === 'muhtar') {
         this.score = Math.max(0, this.score - SCORING.muhtarOverflowPenalty)
         this.hud.setScore(this.score)
-        this.floats.float(this.L.col.cx, this.station.glass.topWorldY, `−${SCORING.muhtarOverflowPenalty}`, 54 * this.L.u, '#FF8A7A')
+        this.floats.float(this.L.col.cx, st.glass.topWorldY, `−${SCORING.muhtarOverflowPenalty}`, 56 * this.L.u, '#FF8A7A')
       }
     }
-    this.floats.burst(this.L.col.cx, this.station.glass.topWorldY - 90 * this.L.u, 'Taştı!', 60 * this.L.u, '#FF8A7A')
+    this.floats.burst(this.L.col.cx, st.glass.topWorldY - 90 * this.L.u, tr.game.overflow, 64 * this.L.u, '#FF8A7A')
     this.loseLife()
     await this.wait(1000)
     if (!this.alive(g)) return
-    await this.station.slideOut(null)
+    if (ao) void this.customer.leave(false)
+    await st.slideOut()
     if (!this.alive(g)) return
-    this.station.resetContents()
-    if (ao) {
-      this.board.removeCard(ao.card, false)
-      const idx = this.orders.indexOf(ao)
-      if (idx >= 0) this.orders.splice(idx, 1)
-    }
-    const next = this.orders[0]
-    this.station.setGlass(next ? next.order.glass : 'ince')
-    await this.station.slideIn()
-    if (!this.alive(g)) return
-    this.busy = false
-    this.station.setBusy(false)
-    this.station.setInputEnabled(this.inputAllowed())
-    this.activateHead()
+    await this.nextGlass(g)
   }
 
-  /** Sabır bitti: müşteri kızgın gider, 1 can gider. */
-  private customerLeft(index: number): void {
-    const ao = this.orders[index]
-    if (!ao) return
-    ao.card.setExpression('angry')
-    this.say(ao.card, ao.order.customer, 'left', () => this.rng.next())
+  /** Sabır bitti: müşteri kızgın gider, 1 can gider, bardaktaki çay dökülür. */
+  private async customerLeft(): Promise<void> {
+    const ao = this.current
+    if (!ao || this.busy || this.over) return
+    const g = this.gen
+    this.busy = true
+    const st = this.station
+    st.setInputEnabled(false)
+    st.setBusy(true)
+    this.customer.setExpression('angry')
+    this.say(ao.order.customer, 'left', () => this.rng.next())
     AudioService.play('reject', { rate: 0.85 })
     HapticsService.trigger('error')
-    this.orders.splice(index, 1)
-    this.board.removeCard(ao.card, false)
     this.streak = 0
     this.hud.setCombo(1)
     this.loseLife()
-    if (index === 0 && !this.busy) void this.discardGlass()
-    else this.activateHead()
-  }
-
-  /** Aktif sipariş gittiyse bardaktaki çay dökülür, yeni bardak gelir. */
-  private async discardGlass(): Promise<void> {
-    const st = this.station
-    if (st.dem + st.su <= 0.0005 && st.sugar === 0) {
-      this.activateHead()
-      return
+    await this.wait(900)
+    if (!this.alive(g)) return
+    void this.customer.leave(false)
+    if (st.dem + st.su > 0.0005 || st.sugar > 0) {
+      await st.slideOut()
+      if (!this.alive(g)) return
+      await this.nextGlass(g)
+    } else {
+      this.current = null
+      st.setHasOrder(false)
+      st.setTargets(null, null)
+      this.busy = false
+      st.setBusy(false)
+      this.arrivalIn = this.rng.float(ARRIVAL.delay[0], ARRIVAL.delay[1]) + 0.4
     }
-    const g = this.gen
-    this.busy = true
-    st.setInputEnabled(false)
-    st.setBusy(true)
-    await st.slideOut(null)
-    if (!this.alive(g)) return
-    st.resetContents()
-    const next = this.orders[0]
-    st.setGlass(next ? next.order.glass : 'ince')
-    await st.slideIn()
-    if (!this.alive(g)) return
-    this.busy = false
-    st.setBusy(false)
-    st.setInputEnabled(this.inputAllowed())
-    this.activateHead()
   }
 
   // ---------- Can ve oyun sonu ----------
@@ -482,7 +433,7 @@ export class ShiftScene extends PlayScene {
       this.awaitingContinue = true
       this.station.setInputEnabled(false)
       const g = this.gen
-      void this.wait(900).then(() => {
+      void this.wait(1300).then(() => {
         if (!this.alive(g)) return
         if (!this.continued) {
           bus.emit('game:continue-offer', { adAvailable: services.ads.isRewardedReady(), cost: CONTINUE_COST })
@@ -503,14 +454,14 @@ export class ShiftScene extends PlayScene {
     this.awaitingContinue = false
     this.lives = 1
     this.hud.setLives(this.lives, this.maxLives)
-    // Aktif sipariş sıfırlanır: sabırlar dolar, bardak boşalır.
-    for (const o of this.orders) {
-      o.patience = o.max
-      o.warned = false
-      o.card.setPatience(1)
-      o.card.setExpression('neutral')
+    // Aktif müşterinin sabrı dolar.
+    if (this.current) {
+      this.current.patience = this.current.max
+      this.current.warned = false
+      this.customer.setPatience(1)
+      this.customer.setExpression('neutral')
     }
-    void this.discardGlass().then(() => this.station.setInputEnabled(this.inputAllowed()))
+    this.station.setInputEnabled(this.inputAllowed())
     AudioService.play('purchase')
   }
 
@@ -541,7 +492,7 @@ export class ShiftScene extends PlayScene {
     this.rush.active = true
     this.rush.left = RUSH.duration
     this.rush.name = this.rng.pick(RUSH.names)
-    this.board.showRush(this.rush.name)
+    this.hud.showRush(this.rush.name)
     AudioService.play('whoosh')
     this.showCrowd(true)
   }
@@ -549,29 +500,29 @@ export class ShiftScene extends PlayScene {
   private endRush(): void {
     this.rush.active = false
     this.rush.nextAt = this.served + this.rng.int(RUSH.everyServes[0], RUSH.everyServes[1])
-    this.board.hideRush()
+    this.hud.hideRush()
     this.showCrowd(false)
   }
 
-  /** Arka plan kalabalıklaşır: tezgâhın arkasında flu müşteri siluetleri. */
+  /** Arka plan kalabalıklaşır: müşterinin arkasında bekleşen flu siluetler. */
   private showCrowd(on: boolean): void {
     const L = this.L
     if (on) {
-      const n = runtime.lowQuality ? 3 : 6
+      const n = runtime.lowQuality ? 2 : 4
       for (let i = 0; i < n; i++) {
         const id = customerImageId(this.rng.pick(CUSTOMER_IDS), 'neutral')
         const side = i % 2 ? 1 : -1
-        const x = L.col.cx + side * (L.col.w * (0.22 + 0.13 * Math.floor(i / 2)))
-        const s = 300 * L.u
+        const x = L.col.cx + side * L.col.w * (0.3 + 0.16 * Math.floor(i / 2))
+        const s = L.customer.size * 0.62
         const img = this.add
           .image(x + side * 300 * L.u, L.counterY + 10 * L.u, id)
           .setOrigin(0.5, 1)
           .setDisplaySize(s, s)
-          .setDepth(-50)
-        img.setTint(0x6a4a38).setAlpha(0)
+          .setDepth(DEPTH.customer - 5)
+        img.setTint(0x8a6a58).setAlpha(0)
         img.setFlipX(side > 0)
         this.crowd.push(img)
-        this.tweens.add({ targets: img, x, alpha: 0.55, duration: 500, delay: i * 90, ease: 'Cubic.easeOut' })
+        this.tweens.add({ targets: img, x, alpha: 0.7, duration: 500, delay: i * 90, ease: 'Cubic.easeOut' })
         this.tweens.add({ targets: img, y: img.y - 8 * L.u, duration: 600 + i * 70, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
       }
     } else {
@@ -583,7 +534,7 @@ export class ShiftScene extends PlayScene {
   }
 
   protected debugExtra(): string {
-    return `aşama ${this.stage.stage} · servis ${this.served} · kuyruk ${this.orders.length}/${this.capacity}${this.rush.active ? ' · YOĞUN' : ''}`
+    return `aşama ${this.stage.stage} · servis ${this.served}${this.rush.active ? ' · YOĞUN' : ''}`
   }
 
   protected onResize(L: Layout): void {

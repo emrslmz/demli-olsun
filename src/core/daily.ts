@@ -3,7 +3,6 @@
 import { LAUNCH_DATE } from '@/config/economy'
 import { CUSTOMERS, type CustomerId } from '@/data/customers'
 import { FILL_TYPES, TEA_TYPES } from '@/data/orderTypes'
-import type { GlassProfileId } from './glassModel'
 import { pickFillType, pickSugar, pickTeaType, type Order } from './orders'
 import { Rng } from './rng'
 
@@ -77,14 +76,12 @@ export interface DailyChallenge {
 }
 
 const DAILY_CUSTOMERS: CustomerId[] = ['riza', 'muhtar', 'taksici', 'ogrenci']
-const DAILY_GLASSES: GlassProfileId[] = ['ince', 'duz', 'kupa']
 export const DAILY_PATIENCE = 30
 
 /** Aynı gün herkes aynı siparişi alır: her şey tarihten türetilen seed'den gelir. */
 export function dailyChallenge(dateKey: string): DailyChallenge {
   const rng = new Rng(`demli-olsun:daily:${dateKey}`)
   const customer = rng.pick(DAILY_CUSTOMERS)
-  const glass = rng.pick(DAILY_GLASSES)
   const teaType = pickTeaType(rng, customer)
   const fillType = pickFillType(rng, customer)
   const [d0, d1] = TEA_TYPES[teaType].dem
@@ -107,9 +104,7 @@ export function dailyChallenge(dateKey: string): DailyChallenge {
       fillType,
       fillTarget,
       sugar,
-      glass,
       patience: DAILY_PATIENCE * CUSTOMERS[customer].patienceFactor,
-      trayCount: 1,
     },
     flowScale,
   }

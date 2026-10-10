@@ -29,6 +29,9 @@ export class AmbientScene extends BaseScene {
   private kettleSteam!: Steam
   private mode: 'menu' | 'preview' = 'menu'
   private shown = { glass: 'klasik', pot: 'celik', venue: 'mahalle' }
+  /** Menünün bildirdiği boş alan (CSS px); yoksa varsayılan yerleşim. */
+  private slot: { top: number; bottom: number } | null = null
+  private hero = { baseY: 0, unit: 1, k: 1 }
   private anchorEditor: AnchorEditor | null = null
 
   constructor() {
@@ -70,10 +73,35 @@ export class AmbientScene extends BaseScene {
     this.onBus('cosmetic:preview', (p) => void this.preview(p))
     this.onBus('cosmetic:equipped', () => void this.preview(null))
     this.onBus('dev:anchors', (on) => this.setAnchorEditor(on))
+    this.onBus('menu:hero-slot', (slot) => {
+      this.slot = slot
+      this.layoutAll(this.L)
+    })
+    bus.emit('menu:hero-request')
   }
 
+  /**
+   * Menü kahramanının yeri ve boyu. Varsayılan: tezgâhın arka kenarına yakın. Menü boş alanını bildirdiyse
+   * bardak o alana sığacak şekilde küçülür ve butonların hemen üstüne oturur (kısa ekranlarda logo/buton altında kalmasın).
+   */
+  private heroFit(L: Layout): { baseY: number; unit: number; k: number } {
+    const full = L.glassUnit * 1.05
+    let baseY = L.counterY + (L.glassBaseY - L.counterY) * 0.5
+    let unit = full
+    if (this.slot) {
+      const top = this.slot.top * L.dpr
+      const bottom = this.slot.bottom * L.dpr
+      baseY = Math.min(baseY, bottom - L.saucer.w * 0.16)
+      // Bardak boyu ≈ 1.12 birim, üstüne buhar için pay.
+      unit = Math.max(full * 0.55, Math.min(full, (baseY - top) / 1.25))
+    }
+    return { baseY, unit, k: unit / full }
+  }
+
+  /** Çarşıda kamera aşağı kayar: bardak ekranın üst kısmında, vitrinin üstünde görünür. */
   private previewScroll(L: Layout): number {
-    return Math.max(0, L.counterY - L.H * 0.42)
+    const center = this.hero.baseY - this.hero.unit * 0.6
+    return Math.max(0, center - L.H * 0.24)
   }
 
   private setMode(m: 'menu' | 'preview'): void {
@@ -131,17 +159,27 @@ export class AmbientScene extends BaseScene {
   private layoutAll(L: Layout): void {
     this.bg.layout(L)
     this.themeFx.layout(L)
-    const k = 1.25
-    this.saucer.setPosition(L.col.cx, L.saucer.y).setDisplaySize(L.saucer.w * k, L.saucer.w * k)
-    this.glass.place(L.col.cx, L.glassBaseY - 6 * L.u, L.glassUnit * k)
+    // Menü kahramanı: tezgâhın ortasında tabaklı büyük bir bardak çay, iki yanda dinlenen demlik ve çaydanlık.
+    const h = this.heroFit(L)
+    this.hero = h
+    const sw = L.saucer.w * 1.15 * 1.05 * h.k
+    this.saucer.setPosition(L.col.cx, h.baseY + 6 * L.u * h.k).setDisplaySize(sw, sw)
+    this.glass.place(L.col.cx, h.baseY - 6 * L.u * h.k, h.unit)
     this.steam.setZone(this.glass.worldRadiusAt(1) * 1.2)
-    this.kettleSteam.setZone(12 * L.u)
-    const pw = L.potWidth.demlik * 1.05
+    this.kettleSteam.setZone(12 * L.u * h.k)
+    // Bardak küçüldükçe demlikler de küçülür ve ortaya yaklaşır.
+    const ps = 1.1 * Math.max(0.7, h.k)
+    const spread = 0.6 + 0.4 * h.k
+    const pw = L.potWidth.demlik * ps
     const dTex = this.demlik.texture.getSourceImage() as { width: number; height: number }
-    this.demlik.setDisplaySize(pw, (pw * dTex.height) / dTex.width).setPosition(L.col.cx - L.col.w * 0.34, L.counterY + 8 * L.u)
-    const cw = L.potWidth.caydanlik * 1.05
+    this.demlik
+      .setDisplaySize(pw, (pw * dTex.height) / dTex.width)
+      .setPosition(L.col.cx + (L.pots.dem.rest.x - 20 * L.u - L.col.cx) * spread, h.baseY - 10 * L.u)
+    const cw = L.potWidth.caydanlik * ps
     const cTex = this.caydanlik.texture.getSourceImage() as { width: number; height: number }
-    this.caydanlik.setDisplaySize(cw, (cw * cTex.height) / cTex.width).setPosition(L.col.cx + L.col.w * 0.34, L.counterY + 8 * L.u)
+    this.caydanlik
+      .setDisplaySize(cw, (cw * cTex.height) / cTex.width)
+      .setPosition(L.col.cx + (L.pots.su.rest.x + 20 * L.u - L.col.cx) * spread, h.baseY - 10 * L.u)
     if (this.mode === 'preview') this.cameras.main.setScroll(0, this.previewScroll(L))
   }
 

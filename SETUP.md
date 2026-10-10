@@ -282,7 +282,7 @@ Son manifesti doğrulamak için Android Studio'da `AndroidManifest.xml` → altt
 ## 16. Tema ve görseller
 
 - Aktif tema: `.env` → `VITE_ACTIVE_THEME` (`auto` = tarihe göre: Aralık–Şubat kış, Haziran–Ağustos yaz, 20 Ekim–2 Kasım cadılar bayramı). Geliştirici menüsünden anında değiştirilebilir.
-- Tüm görseller `tools/art/` altındaki kodla çizilir: `npm run art` (yalnızca bir tema: `npm run art -- --theme=kis`). Görsel değiştirince çapaları (demlik pivot/ağız, tezgâh çizgisi) geliştirici menüsündeki **çapa düzenleyici** ile ayarla; "Kopyala" ile gelen JSON'u ilgili `manifest.json`'a işle.
+- Tüm görseller `tools/art/` altındaki kodla çizilir: `npm run art` (yalnızca bir tema: `npm run art -- --theme=kis`). Üretimden sonra PNG'ler `tools/art/quantize.py` ile 256 renk paletine indirilir (Python 3 + Pillow varsa; yoksa adım atlanır, görseller yalnızca daha büyük olur. Elle atlamak için `npm run art -- --no-quantize`). Görsel değiştirince çapaları (demlik pivot/ağız, tezgâh çizgisi) geliştirici menüsündeki **çapa düzenleyici** ile ayarla; "Kopyala" ile gelen JSON'u ilgili `manifest.json`'a işle.
 - Uygulama ikonu ve splash kaynakları `assets/` altında; değiştirince `npm run cap:assets`.
 
 ## 17. Manuel test matrisi

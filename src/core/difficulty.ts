@@ -1,6 +1,6 @@
 /** Zorluk aşamaları (Bölüm 6.4). */
 
-import { PATIENCE, STAGE5, STAGES, type GaugeMode, type StageConfig } from '@/config/gameplay'
+import { STAGE5, STAGES, type GaugeMode, type StageConfig } from '@/config/gameplay'
 
 export function stageFor(served: number): StageConfig {
   let current = STAGES[0] as StageConfig
@@ -16,15 +16,13 @@ export function basePatience(served: number): number {
   return Math.max(STAGE5.minPatience, s.patience - extra)
 }
 
-export function orderPatience(served: number, customerFactor: number, trayGlasses = 1): number {
-  const base = basePatience(served) * customerFactor
-  if (trayGlasses <= 1) return base
-  return base * trayGlasses * PATIENCE.trayPerGlass
+export function orderPatience(served: number, customerFactor: number): number {
+  return basePatience(served) * customerFactor
 }
 
 /**
- * Efektif gösterge modu. Renk körlüğü modu ve Usta Gözü güçlendiricisi göstergeyi her zaman rakamlı yapar
- * (çarpan da 1.0 olur).
+ * Efektif rehber modu. Renk körlüğü modu ve Usta Gözü güçlendiricisi bardaktaki iki çizgiyi her zaman
+ * gösterir (çarpan da 1.0 olur).
  */
 export function effectiveGauge(stageGauge: GaugeMode, opts: { colorBlind?: boolean; ustaGozu?: boolean }): GaugeMode {
   if (opts.colorBlind || opts.ustaGozu) return 'numbers'

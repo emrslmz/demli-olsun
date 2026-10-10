@@ -11,106 +11,96 @@
   },
   "assets": {
     "bg_mahalle_phone": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_mahalle_phone.jpg",
       "w": 1080,
-      "h": 1920
+      "h": 2340
     },
     "bg_mahalle_tablet": {
-      "counterY": 0.68,
+      "counterY": 0.5,
       "file": "bg/bg_mahalle_tablet.jpg",
       "w": 1536,
       "h": 2048
     },
     "char_riza_neutral": {
       "file": "char/char_riza_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_riza_happy": {
       "file": "char/char_riza_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_riza_angry": {
       "file": "char/char_riza_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_muhtar_neutral": {
       "file": "char/char_muhtar_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_muhtar_happy": {
       "file": "char/char_muhtar_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_muhtar_angry": {
       "file": "char/char_muhtar_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_taksici_neutral": {
       "file": "char/char_taksici_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_taksici_happy": {
       "file": "char/char_taksici_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_taksici_angry": {
       "file": "char/char_taksici_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_ogrenci_neutral": {
       "file": "char/char_ogrenci_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_ogrenci_happy": {
       "file": "char/char_ogrenci_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_ogrenci_angry": {
       "file": "char/char_ogrenci_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_esnaf_neutral": {
       "file": "char/char_esnaf_neutral.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_esnaf_happy": {
       "file": "char/char_esnaf_happy.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "char_esnaf_angry": {
       "file": "char/char_esnaf_angry.png",
-      "w": 512,
-      "h": 512
+      "w": 640,
+      "h": 640
     },
     "logo_emblem": {
       "file": "logo/logo_emblem.png",
       "w": 1024,
       "h": 1024
-    },
-    "deco_board_top": {
-      "file": "deco/deco_board_top.png",
-      "w": 1536,
-      "h": 256
-    },
-    "deco_card_corner": {
-      "file": "deco/deco_card_corner.png",
-      "w": 256,
-      "h": 256
     },
     "deco_counter": {
       "file": "deco/deco_counter.png",
@@ -125,8 +115,6 @@
   },
   "extras": {
     "deco": [
-      "deco_board_top",
-      "deco_card_corner",
       "deco_counter"
     ],
     "particles": [

@@ -45,14 +45,21 @@ describe('glassModel', () => {
       const e = 0.01
       return (2 * e) / (m.volumeAt(h + e) - m.volumeAt(h - e))
     }
-    const waist = dhdv(0.4)
-    expect(waist).toBeGreaterThan(dhdv(0.15) * 1.3)
-    expect(waist).toBeGreaterThan(dhdv(0.9) * 2)
+    const waist = dhdv(0.48)
+    expect(waist).toBeGreaterThan(dhdv(0.15) * 1.4)
+    expect(waist).toBeGreaterThan(dhdv(0.9) * 1.4)
   })
 
-  it('düz bardak doğrusala yakın', () => {
-    const m = getGlassModel('duz')
-    for (let i = 1; i < 10; i++) expect(Math.abs(m.heightAt(i / 10) - i / 10)).toBeLessThan(0.08)
+  it('gerçek ince belli oranları: ağız en geniş, göbek belden geniş', () => {
+    const m = getGlassModel('ince')
+    const rim = m.radiusAt(1)
+    const belly = m.radiusAt(0.2)
+    const waist = m.radiusAt(0.48)
+    expect((rim * 2) / 1).toBeGreaterThan(0.5)
+    expect((rim * 2) / 1).toBeLessThan(0.62)
+    expect(belly).toBeLessThan(rim)
+    expect(waist).toBeLessThan(belly * 0.8)
+    expect(m.maxRadius).toBeCloseTo(rim, 3)
   })
 
   it('monoton spline kontrol noktalarından geçer ve taşmaz', () => {

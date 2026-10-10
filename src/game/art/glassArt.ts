@@ -1,10 +1,10 @@
 /**
  * Bardak texture'ları: glassModel profilinden çizilir, böylece görünen seviye hesaplanan hacimle birebir tutar.
  * Üç katman aynı boyut ve hizada üretilir:
- *   back   — arka cam duvarı / fincanın iç yüzü (sıvının arkasında)
+ *   back   — arka cam duvarı ve arka ağız (sıvının arkasında)
  *   liquid — iç silüet, beyaz; ortası parlak kenarları koyu. Çay rengiyle tint'lenir, seviyeye göre kırpılır.
- *   front  — kontur, ağız, parlamalar, kalın dip, desen (decal), kulp. Porselende opak gövde.
- * Bakış açısı ~15° yukarıdan: her yatay kesit bir elips (ry = rx × ELLIPSE_K).
+ *   front  — cam gövde tonu, kalın dip, desen (decal), keskin parlamalar, kalın kontur ve ağız dudağı.
+ * Görünüm tools/art/lib/teaGlass.mjs ile aynıdır (parlak cartoon). Bakış ~15° yukarıdan: kesitler elips.
  */
 
 import type * as Phaser from 'phaser'
@@ -36,7 +36,7 @@ export interface GlassGeometry {
   y(h: number): number
 }
 
-const PAD = 14
+const PAD = 16
 
 export function glassGeometry(id: GlassProfileId): GlassGeometry {
   const model = getGlassModel(id)
@@ -44,15 +44,13 @@ export function glassGeometry(id: GlassProfileId): GlassGeometry {
   const hpx = GLASS_TEX_UNIT * def.height
   const wall = def.wall * hpx
   const maxR = model.maxRadius * hpx
-  const handleW = def.handle ? maxR * 0.62 : 0
   const halfW = maxR + wall + PAD
   const cx = halfW + 4
-  const texW = Math.ceil(cx + halfW + handleW)
+  const texW = Math.ceil(cx + halfW)
   const rimRy = (model.radiusAt(1) * hpx + wall) * ELLIPSE_K
   const yTop = PAD + rimRy + 4
   const yBot = yTop + hpx
-  const base = def.base * hpx
-  const yBase = yBot + base
+  const yBase = yBot + def.base * hpx
   const baseRy = (model.radiusAt(0) * hpx + wall) * ELLIPSE_K
   const texH = Math.ceil(yBase + baseRy + PAD)
   return {
@@ -71,23 +69,21 @@ export function glassGeometry(id: GlassProfileId): GlassGeometry {
   }
 }
 
-/** Dış silüet yolu (ağız elipsinin ön yarısı dahil değil; ağız ayrıca çizilir). */
+/** Dış silüet: ağzın arka yarısı + sağ kenar + kalın dip + dip ön yayı + sol kenar. */
 function outerPath(ctx: CanvasRenderingContext2D, g: GlassGeometry, steps = 80): void {
   const k = ELLIPSE_K
   const rTop = g.r(1) + g.wall
-  const rBase = g.r(0) + g.wall
+  const rBase = (g.r(0) + g.wall) * 1.02
+  const r0 = g.r(0) + g.wall
   ctx.beginPath()
-  // Ağız arka yarısı (soldan sağa üstten)
   ctx.ellipse(g.cx, g.yTop, rTop, rTop * k, 0, Math.PI, 0, false)
-  // Sağ kenar aşağı
   for (let i = steps; i >= 0; i--) {
     const h = i / steps
     ctx.lineTo(g.cx + g.r(h) + g.wall, g.y(h))
   }
-  ctx.lineTo(g.cx + rBase, g.yBase)
-  // Dip ön kenarı
+  ctx.quadraticCurveTo(g.cx + r0 + g.wall * 0.6, g.yBase - (g.yBase - g.yBot) * 0.2, g.cx + rBase, g.yBase)
   ctx.ellipse(g.cx, g.yBase, rBase, rBase * k, 0, 0, Math.PI, false)
-  // Sol kenar yukarı
+  ctx.quadraticCurveTo(g.cx - r0 - g.wall * 0.6, g.yBase - (g.yBase - g.yBot) * 0.2, g.cx - r0, g.yBot)
   for (let i = 0; i <= steps; i++) {
     const h = i / steps
     ctx.lineTo(g.cx - g.r(h) - g.wall, g.y(h))
@@ -119,24 +115,20 @@ function rgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
-function drawHandle(ctx: CanvasRenderingContext2D, g: GlassGeometry, fill: string, outline: string, lw: number) {
-  const rMid = g.r(0.55) + g.wall
-  const x0 = g.cx + rMid - g.wall * 0.5
-  const yA = g.y(0.82)
-  const yB = g.y(0.22)
-  const reach = g.model.maxRadius * g.hpx * 0.55
-  const thick = g.hpx * 0.07
+/** Profili izleyen parlama çizgisi. rel: yarıçapın oranı (negatif: sol). */
+function profileStroke(ctx: CanvasRenderingContext2D, g: GlassGeometry, rel: number, t0: number, t1: number, width: number, alpha: number) {
   ctx.beginPath()
-  ctx.moveTo(x0, yA - thick / 2)
-  ctx.bezierCurveTo(x0 + reach * 1.15, yA - thick, x0 + reach * 1.2, yB + thick, x0, yB + thick / 2)
-  ctx.lineTo(x0, yB - thick / 2)
-  ctx.bezierCurveTo(x0 + reach * 0.7, yB, x0 + reach * 0.68, yA, x0, yA + thick / 2)
-  ctx.closePath()
-  ctx.fillStyle = fill
-  ctx.fill()
-  ctx.lineWidth = lw
-  ctx.strokeStyle = outline
+  const steps = 40
+  for (let i = 0; i <= steps; i++) {
+    const t = t0 + ((t1 - t0) * i) / steps
+    const x = g.cx + (g.r(t) + g.wall * 0.5) * rel
+    if (i === 0) ctx.moveTo(x, g.y(t))
+    else ctx.lineTo(x, g.y(t))
+  }
+  ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
+  ctx.lineWidth = width
+  ctx.strokeStyle = `rgba(255,255,255,${alpha})`
   ctx.stroke()
 }
 
@@ -200,49 +192,37 @@ function drawLiquid(ctx: CanvasRenderingContext2D, g: GlassGeometry) {
     const h = Math.max(0, Math.min(1, (g.yBot - y) / g.hpx))
     const R = g.r(h)
     const grad = ctx.createLinearGradient(g.cx - R, 0, g.cx + R, 0)
-    grad.addColorStop(0, 'rgb(120,120,120)')
-    grad.addColorStop(0.18, 'rgb(205,205,205)')
-    grad.addColorStop(0.42, 'rgb(255,255,255)')
-    grad.addColorStop(0.62, 'rgb(250,250,250)')
-    grad.addColorStop(0.88, 'rgb(185,185,185)')
-    grad.addColorStop(1, 'rgb(110,110,110)')
+    grad.addColorStop(0, 'rgb(105,105,105)')
+    grad.addColorStop(0.16, 'rgb(200,200,200)')
+    grad.addColorStop(0.4, 'rgb(255,255,255)')
+    grad.addColorStop(0.62, 'rgb(246,246,246)')
+    grad.addColorStop(0.88, 'rgb(170,170,170)')
+    grad.addColorStop(1, 'rgb(95,95,95)')
     ctx.fillStyle = grad
     ctx.fillRect(g.cx - R - 2, y, R * 2 + 4, 1.2)
   }
+  // Dibe doğru koyulaşma
+  const vg = ctx.createLinearGradient(0, g.yTop, 0, g.yBot + 10)
+  vg.addColorStop(0, 'rgba(0,0,0,0)')
+  vg.addColorStop(0.7, 'rgba(0,0,0,0.06)')
+  vg.addColorStop(1, 'rgba(0,0,0,0.28)')
+  ctx.fillStyle = vg
+  ctx.fillRect(0, g.yTop - 20, g.texW, g.yBot - g.yTop + 40)
   ctx.restore()
 }
 
 function drawGlassBack(ctx: CanvasRenderingContext2D, g: GlassGeometry, skin: GlassSkin) {
   const k = ELLIPSE_K
   const r1 = g.r(1)
-  if (g.model.def.opaque) {
-    // Fincanın iç yüzü: ağız elipsi, arkası gölgeli porselen.
-    const grad = ctx.createLinearGradient(0, g.yTop - r1 * k, 0, g.yTop + r1 * k)
-    grad.addColorStop(0, '#d9dde2')
-    grad.addColorStop(1, '#fbfbf8')
-    ctx.fillStyle = grad
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yTop, r1, r1 * k, 0, 0, Math.PI * 2)
-    ctx.fill()
-    // İç duvar boyunca gölge
-    ctx.fillStyle = 'rgba(80,90,110,0.18)'
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yTop + r1 * k * 0.25, r1 * 0.92, r1 * k * 0.7, 0, Math.PI, 0)
-    ctx.fill()
-    return
-  }
   ctx.save()
   innerPath(ctx, g)
-  ctx.fillStyle = rgba(skin.glass, skin.glassAlpha * 0.6)
+  ctx.fillStyle = rgba(skin.glass, skin.glassAlpha * 0.55)
   ctx.fill()
-  ctx.restore()
-  // Arka duvardaki dikey yansıma (sağda)
-  ctx.save()
-  innerPath(ctx, g)
   ctx.clip()
+  // Arka duvardaki dikey yansıma (sağda)
   const grad = ctx.createLinearGradient(g.cx + r1 * 0.2, 0, g.cx + r1, 0)
   grad.addColorStop(0, 'rgba(255,255,255,0)')
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.18)')
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.2)')
   grad.addColorStop(1, 'rgba(255,255,255,0)')
   ctx.fillStyle = grad
   ctx.fillRect(g.cx, g.yTop - 40, r1 * 1.2, g.hpx + 80)
@@ -250,7 +230,7 @@ function drawGlassBack(ctx: CanvasRenderingContext2D, g: GlassGeometry, skin: Gl
   // Ağzın arka yarısı (cam arkadan görünür)
   ctx.beginPath()
   ctx.ellipse(g.cx, g.yTop, r1 + g.wall * 0.5, (r1 + g.wall * 0.5) * k, 0, Math.PI, 0)
-  ctx.lineWidth = Math.max(2, g.wall * 0.55)
+  ctx.lineWidth = Math.max(2, g.hpx * 0.012)
   ctx.strokeStyle = rgba(skin.outline, 0.45)
   ctx.stroke()
 }
@@ -262,96 +242,48 @@ function drawGlassFront(
   decal: { img: CanvasImageSource; w: number; h: number } | null,
 ) {
   const k = ELLIPSE_K
-  const lw = Math.max(3, g.hpx * 0.014)
+  const lw = Math.max(3, g.hpx * 0.022)
   const r1 = g.r(1) + g.wall
   const r0 = g.r(0) + g.wall
-  const def = g.model.def
+  const rBase = r0 * 1.02
 
-  if (def.handle) {
-    drawHandle(ctx, g, def.opaque ? '#fbfbf6' : rgba(skin.glass, 0.55), skin.outline, lw)
+  ctx.save()
+  outerPath(ctx, g)
+  // Cam gövde: kenarlarda dolu, ortada şeffaf
+  const body = ctx.createLinearGradient(g.cx - r1, 0, g.cx + r1, 0)
+  body.addColorStop(0, rgba(skin.glass, Math.min(0.9, skin.glassAlpha * 3.4)))
+  body.addColorStop(0.22, rgba(skin.glass, skin.glassAlpha * 1.2))
+  body.addColorStop(0.55, 'rgba(255,255,255,0.06)')
+  body.addColorStop(0.85, rgba(skin.glass, skin.glassAlpha * 1.5))
+  body.addColorStop(1, rgba(skin.glass, Math.min(0.9, skin.glassAlpha * 3.4)))
+  ctx.fillStyle = body
+  ctx.fill()
+  ctx.clip()
+  // Kalın cam dip
+  ctx.fillStyle = rgba(skin.glass, Math.min(0.85, skin.glassAlpha * 3))
+  ctx.beginPath()
+  ctx.ellipse(g.cx, g.yBot, r0, r0 * k, 0, Math.PI, 0, true)
+  ctx.lineTo(g.cx + rBase, g.yBase)
+  ctx.ellipse(g.cx, g.yBase, rBase, rBase * k, 0, 0, Math.PI, false)
+  ctx.closePath()
+  ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(g.cx - r0 * 0.7, g.yBot + (g.yBase - g.yBot) * 0.45)
+  ctx.quadraticCurveTo(g.cx, g.yBase + rBase * k * 0.4, g.cx + r0 * 0.55, g.yBot + (g.yBase - g.yBot) * 0.5)
+  ctx.lineWidth = lw * 0.9
+  ctx.lineCap = 'round'
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)'
+  ctx.stroke()
+  if (decal) {
+    ctx.globalAlpha = 0.92
+    wrapDecal(ctx, g, decal.img, decal.w, decal.h)
+    ctx.globalAlpha = 1
   }
-
-  if (def.opaque) {
-    // Porselen gövde: ağzın ön yarısından aşağısı opak.
-    ctx.save()
-    outerPath(ctx, g)
-    ctx.clip()
-    const grad = ctx.createLinearGradient(g.cx - r1, 0, g.cx + r1, 0)
-    grad.addColorStop(0, '#e6e8ea')
-    grad.addColorStop(0.3, '#ffffff')
-    grad.addColorStop(0.75, '#f3f3ef')
-    grad.addColorStop(1, '#cfd4da')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, g.yTop, g.texW, g.texH)
-    // Kobalt mavisi ağız bandı ve lale motifi
-    ctx.strokeStyle = '#1F4E8C'
-    ctx.lineWidth = g.hpx * 0.05
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yTop + g.hpx * 0.05, r1, r1 * k, 0, 0.05, Math.PI - 0.05)
-    ctx.stroke()
-    ctx.lineWidth = g.hpx * 0.018
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yBot - g.hpx * 0.05, g.r(0.1) + g.wall, (g.r(0.1) + g.wall) * k, 0, 0.1, Math.PI - 0.1)
-    ctx.stroke()
-    ctx.restore()
-    // Ağız (iç) bölgesini aç: içi BACK + yüzey katmanından görünür.
-    ctx.save()
-    ctx.globalCompositeOperation = 'destination-out'
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yTop, g.r(1), g.r(1) * k, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.restore()
-  } else {
-    // Cam gövde: çok hafif tint + kalın dip
-    ctx.save()
-    outerPath(ctx, g)
-    ctx.fillStyle = rgba(skin.glass, skin.glassAlpha * 0.35)
-    ctx.fill()
-    ctx.clip()
-    // Kalın cam dip
-    ctx.fillStyle = rgba(skin.glass, Math.min(0.8, skin.glassAlpha * 2.2))
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yBot, g.r(0), g.r(0) * k, 0, 0, Math.PI)
-    ctx.lineTo(g.cx - r0, g.yBase)
-    ctx.ellipse(g.cx, g.yBase, r0, r0 * k, 0, Math.PI, 0, true)
-    ctx.closePath()
-    ctx.fill()
-    if (decal) {
-      ctx.globalAlpha = 0.92
-      wrapDecal(ctx, g, decal.img, decal.w, decal.h)
-      ctx.globalAlpha = 1
-    }
-    // Sol parlama (ışık sol üstten): profili izleyen yumuşak şerit
-    ctx.lineCap = 'round'
-    for (const [off, width, alpha] of [
-      [0.62, 0.12, 0.42],
-      [0.48, 0.05, 0.55],
-    ] as const) {
-      ctx.beginPath()
-      for (let i = 4; i <= 92; i++) {
-        const h = i / 100
-        const x = g.cx - (g.r(h) + g.wall * 0.3) * off
-        const y = g.y(h)
-        if (i === 4) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      ctx.lineWidth = g.hpx * width
-      ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.5})`
-      ctx.stroke()
-    }
-    // Sağ kenarda ince yansıma
-    ctx.beginPath()
-    for (let i = 10; i <= 85; i++) {
-      const h = i / 100
-      const x = g.cx + (g.r(h) + g.wall * 0.2) * 0.86
-      if (i === 10) ctx.moveTo(x, g.y(h))
-      else ctx.lineTo(x, g.y(h))
-    }
-    ctx.lineWidth = g.hpx * 0.018
-    ctx.strokeStyle = 'rgba(255,255,255,0.28)'
-    ctx.stroke()
-    ctx.restore()
-  }
+  // Keskin parlamalar: solda uzun şerit + kısa çizgi, sağda ince kenar ışığı
+  profileStroke(ctx, g, -0.62, 0.1, 0.9, g.hpx * 0.055, 0.72)
+  profileStroke(ctx, g, -0.4, 0.62, 0.84, g.hpx * 0.025, 0.6)
+  profileStroke(ctx, g, 0.8, 0.18, 0.78, g.hpx * 0.02, 0.45)
+  ctx.restore()
 
   // Dış kontur
   ctx.lineJoin = 'round'
@@ -359,33 +291,28 @@ function drawGlassFront(
   ctx.strokeStyle = skin.outline
   outerPath(ctx, g)
   ctx.stroke()
-  // Ağzın ön yarısı (kalın) + ağız kenarı rengi
+  // Dip iç elipsi
   ctx.beginPath()
-  ctx.ellipse(g.cx, g.yTop, r1 - g.wall * 0.5, (r1 - g.wall * 0.5) * k, 0, 0, Math.PI)
-  ctx.lineWidth = Math.max(lw * 1.4, g.wall * 0.9)
-  ctx.strokeStyle = skin.rim === '#FFFFFF' ? 'rgba(255,255,255,0.75)' : skin.rim
+  ctx.ellipse(g.cx, g.yBot, g.r(0), g.r(0) * k, 0, 0, Math.PI)
+  ctx.lineWidth = lw * 0.45
+  ctx.strokeStyle = rgba(skin.outline, 0.45)
+  ctx.stroke()
+  // Ağız: ön dudak (kalın, parlak) + kontur + parıltı
+  const rr = r1 - g.wall * 0.5
+  ctx.beginPath()
+  ctx.ellipse(g.cx, g.yTop, rr, rr * k, 0, 0, Math.PI)
+  ctx.lineWidth = Math.max(lw * 1.1, g.wall * 1.3)
+  ctx.strokeStyle = skin.rim === '#FFFFFF' ? 'rgba(255,255,255,0.85)' : skin.rim
   ctx.stroke()
   ctx.beginPath()
   ctx.ellipse(g.cx, g.yTop, r1, r1 * k, 0, 0, Math.PI * 2)
-  ctx.lineWidth = lw * 0.8
+  ctx.lineWidth = lw * 0.85
   ctx.strokeStyle = skin.outline
   ctx.stroke()
-  if (!def.opaque) {
-    // Dip iç elipsi (kalın camın üst yüzü)
-    ctx.beginPath()
-    ctx.ellipse(g.cx, g.yBot, g.r(0), g.r(0) * k, 0, 0, Math.PI)
-    ctx.lineWidth = lw * 0.5
-    ctx.strokeStyle = rgba(skin.outline, 0.4)
-    ctx.stroke()
-  }
-  // Sol üstte tek yumuşak parıltı
-  const hx = g.cx - g.r(0.88) * 0.55
-  const hy = g.y(0.86)
-  const spot = ctx.createRadialGradient(hx, hy, 0, hx, hy, g.hpx * 0.06)
-  spot.addColorStop(0, 'rgba(255,255,255,0.9)')
-  spot.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = spot
-  ctx.fillRect(hx - g.hpx * 0.07, hy - g.hpx * 0.07, g.hpx * 0.14, g.hpx * 0.14)
+  ctx.beginPath()
+  ctx.ellipse(g.cx - r1 * 0.55, g.yTop + r1 * k * 0.55, r1 * 0.18, r1 * k * 0.28, 0, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.fill()
 }
 
 function decalSource(scene: Phaser.Scene, key: string | null): { img: CanvasImageSource; w: number; h: number } | null {

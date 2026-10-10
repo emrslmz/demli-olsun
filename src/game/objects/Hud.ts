@@ -29,6 +29,9 @@ export class Hud {
   private readonly coin: Phaser.GameObjects.Image
   private readonly tipsText: Phaser.GameObjects.Text
   private readonly lives: Phaser.GameObjects.Image[] = []
+  private readonly rushBg: Phaser.GameObjects.Graphics
+  private readonly rushText: Phaser.GameObjects.Text
+  private rushP = 1
   private L!: Layout
   private score = 0
   private shownScore = 0
@@ -49,6 +52,8 @@ export class Hud {
     this.comboText = scene.add.text(0, 0, '', style(30, '#F6C445')).setOrigin(0, 0.5).setDepth(60)
     this.coin = scene.add.image(0, 0, 'icon_coin').setDepth(60)
     this.tipsText = scene.add.text(0, 0, '0', style(34)).setOrigin(1, 0.5).setDepth(60)
+    this.rushBg = scene.add.graphics().setDepth(61).setVisible(false)
+    this.rushText = scene.add.text(0, 0, '', style(34, '#FFF6E6')).setOrigin(0.5).setDepth(62).setVisible(false)
     this.layout(L)
   }
 
@@ -143,6 +148,44 @@ export class Hud {
     this.comboText.setVisible(false)
   }
 
+  /** Yoğun saat şeridi (HUD'ın altında). */
+  showRush(name: string): void {
+    this.rushText.setText(`${tr.hud.rush} · ${name}`).setVisible(true)
+    this.rushBg.setVisible(true)
+    this.rushP = 1
+    this.drawRush()
+    this.rushText.setScale(0.4)
+    this.scene.tweens.add({ targets: this.rushText, scale: 1, duration: 320, ease: 'Back.easeOut' })
+  }
+
+  setRushProgress(p: number): void {
+    if (Math.abs(p - this.rushP) < 0.01) return
+    this.rushP = p
+    this.drawRush()
+  }
+
+  hideRush(): void {
+    this.rushText.setVisible(false)
+    this.rushBg.setVisible(false)
+  }
+
+  private drawRush(): void {
+    const L = this.L
+    const u = L.u
+    const w = Math.min(L.col.w * 0.8, this.rushText.width + 80 * u)
+    const h = 64 * u
+    const x = L.col.cx
+    const y = L.hud.y + L.hud.h + 50 * u
+    this.rushText.setStyle(style(32 * u, '#FFF6E6')).setPosition(x, y - 4 * u)
+    const g = this.rushBg
+    g.clear()
+    g.fillStyle(DARK, 1).fillRoundedRect(x - w / 2 - 4 * u, y - h / 2 - 4 * u + 5 * u, w + 8 * u, h + 8 * u, h / 2)
+    g.fillStyle(DARK, 1).fillRoundedRect(x - w / 2 - 4 * u, y - h / 2 - 4 * u, w + 8 * u, h + 8 * u, h / 2)
+    g.fillStyle(0xe5533c, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, h / 2 - 4 * u)
+    g.fillStyle(0xffffff, 0.25).fillRoundedRect(x - w / 2 + 10 * u, y - h / 2 + 6 * u, w - 20 * u, h * 0.3, h * 0.15)
+    g.fillStyle(0xf6c445, 1).fillRoundedRect(x - w / 2 + 12 * u, y + h / 2 - 14 * u, (w - 24 * u) * Math.max(0, this.rushP), 8 * u, 4 * u)
+  }
+
   setScore(score: number): void {
     this.score = score
   }
@@ -200,6 +243,7 @@ export class Hud {
       ...this.lives,
     ])
       o.setVisible(v)
+    if (!v) this.hideRush()
     if (v) this.pauseZone.setInteractive()
     else this.pauseZone.disableInteractive()
   }
@@ -214,6 +258,8 @@ export class Hud {
       this.comboText,
       this.coin,
       this.tipsText,
+      this.rushBg,
+      this.rushText,
       ...this.lives,
     ])
       o.destroy()

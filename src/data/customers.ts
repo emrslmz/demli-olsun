@@ -81,9 +81,9 @@ export const CUSTOMERS: Record<CustomerId, CustomerDef> = {
     patienceFactor: 1,
     teaWeights: { acik: 0.2, tavsan: 0.4, demli: 0.4, koyu: 0 },
     fillWeights: { normal: 0.9, agzina: 0.1, yarim: 0 },
-    minStage: 5,
+    minStage: 3,
     weight: 0.9,
-    trait: 'Dükkâna tepsiyle 3–4 bardak götürür.',
+    trait: 'Dükkândan koşa koşa gelir, acelesi vardır ama bahşişi boldur.',
   },
 }
 

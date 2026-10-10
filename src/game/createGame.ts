@@ -22,6 +22,8 @@ export function createGame(parent: HTMLElement, cssW: number, cssH: number, safe
   runtime.dpr = targetDpr()
   recomputeLayout()
   const game = new Phaser.Game(makeConfig(parent, cssW, cssH, runtime.dpr))
+  // Geliştirmede test betikleri sahne durumunu okuyabilsin.
+  if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game
 
   const applySize = () => {
     const dpr = targetDpr()

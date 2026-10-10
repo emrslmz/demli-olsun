@@ -11,7 +11,7 @@ let loaded = false
 async function loadAll() {
   if (loaded) return
   loaded = true
-  const mods = ['characters', 'pots', 'props', 'ui', 'icons', 'fx', 'decals', 'badges', 'logo', 'backgrounds', 'deco']
+  const mods = ['characters', 'pots', 'props', 'icons', 'fx', 'decals', 'badges', 'logo', 'backgrounds', 'deco']
   for (const m of mods) {
     try {
       await import(`./${m}.mjs`)

@@ -109,6 +109,10 @@ export type Events = {
   'cosmetic:equipped': void
   /** Ortam sahnesinin modu (menüde büyük bardak, çarşıda önizleme). */
   'ambient:mode': 'menu' | 'preview'
+  /** Vue → Phaser: menüde logo ile butonlar arasındaki boş alan (CSS px, ekran üstünden); bardak buraya sığdırılır. */
+  'menu:hero-slot': { top: number; bottom: number }
+  /** Phaser → Vue: ortam sahnesi açıldı, menü boş alanı yeniden bildirsin. */
+  'menu:hero-request': void
   /** Geliştirici menüsü. */
   'dev:overlay': boolean
   'dev:stage': number

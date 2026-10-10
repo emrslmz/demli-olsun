@@ -1,145 +1,188 @@
-// Sahne eşyaları (saydam): tabak, şekerlik, şeker, kaşık, askılı tepsi. Yandan ~15° yukarıdan.
+// v2 sahne eşyaları (saydam): tezgâh, çay tabağı, şekerlik, kesme şeker, kaşık, askılı tepsi.
+// Yandan ~15° yukarıdan bakış, parlak cartoon gölgelendirme.
 
 import { register } from './index.mjs'
-import { C, cel, ellipsePath, f, line, shade, silhouette, smoothPath, svg } from '../lib/svg.mjs'
+import { C, ellipsePath, f, rng, rrectPath, shade, svg } from '../lib/svg.mjs'
+import { contactShadow, lg, rg, toon } from '../lib/toon.mjs'
+import { GLASS_K, saucerSvg, spoonSvg } from '../lib/teaGlass.mjs'
 
-const K = 0.27 // elips oranı (15°)
+const OUT = C.out
 
-function tabak() {
-  const cx = 256
-  const cy = 262
-  const rx = 234
-  const ry = rx * K
-  const side = 18
-  const outer = ellipsePath(cx, cy, rx, ry)
-  const under = `M${cx - rx} ${cy} L${cx - rx + 26} ${cy + side} Q${cx} ${cy + ry + side + 14} ${cx + rx - 26} ${cy + side} L${cx + rx} ${cy} Q${cx} ${cy + ry * 2.1} ${cx - rx} ${cy}Z`
-  let s = silhouette([outer, under], 16)
-  s += cel(under, '#E7EAEE', { sw: 7, shadow: 0.85 })
-  s += cel(outer, '#FBFBF8', {
-    sw: 7,
-    shadow: 0.9,
-    off: [-10, -6],
-    hl: [cx - 110, cy - 18, 70, 12],
-    hlOpacity: 0.7,
-    inner:
-      `<path d="${ellipsePath(cx, cy + 2, rx * 0.62, ry * 0.62)}" fill="#ECEFF2"/>` +
-      `<path d="${ellipsePath(cx, cy + 4, rx * 0.44, ry * 0.44)}" fill="#F7F8F9" stroke="#D9DEE3" stroke-width="4"/>`,
+/** Tezgâh üstü: arka kenar pirinç boru (y=0) + perspektifli tahtalar + yuvarlak ön dudak (alt 70 px). */
+function tezgahUst(W, H) {
+  const lip = 70
+  const top = H - lip
+  const r = rng('tezgah')
+  let s = ''
+  const planks = [0.09, 0.11, 0.13, 0.15, 0.18, 0.2]
+  const sum = planks.reduce((a, b) => a + b, 0)
+  let y = 14
+  planks.forEach((p, i) => {
+    const h = ((top - 14) * p) / sum
+    const c = ['#A86A3C', '#B27442', '#A0643A', '#B87A46', '#AA6E3E', '#B47644'][i]
+    const [g, gd] = lg([
+      [0, shade(c, 1.08)],
+      [1, shade(c, 0.92)],
+    ])
+    s += gd + `<rect x="0" y="${f(y)}" width="${W}" height="${f(h + 1)}" fill="url(#${g})"/>`
+    for (let k = 0; k < 6; k++) {
+      const yy = y + r() * h
+      const x0 = r() * W
+      s += `<path d="M${f(x0)} ${f(yy)} q${f(120 + r() * 160)} ${f((r() - 0.5) * 6)} ${f(300 + r() * 200)} 0" stroke="#5A3418" stroke-width="${f(2 + r() * 2)}" fill="none" opacity=".18"/>`
+    }
+    s += `<rect x="0" y="${f(y + h - 2)}" width="${W}" height="3" fill="#5A3418" opacity=".45"/>`
+    y += h
   })
-  s += `<path d="${ellipsePath(cx, cy, rx - 16, ry - 5)}" fill="none" stroke="${C.gold}" stroke-width="5"/>`
-  s += `<path d="${ellipsePath(cx, cy, rx - 8, ry - 2.5)}" fill="none" stroke="#E9C766" stroke-width="2" opacity=".7"/>`
-  return svg(512, 512, s)
+  // Cilalı yüzeyde ince, yatay ışık çizgileri (lamba yansıması)
+  s += `<rect x="${f(W * 0.18)}" y="${f(top * 0.3)}" width="${f(W * 0.64)}" height="${f(top * 0.05)}" rx="${f(top * 0.025)}" fill="#FFF3D6" opacity=".14" filter="url(#b4)"/>`
+  s += `<rect x="${f(W * 0.3)}" y="${f(top * 0.62)}" width="${f(W * 0.4)}" height="${f(top * 0.035)}" rx="${f(top * 0.02)}" fill="#FFF3D6" opacity=".1" filter="url(#b4)"/>`
+  // Arka kenar: koyu şerit + pirinç boru
+  s += `<rect x="0" y="0" width="${W}" height="18" fill="#3B2416"/>`
+  s += `<rect x="0" y="18" width="${W}" height="22" fill="#000" opacity=".18" filter="url(#b4)"/>`
+  const [bg, bgd] = lg([
+    [0, '#FFF0B0'],
+    [0.4, '#E2B33C'],
+    [1, '#9A7416'],
+  ])
+  s += bgd + `<rect x="-10" y="2" width="${W + 20}" height="14" rx="7" fill="url(#${bg})" stroke="${OUT}" stroke-width="4"/>`
+  // Ön dudak
+  const [lgId, lgd] = lg([
+    [0, '#D69A5E'],
+    [0.35, '#B87A46'],
+    [1, '#6E4224'],
+  ])
+  s += lgd + `<rect x="-10" y="${f(top - 6)}" width="${W + 20}" height="${lip + 20}" rx="20" fill="url(#${lgId})" stroke="${OUT}" stroke-width="6"/>`
+  s += `<rect x="20" y="${f(top + 2)}" width="${W - 40}" height="8" rx="4" fill="#fff" opacity=".35"/>`
+  return s
 }
 
-function seker(size = 128) {
-  const s0 = size / 128
-  const top = `M${64 * s0} ${18 * s0} L${108 * s0} ${36 * s0} L${64 * s0} ${56 * s0} L${20 * s0} ${36 * s0}Z`
-  const left = `M${20 * s0} ${36 * s0} L${64 * s0} ${56 * s0} L${64 * s0} ${110 * s0} L${20 * s0} ${88 * s0}Z`
-  const right = `M${108 * s0} ${36 * s0} L${64 * s0} ${56 * s0} L${64 * s0} ${110 * s0} L${108 * s0} ${88 * s0}Z`
-  const grains = Array.from({ length: 18 }, (_, i) => {
-    const x = (24 + ((i * 37) % 80)) * s0
-    const y = (40 + ((i * 53) % 64)) * s0
-    return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(1.6 * s0)}" fill="#D8D2C4"/>`
-  }).join('')
-  return (
-    silhouette([`M${64 * s0} ${18 * s0} L${108 * s0} ${36 * s0} L${108 * s0} ${88 * s0} L${64 * s0} ${110 * s0} L${20 * s0} ${88 * s0} L${20 * s0} ${36 * s0}Z`], 7 * s0) +
-    `<path d="${left}" fill="#EDE8DC"/><path d="${right}" fill="#D9D3C5"/><path d="${top}" fill="#FFFFFF"/>${grains}` +
-    `<path d="${top} ${left} ${right}" fill="none" stroke="${C.out}" stroke-width="${5 * s0}" stroke-linejoin="round"/>`
-  )
-}
-
-function sekerlik() {
-  const cx = 256
-  const top = 230
-  const bot = 420
-  const rx = 190
-  const bowl = `M${cx - rx} ${top} Q${cx - rx + 10} ${bot - 40} ${cx - 90} ${bot} L${cx + 90} ${bot} Q${cx + rx - 10} ${bot - 40} ${cx + rx} ${top}Z`
-  const rim = ellipsePath(cx, top, rx, rx * K)
-  const foot = `M${cx - 96} ${bot - 6} L${cx - 110} ${bot + 34} Q${cx} ${bot + 56} ${cx + 110} ${bot + 34} L${cx + 96} ${bot - 6}Z`
-  let s = silhouette([bowl, rim, foot], 16)
-  // Küpler (kasenin içinde, üstte yığın)
-  const cubes = [
-    [150, 150, 0.95, -8],
-    [232, 132, 1, 6],
-    [312, 150, 0.95, 10],
-    [196, 186, 1, -4],
-    [276, 182, 1, 4],
-  ]
-  let cs = ''
-  for (const [x, y, sc, rot] of cubes) {
-    cs += `<g transform="translate(${x - 52 * sc} ${y - 52 * sc}) rotate(${rot} 52 52) scale(${(sc * 104) / 128})">${seker(128)}</g>`
+/** Tezgâh önü: pirinç şerit + kabartma paneller (dikeyde esnetilir). */
+function tezgahOn(W, H) {
+  const [pg, pgd] = lg([
+    [0, '#5E381E'],
+    [1, '#3E2412'],
+  ])
+  let s = pgd + `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#${pg})"/>`
+  s += `<rect x="0" y="0" width="${W}" height="50" fill="#000" opacity=".35" filter="url(#b8)"/>`
+  const [bg, bgd] = lg([
+    [0, '#FFF0B0'],
+    [0.4, '#E2B33C'],
+    [1, '#9A7416'],
+  ])
+  s += bgd + `<rect x="-10" y="16" width="${W + 20}" height="14" fill="url(#${bg})" stroke="${OUT}" stroke-width="3"/>`
+  const n = 3
+  const gap = 34
+  const pw = (W - gap * (n + 1)) / n
+  const ph = H - 140
+  for (let i = 0; i < n; i++) {
+    const x = gap + i * (pw + gap)
+    const yy = 64
+    s += toon(rrectPath(x, yy, pw, ph, 18), '#6A4022', { sw: 6, band: [-8, -8], bandTone: 0.85, light: 1.18, rim: true, rimOpacity: 0.3 })
+    s += `<path d="${rrectPath(x + 26, yy + 26, pw - 52, ph - 52, 12)}" fill="#583318" stroke="#2E1A0C" stroke-width="4" opacity=".9"/>`
   }
-  s += cel(foot, '#D6EEF2', { sw: 7, shadow: 0.85, hl: [cx - 60, bot + 10, 30, 8] })
-  // Arka cam duvarı
-  s += `<path d="${ellipsePath(cx, top, rx - 8, rx * K - 3)}" fill="#E8F6F8" opacity=".55"/>`
-  s += cs
-  // Ön cam (yarı saydam) + kesme cam yüzeyleri
-  const facets = Array.from({ length: 7 }, (_, i) => {
-    const x = cx - 150 + i * 50
-    return `<path d="M${x} ${top + 30} L${x + 14} ${bot - 20}" stroke="#FFFFFF" stroke-width="6" opacity=".55"/>`
-  }).join('')
-  s += cel(bowl, '#BFE3EA', { sw: 7, shadow: 0.82, off: [16, 6], hl: [cx - 110, top + 60, 30, 60], hlOpacity: 0.7, inner: facets })
-  s = s.replace(/fill="#BFE3EA"/g, 'fill="#BFE3EA" fill-opacity=".72"')
-  s += `<path d="${rim}" fill="none" stroke="${C.out}" stroke-width="7"/><path d="${ellipsePath(cx, top + 2, rx - 10, rx * K - 4)}" fill="none" stroke="#fff" stroke-width="5" opacity=".7"/>`
-  return svg(512, 512, s)
+  s += `<rect x="0" y="${f(H - 40)}" width="${W}" height="40" fill="#2A1608"/>`
+  return s
 }
 
-function kasik() {
-  // Çapraz duran çay kaşığı: hazne sol altta, sap sağ üstte
-  const bowl = ellipsePath(78, 182, 40, 54)
-  const handle = `M98 140 C120 110 150 86 196 44 C206 36 220 40 214 54 C176 96 140 130 112 160Z`
-  let s = silhouette([handle, bowl], 12)
-  s = `<g transform="rotate(-8 128 128)">` + s
-  s += cel(handle, '#C6CED6', { sw: 6, hl: [160, 80, 30, 6], hlOpacity: 0.8, inner: `<path d="M110 136 C140 106 170 82 204 50" stroke="#fff" stroke-width="5" opacity=".6"/>` })
-  s += `<g transform="rotate(35 78 182)">` + cel(bowl, '#C6CED6', { sw: 6, off: [8, 8], hl: [66, 160, 14, 22], hlOpacity: 0.8, inner: `<path d="${ellipsePath(82, 186, 26, 38)}" fill="#A9B3BD"/>` }) + `</g>`
-  s += `</g>`
-  return svg(256, 256, s)
+function tabak(W, H) {
+  return saucerSvg(W / 2, H * 0.5, W * 0.46, { sw: 7 })
 }
 
-function tepsi() {
-  const cx = 384
-  const ty = 600
-  const rx = 330
-  const ry = rx * K
-  const side = 26
-  const top = ellipsePath(cx, ty, rx, ry)
-  const under = `M${cx - rx} ${ty} L${cx - rx + 10} ${ty + side} Q${cx} ${ty + ry + side + 18} ${cx + rx - 10} ${ty + side} L${cx + rx} ${ty} Q${cx} ${ty + ry * 2} ${cx - rx} ${ty}Z`
-  const ringY = 70
-  // Askı kolları: kenardaki üç noktadan tepedeki halkaya
-  const arms = [
-    [cx - rx + 24, ty - 6],
-    [cx + rx - 24, ty - 6],
-    [cx, ty - ry + 6],
-  ]
-  let s = silhouette([top, under], 18)
-  for (const [ax, ay] of arms) {
-    const d = `M${ax} ${ay} C${ax + (cx - ax) * 0.1} ${ay - 220} ${cx + (ax - cx) * 0.35} ${ringY + 120} ${cx} ${ringY + 34}`
-    s += line(d, 26, C.out) + line(d, 14, '#D9B13A') + line(d, 4, '#F6DB82', 'opacity=".9" transform="translate(-3 -2)"')
-  }
-  s += cel(ellipsePath(cx, ringY, 34, 34), '#D9B13A', { sw: 9, noShadow: true }) + `<circle cx="${cx}" cy="${ringY}" r="18" fill="none" stroke="${C.out}" stroke-width="7"/><circle cx="${cx}" cy="${ringY}" r="18" fill="#00000000"/>`
-  s = s.replace(`<circle cx="${cx}" cy="${ringY}" r="18" fill="#00000000"/>`, '')
-  // Halkanın ortası boş görünsün
-  s += `<circle cx="${cx}" cy="${ringY}" r="15" fill="none"/>`
-  s += cel(under, '#B98F24', { sw: 8, shadow: 0.85 })
-  const engraving = Array.from({ length: 12 }, (_, i) => {
-    const a = (i / 12) * Math.PI * 2
-    return `<path d="M${f(cx + Math.cos(a) * rx * 0.3)} ${f(ty + Math.sin(a) * ry * 0.3)} L${f(cx + Math.cos(a) * rx * 0.62)} ${f(ty + Math.sin(a) * ry * 0.62)}" stroke="#A88316" stroke-width="4"/>`
-  }).join('')
-  s += cel(top, '#D9B13A', {
+function seker(W) {
+  const s0 = W / 128
+  const p = (x, y) => `${f(x * s0)} ${f(y * s0)}`
+  const top = `M${p(64, 16)} L${p(110, 36)} L${p(64, 56)} L${p(18, 36)}Z`
+  const left = `M${p(18, 36)} L${p(64, 56)} L${p(64, 112)} L${p(18, 90)}Z`
+  const right = `M${p(110, 36)} L${p(64, 56)} L${p(64, 112)} L${p(110, 90)}Z`
+  let s = contactShadow(64 * s0, 108 * s0, 44 * s0, 10 * s0, 0.25)
+  s += `<path d="${left}" fill="#EFEAE0"/><path d="${right}" fill="#D8D1C2"/><path d="${top}" fill="#FFFFFF"/>`
+  const r = rng('seker')
+  for (let i = 0; i < 20; i++) s += `<circle cx="${f((22 + r() * 84) * s0)}" cy="${f((40 + r() * 66) * s0)}" r="${f(1.6 * s0)}" fill="#CFC6B3"/>`
+  s += `<path d="M${p(30, 34)} L${p(62, 22)}" stroke="#fff" stroke-width="${f(5 * s0)}" stroke-linecap="round" opacity=".9"/>`
+  s += `<path d="${top} ${left} ${right}" fill="none" stroke="${OUT}" stroke-width="${f(5 * s0)}" stroke-linejoin="round"/>`
+  return s
+}
+
+function sekerlik(W) {
+  const cx = W / 2
+  const s0 = W / 512
+  const top = 270 * s0
+  const bot = 430 * s0
+  const rx = 180 * s0
+  const k = GLASS_K
+  let s = contactShadow(cx, bot + 40 * s0, rx * 0.8, 26 * s0, 0.3)
+  const foot = `M${f(cx - 90 * s0)} ${f(bot - 6 * s0)} L${f(cx - 104 * s0)} ${f(bot + 30 * s0)} Q${f(cx)} ${f(bot + 52 * s0)} ${f(cx + 104 * s0)} ${f(bot + 30 * s0)} L${f(cx + 90 * s0)} ${f(bot - 6 * s0)}Z`
+  s += toon(foot, '#D6E4EC', { sw: 7, band: [8, 0] })
+  const bowl = `M${f(cx - rx)} ${f(top)} Q${f(cx - rx + 10 * s0)} ${f(bot - 40 * s0)} ${f(cx - 86 * s0)} ${f(bot)} L${f(cx + 86 * s0)} ${f(bot)} Q${f(cx + rx - 10 * s0)} ${f(bot - 40 * s0)} ${f(cx + rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 1 ${f(cx - rx)} ${f(top)}Z`
+  s += toon(bowl, '#CFE6F0', {
     sw: 8,
-    shadow: 0.88,
-    off: [-14, -6],
-    hl: [cx - 150, ty - 26, 90, 14],
-    hlOpacity: 0.6,
-    inner: `<path d="${ellipsePath(cx, ty + 4, rx * 0.86, ry * 0.86)}" fill="#C99F2C"/>${engraving}<path d="${ellipsePath(cx, ty + 4, rx * 0.3, ry * 0.3)}" fill="none" stroke="#A88316" stroke-width="5"/>`,
+    band: [12, 0],
+    light: 1.15,
+    inner: [...Array(9)].map((_, i) => `<path d="M${f(cx - rx + i * 46 * s0)} ${f(top + 20 * s0)} q${f(10 * s0)} ${f(80 * s0)} ${f(30 * s0)} ${f(150 * s0)}" stroke="#fff" stroke-width="${f(8 * s0)}" fill="none" opacity=".45"/>`).join(''),
+    spec: [[cx - rx * 0.6, top + 60 * s0, 14 * s0, 40 * s0, -10, 0.8]],
   })
-  s += `<path d="${ellipsePath(cx, ty, rx - 12, ry - 4)}" fill="none" stroke="#F6DB82" stroke-width="4" opacity=".8"/>`
-  return svg(768, 768, s)
+  // Kasenin içi ve kesme şeker yığını; ön kenar küplerin altını örter
+  s += `<path d="${ellipsePath(cx, top, rx, rx * k)}" fill="#9FC3D3"/>`
+  const cubes = [
+    [-100, 14],
+    [-36, 20],
+    [30, 18],
+    [96, 12],
+    [-66, -26],
+    [2, -30],
+    [66, -24],
+    [-30, -70],
+    [34, -66],
+  ]
+  for (const [dx, dy] of cubes) s += `<g transform="translate(${f(cx + dx * s0 - 36 * s0)} ${f(top + dy * s0 - 52 * s0)}) scale(${f(0.56 * s0)})">${seker(128)}</g>`
+  s += `<path d="M${f(cx - rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 0 ${f(cx + rx)} ${f(top)}" fill="none" stroke="#CFE6F0" stroke-width="${f(16 * s0)}"/>`
+  s += `<path d="M${f(cx - rx)} ${f(top)} A${f(rx)} ${f(rx * k)} 0 0 0 ${f(cx + rx)} ${f(top)}" fill="none" stroke="#fff" stroke-width="${f(6 * s0)}" opacity=".8"/>`
+  s += `<path d="${ellipsePath(cx, top, rx, rx * k)}" fill="none" stroke="${OUT}" stroke-width="${f(7 * s0)}"/>`
+  return s
 }
 
-register((id) => id === 'prop_tabak', () => tabak())
-register((id) => id === 'prop_seker', () => svg(128, 128, `<g transform="translate(0 4)">${seker(128)}</g>`))
-register((id) => id === 'prop_sekerlik', () => sekerlik())
-register((id) => id === 'prop_kasik', () => kasik())
-register((id) => id === 'prop_tepsi', () => tepsi())
+function kasik(W) {
+  return spoonSvg(W * 0.5, W * 0.5, W * 0.9, 7 * (W / 256))
+}
 
-export { seker as sugarCubeSvg, shade, smoothPath }
+function tepsi(W) {
+  const cx = W / 2
+  const s0 = W / 768
+  const ty = 560 * s0
+  const rx = 300 * s0
+  const k = GLASS_K
+  const [gg, ggd] = lg([
+    [0, '#FFF0B0'],
+    [0.4, '#E2B33C'],
+    [1, '#9A7416'],
+  ])
+  let s = ggd + contactShadow(cx, ty + 50 * s0, rx, 40 * s0, 0.3)
+  // Askı kolları
+  for (const side of [-1, 1]) s += `<path d="M${f(cx + side * rx * 0.9)} ${f(ty)} Q${f(cx + side * rx * 0.75)} ${f(200 * s0)} ${f(cx)} ${f(90 * s0)}" fill="none" stroke="${OUT}" stroke-width="${f(22 * s0)}" stroke-linecap="round"/><path d="M${f(cx + side * rx * 0.9)} ${f(ty)} Q${f(cx + side * rx * 0.75)} ${f(200 * s0)} ${f(cx)} ${f(90 * s0)}" fill="none" stroke="url(#${gg})" stroke-width="${f(10 * s0)}" stroke-linecap="round"/>`
+  s += toon(ellipsePath(cx, 80 * s0, 40 * s0, 40 * s0), '#E2B33C', { sw: 8, band: [4, 4] })
+  s += `<circle cx="${cx}" cy="${f(80 * s0)}" r="${f(18 * s0)}" fill="#3B2416"/>`
+  // Tepsi
+  s += `<path d="M${f(cx - rx)} ${f(ty)} A${f(rx)} ${f(rx * k)} 0 0 0 ${f(cx + rx)} ${f(ty)} L${f(cx + rx * 0.96)} ${f(ty + 26 * s0)} A${f(rx * 0.96)} ${f(rx * k * 0.96)} 0 0 1 ${f(cx - rx * 0.96)} ${f(ty + 26 * s0)}Z" fill="#9A7416" stroke="${OUT}" stroke-width="${f(7 * s0)}"/>`
+  s += toon(ellipsePath(cx, ty, rx, rx * k), '#E2B33C', { sw: 8, band: [0, -10], dir: 'v', spec: [[cx - rx * 0.5, ty - rx * k * 0.4, rx * 0.25, rx * k * 0.15, 0, 0.6]] })
+  s += `<path d="${ellipsePath(cx, ty, rx * 0.84, rx * k * 0.84)}" fill="none" stroke="#9A7416" stroke-width="${f(6 * s0)}"/>`
+  return s
+}
+
+register(
+  (id) => id.startsWith('prop_'),
+  (a) => {
+    const W = a.w
+    const H = a.h
+    let body = ''
+    if (a.id === 'prop_tezgah_ust') return svg(W, H, tezgahUst(W, H))
+    if (a.id === 'prop_tezgah_on') return svg(W, H, tezgahOn(W, H))
+    if (a.id === 'prop_tabak') body = tabak(W, H)
+    else if (a.id === 'prop_seker') body = seker(W)
+    else if (a.id === 'prop_sekerlik') body = sekerlik(W)
+    else if (a.id === 'prop_kasik') body = kasik(W)
+    else if (a.id === 'prop_tepsi') body = tepsi(W)
+    return svg(W, H, body)
+  },
+)
+
+export { rg }

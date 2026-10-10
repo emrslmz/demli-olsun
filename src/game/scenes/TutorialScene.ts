@@ -12,7 +12,6 @@ import { bucketFor } from '@/data/lines'
 import { pct1, tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import type { Layout } from '../layout'
-import type { OrderCard } from '../objects/OrderBoard'
 import { PlayScene } from './PlayScene'
 
 type Sub = 'dem' | 'su' | 'serve' | 'early-dem' | 'early-su' | 'early-wait' | 'serve2' | 'free' | 'done' | 'busy'
@@ -26,9 +25,7 @@ const ORDERS: Order[] = [
     fillType: 'normal',
     fillTarget: 80,
     sugar: 0,
-    glass: 'ince',
     patience: 999,
-    trayCount: 1,
   },
   {
     id: 2,
@@ -38,9 +35,7 @@ const ORDERS: Order[] = [
     fillType: 'normal',
     fillTarget: 85,
     sugar: 0,
-    glass: 'ince',
     patience: 999,
-    trayCount: 1,
   },
   {
     id: 3,
@@ -50,16 +45,14 @@ const ORDERS: Order[] = [
     fillType: 'normal',
     fillTarget: 85,
     sugar: 0,
-    glass: 'ince',
     patience: 999,
-    trayCount: 1,
   },
 ]
 
 export class TutorialScene extends PlayScene {
   private step = 0
   private sub: Sub = 'busy'
-  private card: OrderCard | null = null
+  private hasCustomer = false
   private hand!: Phaser.GameObjects.Image
   private handTween: Phaser.Tweens.Tween | null = null
   private hintBg!: Phaser.GameObjects.Graphics
@@ -75,13 +68,13 @@ export class TutorialScene extends PlayScene {
   create() {
     this.step = 0
     this.sub = 'busy'
-    this.card = null
+    this.hasCustomer = false
     this.finished = false
     this.createPlay({ glass: 'ince', gauge: 'numbers' })
     this.hand = this.add.image(0, 0, 'ca_hand').setDepth(150).setOrigin(0.5, 0.05).setVisible(false)
     this.hintBg = this.add.graphics().setDepth(140)
     this.hintText = this.add
-      .text(0, 0, '', { fontFamily: FONTS.chalk, fontStyle: '700', fontSize: '34px', color: '#EDEDE4', align: 'center' })
+      .text(0, 0, '', { fontFamily: FONTS.ui, fontStyle: '700', fontSize: '34px', color: '#3B2416', align: 'center' })
       .setOrigin(0.5)
       .setDepth(141)
     const skipText = this.add
@@ -111,11 +104,10 @@ export class TutorialScene extends PlayScene {
     const g = this.gen
     this.step = i
     const order = ORDERS[i] as Order
-    this.card = this.board.addCard(order)
-    this.card.setActive(true, this.reduced)
     this.station.setTargets(order.demTarget, order.fillTarget)
-    await this.wait(700)
+    await this.customer.enter(order)
     if (!this.alive(g)) return
+    this.hasCustomer = true
     this.station.setHasOrder(true)
     this.station.setInputEnabled(true)
     if (i === 0) this.setSub('dem')
@@ -192,7 +184,7 @@ export class TutorialScene extends PlayScene {
   }
 
   private async onServe(): Promise<void> {
-    if (this.sub === 'busy' || this.sub === 'done' || !this.card) return
+    if (this.sub === 'busy' || this.sub === 'done' || !this.hasCustomer) return
     const g = this.gen
     const order = ORDERS[this.step] as Order
     const st = this.station
@@ -210,9 +202,8 @@ export class TutorialScene extends PlayScene {
     })
     await st.stir(this.reduced)
     if (!this.alive(g)) return
-    const card = this.card
-    card.setExpression(ev.accepted ? (ev.stars >= 2 ? 'happy' : 'neutral') : 'angry')
-    this.say(card, order.customer, bucketFor(ev.accuracy, ev.accepted))
+    this.customer.setExpression(ev.accepted ? (ev.stars >= 2 ? 'happy' : 'neutral') : 'angry')
+    this.say(order.customer, bucketFor(ev.accuracy, ev.accepted))
     const L = this.L
     const top = st.glass.topWorldY
     this.floats.float(L.col.cx, top - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 56 * L.u)
@@ -220,11 +211,12 @@ export class TutorialScene extends PlayScene {
     AudioService.play(ev.accepted ? 'serve' : 'reject')
     await this.wait(1100)
     if (!this.alive(g)) return
-    await st.slideOut(ev.accepted ? this.tray : null)
+    if (ev.accepted) await st.serveTo(this.customer.servePoint())
+    else await st.slideOut()
     if (!this.alive(g)) return
+    void this.customer.leave(ev.accepted)
+    this.hasCustomer = false
     st.resetContents()
-    this.board.removeCard(card, ev.accepted)
-    this.card = null
     st.setHasOrder(false)
     await st.slideIn()
     if (!this.alive(g)) return
@@ -247,7 +239,7 @@ export class TutorialScene extends PlayScene {
     this.floats.burst(this.L.col.cx, this.station.glass.topWorldY - 80 * this.L.u, 'Taştı! Bir daha dene.', 46 * this.L.u, '#FF8A7A')
     await this.wait(1100)
     if (!this.alive(g)) return
-    await this.station.slideOut(null)
+    await this.station.slideOut()
     if (!this.alive(g)) return
     this.station.resetContents()
     await this.station.slideIn()
@@ -283,17 +275,19 @@ export class TutorialScene extends PlayScene {
     const w = Math.min(L.col.w * 0.9, this.hintText.width + 60 * u)
     const h = this.hintText.height + 36 * u
     const x = L.col.cx
-    const y = L.board.y + L.board.h + 26 * u + h / 2
+    const y = Math.max(L.counterFrontY + h / 2 + 6 * u, (L.counterFrontY + L.controls.area.y) / 2)
     const g = this.hintBg
     g.clear()
-    g.fillStyle(0x3b2416, 1).fillRoundedRect(x - w / 2 - 5 * u, y - h / 2 - 5 * u + 6 * u, w + 10 * u, h + 10 * u, 20 * u)
-    g.fillStyle(0x3b2416, 1).fillRoundedRect(x - w / 2 - 5 * u, y - h / 2 - 5 * u, w + 10 * u, h + 10 * u, 20 * u)
-    g.fillStyle(0x1e2b24, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 16 * u)
-    g.lineStyle(3 * u, 0xedede4, 0.25).strokeRoundedRect(x - w / 2 + 6 * u, y - h / 2 + 6 * u, w - 12 * u, h - 12 * u, 12 * u)
+    // Krem cartoon kart: kalın koyu kenar, altta gölge, üstte parlama.
+    const o = 5 * u
+    g.fillStyle(0x2a1408, 0.85).fillRoundedRect(x - w / 2 - o, y - h / 2 - o + 8 * u, w + o * 2, h + o * 2, 24 * u)
+    g.fillStyle(0x3b2416, 1).fillRoundedRect(x - w / 2 - o, y - h / 2 - o, w + o * 2, h + o * 2, 24 * u)
+    g.fillStyle(0xfff3dc, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 20 * u)
+    g.fillStyle(0xffffff, 0.85).fillRoundedRect(x - w / 2 + 16 * u, y - h / 2 + 7 * u, w * 0.45, 8 * u, 4 * u)
     this.hintText.setPosition(x, y)
     this.hintText.setAlpha(0)
     this.tweens.add({ targets: this.hintText, alpha: 1, duration: 250 })
-    AudioService.play('chalk')
+    AudioService.play('pop')
   }
 
   private pointAt(x: number, y: number): void {

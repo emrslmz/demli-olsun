@@ -1,5 +1,5 @@
 /**
- * Günün Siparişi: herkese aynı tek sipariş (tarih seed'li), tek hak, göstergelerde yalnızca işaret,
+ * Günün Siparişi: herkese aynı tek sipariş (tarih seed'li), tek hak, bardakta yalnızca doluluk çizgisi,
  * o güne özel akış hızı. Süre biterse bardak olduğu gibi servis edilir. Sonuç Vue'ya 'daily:finished' ile gider.
  */
 
@@ -16,16 +16,16 @@ import { fmt, pct1, tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
 import { useEconomyStore } from '@/stores/economy'
+import { useInventoryStore } from '@/stores/inventory'
 import type { Layout } from '../layout'
 import { Hud } from '../objects/Hud'
-import type { OrderCard } from '../objects/OrderBoard'
 import { PlayScene } from './PlayScene'
 
 export class DailyScene extends PlayScene {
   private challenge!: DailyChallenge
   private rng!: Rng
   private hud!: Hud
-  private card: OrderCard | null = null
+  private hasCustomer = false
   private patience = 0
   private maxPatience = 1
   private started = false
@@ -41,14 +41,13 @@ export class DailyScene extends PlayScene {
   create(data: DailyStartOptions) {
     this.challenge = data.challenge
     this.rng = new Rng(`daily-fx:${this.challenge.dateKey}`)
-    this.card = null
+    this.hasCustomer = false
     this.started = false
     this.done = false
     this.elapsed = 0
     this.warned = false
-    const order = this.challenge.order
     this.createPlay({
-      glass: order.glass,
+      glass: 'ince',
       gauge: effectiveGauge('marks', { colorBlind: false, ustaGozu: false }),
       flowScale: this.challenge.flowScale,
       seedRand: () => this.rng.next(),
@@ -61,14 +60,13 @@ export class DailyScene extends PlayScene {
       if (!this.done) bus.emit('game:pause-request')
     }
     this.note = this.add
-      .text(0, 0, tr.daily.oneShot, { fontFamily: FONTS.chalk, fontStyle: '700', fontSize: '32px', color: '#EDEDE4', align: 'center' })
+      .text(0, 0, tr.daily.oneShot, { fontFamily: FONTS.chalk, fontStyle: '800', fontSize: '32px', color: '#FFF6E6', align: 'center' })
       .setOrigin(0.5)
       .setDepth(120)
-      .setStroke('#1E2B24', 8)
+      .setStroke('#3B2416', 8)
     this.station.setHasOrder(false)
     this.station.events.on('serve', () => void this.serve(false))
     this.station.events.on('overflow', () => void this.onOverflow())
-    this.station.events.on('sugar', (n: number) => this.card?.setSugarGiven(n))
     this.onBus('game:end-request', () => void this.serve(true))
     this.onResize(this.L)
     void this.begin()
@@ -79,13 +77,14 @@ export class DailyScene extends PlayScene {
     await this.wait(500)
     if (!this.alive(g)) return
     const order = this.challenge.order
-    this.card = this.board.addCard(order)
-    this.card.setActive(true, this.reduced)
-    AudioService.play('chalk')
+    this.station.setTargets(order.demTarget, order.fillTarget)
+    await this.customer.enter(order, useInventoryStore().equipped.glass)
+    if (!this.alive(g)) return
+    this.hasCustomer = true
+    AudioService.play('pop')
     this.patience = order.patience
     this.maxPatience = order.patience
-    this.station.setTargets(order.demTarget, order.fillTarget)
-    await this.wait(800)
+    await this.wait(300)
     if (!this.alive(g)) return
     this.station.setHasOrder(true)
     this.station.setInputEnabled(true)
@@ -97,14 +96,14 @@ export class DailyScene extends PlayScene {
 
   protected tick(dt: number): void {
     this.hud.update(dt)
-    if (!this.started || this.done || !this.card) return
+    if (!this.started || this.done || !this.hasCustomer) return
     this.elapsed += dt
     this.patience -= dt
     const ratio = Math.max(0, this.patience / this.maxPatience)
-    this.card.setPatience(ratio)
+    this.customer.setPatience(ratio)
     if (!this.warned && ratio < 0.2) {
       this.warned = true
-      this.say(this.card, this.challenge.order.customer, 'impatient', () => this.rng.next())
+      this.say(this.challenge.order.customer, 'impatient', () => this.rng.next())
       AudioService.play('tick')
     }
     if (this.patience <= 0) void this.serve(true)
@@ -116,7 +115,7 @@ export class DailyScene extends PlayScene {
 
   /** Servis (oyuncu ya da süre/çıkış). Tek hak: ikinci kez çağrılmaz. */
   private async serve(forced: boolean): Promise<void> {
-    if (this.done || !this.card) return
+    if (this.done || !this.hasCustomer) return
     this.done = true
     const g = this.gen
     const st = this.station
@@ -125,7 +124,7 @@ export class DailyScene extends PlayScene {
     st.setBusy(true)
     if (forced) {
       st.stopPour()
-      if (this.patience <= 0) this.floats.burst(this.L.col.cx, st.glass.topWorldY - 90 * this.L.u, 'Süre doldu!', 52 * this.L.u, '#FFD27A')
+      if (this.patience <= 0) this.floats.burst(this.L.col.cx, st.glass.topWorldY - 90 * this.L.u, tr.game.timeUp, 52 * this.L.u, '#FFD27A')
     }
     const empty = st.volume <= 0.001
     const ev = evaluateServe({
@@ -145,7 +144,7 @@ export class DailyScene extends PlayScene {
   }
 
   private async onOverflow(): Promise<void> {
-    if (this.done || !this.card) return
+    if (this.done || !this.hasCustomer) return
     this.done = true
     const g = this.gen
     const st = this.station
@@ -155,7 +154,7 @@ export class DailyScene extends PlayScene {
     this.shakeCamera()
     AudioService.play('overflow')
     HapticsService.trigger('error')
-    this.floats.burst(this.L.col.cx, st.glass.topWorldY - 90 * this.L.u, 'Taştı!', 60 * this.L.u, '#FF8A7A')
+    this.floats.burst(this.L.col.cx, st.glass.topWorldY - 90 * this.L.u, tr.game.overflow, 60 * this.L.u, '#FF8A7A')
     const order = this.challenge.order
     const ev = evaluateServe({
       demPct: st.demPct,
@@ -170,14 +169,13 @@ export class DailyScene extends PlayScene {
   }
 
   private async react(ev: ServeEvaluation, bucket: LineBucket, g: number): Promise<void> {
-    const card = this.card
-    if (!card) return
+    if (!this.hasCustomer) return
     const st = this.station
     const order = this.challenge.order
     const L = this.L
     const happy = ev.accepted && (order.customer === 'riza' ? ev.stars === 3 : ev.stars >= 2)
-    card.setExpression(ev.accepted ? (happy ? 'happy' : 'neutral') : 'angry')
-    const line = this.say(card, order.customer, bucket, () => this.rng.next())
+    this.customer.setExpression(ev.accepted ? (happy ? 'happy' : 'neutral') : 'angry')
+    const line = this.say(order.customer, bucket, () => this.rng.next())
     const top = st.glass.topWorldY
     if (ev.accepted) {
       AudioService.play(ev.stars === 3 ? 'star' : 'serve')
@@ -185,12 +183,22 @@ export class DailyScene extends PlayScene {
     } else {
       AudioService.play('reject')
       HapticsService.trigger('error')
-      card.showX()
+      this.shakeCamera()
     }
     this.floats.float(L.col.cx, top - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 64 * L.u, '#FFF6E6', 80 * L.u, 1600)
     this.starsPop.show(L.col.cx, top - 130 * L.u, ev.stars, 76 * L.u, (i) => AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }))
     const tips = ev.accepted ? DAILY_REWARD.base + DAILY_REWARD.perStar * ev.stars : DAILY_REWARD.rejected
-    await this.wait(2200)
+    // Sonuç ekranı gelmeden: kabul edilen bardak müşteriye gider, beğenilmeyen geri çekilir.
+    const demPct = round1(st.demPct)
+    const fillPct = round1(st.fillPct)
+    const sugarGiven = st.sugar
+    await this.wait(900)
+    if (!this.alive(g)) return
+    if (ev.accepted) await st.serveTo(this.customer.servePoint())
+    else await st.slideOut()
+    if (!this.alive(g)) return
+    void this.customer.leave(happy)
+    await this.wait(700)
     if (!this.alive(g)) return
     bus.emit('daily:finished', {
       dateKey: this.challenge.dateKey,
@@ -203,11 +211,11 @@ export class DailyScene extends PlayScene {
       accepted: ev.accepted,
       line,
       timeSec: Math.round(this.elapsed * 10) / 10,
-      demPct: round1(st.demPct),
-      fillPct: round1(st.fillPct),
+      demPct,
+      fillPct,
       targetDem: order.demTarget,
       targetFill: order.fillTarget,
-      sugarGiven: st.sugar,
+      sugarGiven,
       sugarTarget: order.sugar,
       tips,
     })
@@ -220,8 +228,8 @@ export class DailyScene extends PlayScene {
   protected onResize(L: Layout): void {
     this.layoutPlay(L)
     this.hud?.layout(L)
-    this.note?.setFontSize(Math.round(34 * L.u)).setPosition(L.col.cx, L.board.y + L.board.h + 60 * L.u)
-    this.note?.setStroke('#1E2B24', 8 * L.u).setWordWrapWidth(L.col.w * 0.86)
+    this.note?.setFontSize(Math.round(42 * L.u)).setPosition(L.col.cx, L.hud.y + L.hud.h + 56 * L.u)
+    this.note?.setStroke('#3B2416', 10 * L.u).setWordWrapWidth(L.col.w * 0.86)
   }
 
   protected onShutdown(): void {

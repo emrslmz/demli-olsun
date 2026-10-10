@@ -64,7 +64,7 @@ function squares(ctx: CanvasRenderingContext2D, x: number, y: number, score: num
 
 export async function renderDailyCard(r: DailyResultData, streak: number): Promise<string> {
   try {
-    await Promise.all([document.fonts.load('700 80px Kalam'), document.fonts.load('900 60px Nunito')])
+    await Promise.all([document.fonts.load('800 80px "Baloo 2"', 'ğşİ'), document.fonts.load('600 60px "Baloo 2"', 'ğşİ')])
   } catch {
     /* sistem yazı tipi */
   }
@@ -96,9 +96,9 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   if (logo) ctx.drawImage(logo, 90, 84, 150, 150)
   ctx.fillStyle = INK
   ctx.textBaseline = 'middle'
-  ctx.font = '700 84px Kalam, cursive'
+  ctx.font = '800 84px "Baloo 2", sans-serif'
   ctx.fillText('Demli Olsun', 266, 136)
-  ctx.font = '900 54px Nunito, sans-serif'
+  ctx.font = '800 54px "Baloo 2", sans-serif'
   ctx.fillStyle = '#8B1E0F'
   ctx.fillText(`Günün Siparişi #${r.dayNumber}`, 270, 206)
 
@@ -112,22 +112,22 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   ctx.strokeStyle = INK
   ctx.stroke()
   ctx.fillStyle = INK
-  ctx.font = '900 34px Nunito, sans-serif'
+  ctx.font = '800 34px "Baloo 2", sans-serif'
   ctx.globalAlpha = 0.7
   ctx.fillText(CUSTOMERS[r.customer].name, 380, fy + 50)
   ctx.globalAlpha = 1
-  ctx.font = '800 40px Nunito, sans-serif'
+  ctx.font = '800 40px "Baloo 2", sans-serif'
   wrap(ctx, `“${r.line}”`, 580)
     .slice(0, 3)
     .forEach((l, i) => ctx.fillText(l, 380, fy + 106 + i * 50))
 
   // İsabet
   ctx.textAlign = 'center'
-  ctx.font = '800 44px Nunito, sans-serif'
+  ctx.font = '800 44px "Baloo 2", sans-serif'
   ctx.globalAlpha = 0.75
   ctx.fillText('İsabet', W / 2, 600)
   ctx.globalAlpha = 1
-  ctx.font = '1000 150px Nunito, sans-serif'
+  ctx.font = '800 150px "Baloo 2", sans-serif'
   ctx.fillText(`%${pct1(r.accuracy)}`, W / 2, 700)
   // Yıldızlar
   for (let i = 0; i < 3; i++) {
@@ -149,7 +149,7 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
 
   // Metrikler
   ctx.textAlign = 'left'
-  ctx.font = '900 46px Nunito, sans-serif'
+  ctx.font = '800 46px "Baloo 2", sans-serif'
   const rows: [string, number][] = [
     ['Renk', r.demScore],
     ['Doluluk', r.fillScore],
@@ -164,11 +164,11 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   // Seri
   ctx.textAlign = 'center'
   ctx.fillStyle = '#8B1E0F'
-  ctx.font = '900 56px Nunito, sans-serif'
+  ctx.font = '800 56px "Baloo 2", sans-serif'
   ctx.fillText(`Seri: ${streak} gün`, W / 2, 1190)
   ctx.fillStyle = INK
   ctx.globalAlpha = 0.6
-  ctx.font = '700 36px Kalam, cursive'
+  ctx.font = '800 36px "Baloo 2", sans-serif'
   ctx.fillText('Mahallenin çaycısı sensin.', W / 2, 1262)
   ctx.globalAlpha = 1
 

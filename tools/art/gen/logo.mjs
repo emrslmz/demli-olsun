@@ -3,7 +3,7 @@
 
 import { register } from './index.mjs'
 import { C, cel, ellipsePath, f, line, shade, silhouette, smoothPath, starPath, svg } from '../lib/svg.mjs'
-import { tulipGlass } from './icons.mjs'
+import { teaGlass } from '../lib/teaGlass.mjs'
 
 function tulipMotif(cx, cy, size, rot) {
   const h = size
@@ -101,14 +101,10 @@ function pumpkin(cx, cy, r) {
 export function emblem(theme) {
   const cx = 512
   let s = medallion(cx, 470, 400, theme)
-  // Tabak
-  const sy = 830
-  s += silhouette([ellipsePath(cx, sy, 270, 70)], 20)
-  s += cel(ellipsePath(cx, sy, 270, 70), '#FBFBF8', { sw: 12, off: [-10, -6], hl: [cx - 120, sy - 18, 80, 14], inner: `<path d="${ellipsePath(cx, sy + 4, 160, 40)}" fill="#ECEFF2"/>` })
-  s += `<path d="${ellipsePath(cx, sy, 250, 62)}" fill="none" stroke="${C.gold}" stroke-width="8"/>`
-  // Bardak
-  s += `<g>${tulipGlass(cx, sy + 6, 470, { saucer: false })}</g>`
-  s += steam(cx, 330, 260)
+  // Tabaklı ince belli bardak (oyundakiyle aynı çizim)
+  const sy = 840
+  s += teaGlass(cx, sy, 520, { saucer: true, fill: 0.86, sw: 16, shadow: true })
+  s += steam(cx, 300, 230)
   if (theme === 'kis') {
     s += cel(smoothPath([[cx + 120, sy - 10], [cx + 170, sy - 50], [cx + 230, sy - 40], [cx + 270, sy - 6], [cx + 200, sy + 20]]), '#FFFFFF', { sw: 9, hl: [cx + 180, sy - 34, 20, 8] })
     s += cel(smoothPath([[cx - 270, sy - 6], [cx - 230, sy - 40], [cx - 180, sy - 34], [cx - 140, sy - 6], [cx - 200, sy + 22]]), '#FFFFFF', { sw: 9 })

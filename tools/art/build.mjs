@@ -69,10 +69,11 @@ function readJson(file) {
   }
 }
 
-/** Var olan manifest'teki bilinmeyen alanları ve elle ayarlanmış çapaları korur. */
+/** Var olan manifest'teki elle ayarlanmış çapaları (pivot, spout, counterY, slice) korur; katalogdan çıkan görselleri siler. */
 function mergeManifest(existing, fresh) {
   if (!existing) return fresh
-  const out = { ...existing, ...fresh, assets: { ...(existing.assets ?? {}) } }
+  // Yalnızca katalogdaki görseller kalır; elle ayarlanmış çapalar korunur.
+  const out = { ...existing, ...fresh, assets: {} }
   for (const [id, a] of Object.entries(fresh.assets)) {
     const prev = existing.assets?.[id] ?? {}
     const keep = {}
@@ -170,6 +171,17 @@ async function buildAppIcons(page) {
   console.log('[art] uygulama ikonu ve splash: assets/')
 }
 
+/** PNG'leri 256 renk paletine indirger (python3 + Pillow varsa; yoksa atlanır). */
+function quantize(dirs) {
+  if (arg('no-quantize')) return
+  try {
+    const out = execSync(`python3 ${JSON.stringify(path.join(ROOT, 'tools/art/quantize.py'))} ${dirs.map((d) => JSON.stringify(d)).join(' ')}`)
+    process.stdout.write(out.toString())
+  } catch {
+    console.warn('[art] python3/Pillow yok: palet sıkıştırma atlandı (görseller yine çalışır, yalnızca daha büyük).')
+  }
+}
+
 async function main() {
   const { chromium } = await loadPlaywright()
   const browser = await chromium.launch(launchOptions())
@@ -177,7 +189,10 @@ async function main() {
   const themeArg = arg('theme')
   const themes = typeof themeArg === 'string' ? [themeArg] : THEMES
   try {
-    if (!arg('review-only')) for (const t of themes) await buildTheme(page, t)
+    if (!arg('review-only')) {
+      for (const t of themes) await buildTheme(page, t)
+      quantize(themes.map((t) => path.join(OUT, t)))
+    }
     if (arg('icons') || (!arg('only') && !themeArg)) await buildAppIcons(page)
     if (arg('review') || arg('review-only')) for (const t of themes) await buildContactSheet(page, t)
   } finally {

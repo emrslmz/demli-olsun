@@ -2,10 +2,27 @@
 // Yandan ve ~15° yukarıdan görünüm. Çapalar (pivot, spout) çizimin geometrisinden hesaplanır.
 
 import { register } from './index.mjs'
-import { C, cel, ellipsePath, f, line, mix, newId, shade, silhouette, smoothPath, svg } from '../lib/svg.mjs'
+import { C, ellipsePath, f, line, mix, newId, shade, silhouette, smoothPath, svg } from '../lib/svg.mjs'
+import { contactShadow, toon } from '../lib/toon.mjs'
+
+/** v2: eski cel() çağrılarını parlak toon gövdeye çevirir (keskin parlama + kenar ışığı). */
+function cel(d, fill, o = {}) {
+  const spec = o.hl ? [[o.hl[0], o.hl[1], o.hl[2] * 0.75, o.hl[3] * 0.6, 0, Math.min(0.95, (o.hlOpacity ?? 0.4) + 0.35)]] : []
+  const glow = o.hl ? [o.hl[0], o.hl[1], Math.max(o.hl[2], o.hl[3]) * 1.4, 0.35] : null
+  return toon(d, fill, {
+    sw: o.sw ?? 6,
+    band: o.noShadow ? null : o.off ?? [10, 10],
+    bandTone: o.shadow ? Math.min(1, o.shadow + 0.12) : 0.9,
+    light: 1.25,
+    dark: 0.78,
+    spec,
+    glow,
+    inner: o.inner ?? '',
+  })
+}
 
 const MATERIALS = {
-  celik: { body: '#B9C3CD', dark: '#7D8894', light: '#EEF3F7', handle: '#25292F', knob: '#25292F', rim: '#98A3AE' },
+  celik: { body: '#BCC6D0', dark: '#6F7C89', light: '#FFFFFF', handle: '#2A2F36', knob: '#2A2F36', rim: '#98A3AE' },
   emaye: { body: '#F2E6CC', dark: '#D9C7A2', light: '#FFF9EC', handle: '#1F4E8C', knob: '#1F4E8C', rim: '#1F4E8C' },
   porselen: { body: '#FAFAF6', dark: '#D8DEE6', light: '#FFFFFF', handle: '#FAFAF6', knob: '#1F4E8C', rim: '#1F4E8C' },
   bakir: { body: '#C77A45', dark: '#94522A', light: '#F3B587', handle: '#C9A227', knob: '#C9A227', rim: '#A85E31' },
@@ -176,7 +193,7 @@ function pot(kind, mat) {
   // Taban halkası
   const foot = `M${cx - rx * 0.6} ${bodyBot - 14} Q${cx} ${bodyBot + 30} ${cx + rx * 0.6} ${bodyBot - 14} L${cx + rx * 0.56} ${bodyBot + 12} Q${cx} ${bodyBot + 44} ${cx - rx * 0.56} ${bodyBot + 12}Z`
 
-  let s = silhouette([body, sp.d, handle, lid, knob, foot], 18)
+  let s = contactShadow(cx, bodyBot + 20, rx * 0.95, 26, 0.3) + silhouette([body, sp.d, handle, lid, knob, foot], 18)
   s += cel(handle, m.handle, { sw: 7, hl: [cx - rx - 70, isDemlik ? 330 : 380, 18, 30], hlOpacity: 0.3 })
   s += cel(sp.d, m.body, { sw: 7, shadow: 0.78, off: [0, 10], hl: [cx + rx + 50, isDemlik ? 380 : 520, 30, 12], inner: mat === 'emaye' || mat === 'porselen' ? '' : `<path d="${sp.d}" fill="none" stroke="${m.light}" stroke-width="10" opacity=".35" transform="translate(-6 -6)"/>` })
   s += `<path d="${tipOpening}" fill="${mat === 'celik' ? '#4E5863' : m.rim}" stroke="${C.out}" stroke-width="5"/>`

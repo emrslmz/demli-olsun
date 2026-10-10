@@ -1,5 +1,6 @@
 /**
- * Bardak görünümü: arka cam → sıvı gövdesi (kırpılan, tint'li) → parıltı → yüzey elipsi (dalgalı) → ön cam.
+ * Bardak görünümü: arka cam → sıvı gövdesi (kırpılan, tint'li) → parıltı → yüzey elipsi (dalgalı) → hedef çizgileri → ön cam.
+ * Hedef çizgileri: koyu "dem çizgisi" (önce buraya kadar dem) ve beyaz "dolu çizgisi" (suyla buraya kadar).
  * Bardak her zaman glassModel profilinden çizilir; görünen seviye hesaplanan hacimle birebir tutar.
  * Sıvı yüzeyi iki sinüs dalgasının toplamıdır; döküm sırasında genlik artar, sonra durulur.
  */
@@ -20,7 +21,11 @@ export class GlassView {
   private liquid!: Phaser.GameObjects.Image
   private glow!: Phaser.GameObjects.Image
   private surface!: Phaser.GameObjects.Graphics
+  private guides!: Phaser.GameObjects.Graphics
   private front!: Phaser.GameObjects.Image
+  /** Hedef çizgileri (hacim oranı) ya da null. */
+  private guideDem: number | null = null
+  private guideFill: number | null = null
   private readonly swirl: Phaser.GameObjects.Image[] = []
   geo!: GlassGeometry
   type: GlassProfileId = 'ince'
@@ -62,9 +67,9 @@ export class GlassView {
     for (let i = 0; i < SWIRL_DOTS; i++) {
       this.swirl.push(this.scene.add.image(0, 0, 'ca_dot').setAlpha(0))
     }
+    this.guides = this.scene.add.graphics()
     this.front = this.scene.add.image(0, 0, keys.front).setOrigin(ox, oy)
-    this.container.add([this.back, this.liquid, this.glow, ...this.swirl, this.surface, this.front])
-    this.liquid.setVisible(!g.model.def.opaque)
+    this.container.add([this.back, this.liquid, this.glow, ...this.swirl, this.surface, this.guides, this.front])
     this.applyLevel()
   }
 
@@ -121,6 +126,12 @@ export class GlassView {
     }
   }
 
+  /** Hedef çizgileri (hacim oranı 0..1) ya da null (gizli). */
+  setGuides(dem: number | null, fill: number | null): void {
+    this.guideDem = dem
+    this.guideFill = fill
+  }
+
   agitate(amount: number): void {
     this.agitation = Math.min(1.5, Math.max(this.agitation, amount))
   }
@@ -160,12 +171,10 @@ export class GlassView {
     const empty = vol <= 0.0008
     // Sıvı gövdesi: seviyeden aşağısı.
     const cropY = g.y(h)
-    if (!g.model.def.opaque) {
-      this.liquid.setVisible(!empty)
-      this.liquid.setCrop(0, cropY, g.texW, g.texH - cropY)
-      this.liquid.setTint(tint)
-      this.liquid.setAlpha(this.color.a)
-    }
+    this.liquid.setVisible(!empty)
+    this.liquid.setCrop(0, cropY, g.texW, g.texH - cropY)
+    this.liquid.setTint(tint)
+    this.liquid.setAlpha(this.color.a)
     // Ortadaki sıcak parıltı
     const midH = h * 0.5
     const lx = g.cx
@@ -175,11 +184,62 @@ export class GlassView {
     const rr = g.r(midH)
     this.glow.setPosition(ox, oy)
     this.glow.setDisplaySize(rr * 1.5, Math.max(10, (g.y(0) - g.y(h)) * 0.95))
-    const glowA = empty || g.model.def.opaque ? 0 : 0.28 * Math.min(1, vol * 2.2) * (0.4 + 0.6 * this.color.a)
+    const glowA = empty ? 0 : 0.28 * Math.min(1, vol * 2.2) * (0.4 + 0.6 * this.color.a)
     this.glow.setAlpha(glowA)
     this.glow.setTint(rgbToInt({ r: Math.min(255, this.color.r + 60), g: Math.min(255, this.color.g + 40), b: this.color.b }))
     this.drawSurface(h, empty)
     this.drawSwirl(h, empty)
+    this.drawGuides(vol)
+  }
+
+  private guideKey = ''
+
+  private drawGuides(vol: number): void {
+    // Yalnızca değişince yeniden çiz (Graphics her karede yeniden üçgenlenir).
+    const nearAny = [this.guideDem, this.guideFill].some((v) => v !== null && Math.abs(vol - v) < 0.04)
+    const key = `${this.guideDem}|${this.guideFill}|${nearAny ? Math.round(vol * 200) + ':' + Math.round(this.time * 12) : 'far'}`
+    if (key === this.guideKey) return
+    this.guideKey = key
+    const s = this.guides
+    s.clear()
+    const g = this.geo
+    const lw = g.hpx * 0.014
+    const line = (v: number, color: number) => {
+      const h = g.model.heightAt(Math.min(1, v))
+      const cy = g.y(h) - g.yBase
+      const rx = (g.r(h) + g.wall * 0.4) * 1.01
+      const ry = rx * ELLIPSE_K
+      // Seviye çizgiye yaklaşınca çizgi parlar
+      const near = Math.max(0, 1 - Math.abs(vol - v) / 0.04)
+      const pulse = near > 0 ? 0.5 + 0.5 * Math.sin(this.time * 12) : 0
+      const dashes = 9
+      for (const [w, c, a] of [
+        [lw * 2.2, 0x3b2416, 0.75],
+        [lw * (1 + 0.6 * near), color, 0.95],
+      ] as const) {
+        s.lineStyle(w, c, a * (1 - 0.25 * pulse * (c === color ? 0 : 1)))
+        for (let i = 0; i < dashes; i++) {
+          const a0 = (i / dashes) * Math.PI + 0.06
+          const a1 = ((i + 0.62) / dashes) * Math.PI + 0.06
+          s.beginPath()
+          for (let j = 0; j <= 4; j++) {
+            const a = a0 + ((a1 - a0) * j) / 4
+            const x = Math.cos(a) * rx
+            const y = cy + Math.sin(a) * ry
+            if (j === 0) s.moveTo(x, y)
+            else s.lineTo(x, y)
+          }
+          s.strokePath()
+        }
+      }
+      // Sağ uçta küçük işaret
+      s.fillStyle(0x3b2416, 1)
+      s.fillCircle(rx + lw * 2.4, cy, lw * 2.4)
+      s.fillStyle(color, 1)
+      s.fillCircle(rx + lw * 2.4, cy, lw * 1.5 * (1 + 0.3 * pulse))
+    }
+    if (this.guideDem !== null) line(this.guideDem, 0x8a2a0c)
+    if (this.guideFill !== null) line(this.guideFill, 0xffffff)
   }
 
   private drawSurface(h: number, empty: boolean): void {
@@ -187,7 +247,6 @@ export class GlassView {
     s.clear()
     if (empty) return
     const g = this.geo
-    const opaque = g.model.def.opaque
     const cy = g.y(h) - g.yBase
     const rx = g.r(h) * 0.995
     const ry = rx * ELLIPSE_K
@@ -196,7 +255,7 @@ export class GlassView {
     const c = this.color
     // Yüzey: gövdeden biraz açık (ışık yansıması)
     const top = rgbToInt({ r: Math.min(255, c.r + 28), g: Math.min(255, c.g + 22), b: Math.min(255, c.b + 18) })
-    const alpha = opaque ? Math.min(1, 0.55 + c.a * 0.5) : Math.min(1, c.a + 0.08)
+    const alpha = Math.min(1, c.a + 0.08)
     s.fillStyle(top, alpha)
     s.beginPath()
     for (let i = 0; i <= SURFACE_POINTS; i++) {
@@ -224,7 +283,7 @@ export class GlassView {
   }
 
   private drawSwirl(h: number, empty: boolean): void {
-    const active = !empty && this.swirlT < 1 && !this.geo.model.def.opaque
+    const active = !empty && this.swirlT < 1
     const g = this.geo
     for (let i = 0; i < this.swirl.length; i++) {
       const d = this.swirl[i] as Phaser.GameObjects.Image

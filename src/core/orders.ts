@@ -1,9 +1,8 @@
 /** Sipariş üretimi (Bölüm 6). Seed'li RNG ile deterministik. */
 
-import { GLASS_WEIGHTS, SUGAR, TRAY, type StageConfig } from '@/config/gameplay'
+import { SUGAR, type StageConfig } from '@/config/gameplay'
 import { CUSTOMERS, CUSTOMER_IDS, type CustomerId } from '@/data/customers'
 import { FILL_TYPES, FILL_TYPE_IDS, TEA_TYPES, TEA_TYPE_IDS, type FillTypeId, type TeaTypeId } from '@/data/orderTypes'
-import type { GlassProfileId } from './glassModel'
 import { orderPatience } from './difficulty'
 import type { Rng } from './rng'
 
@@ -17,11 +16,8 @@ export interface Order {
   /** Hedef doluluk yüzdesi (tam sayı, şeker dahil son hacim). */
   fillTarget: number
   sugar: number
-  glass: GlassProfileId
   /** Toplam sabır (sn). */
   patience: number
-  /** Tepsi siparişinde bardak sayısı; normalde 1. */
-  trayCount: number
 }
 
 export interface OrderContext {
@@ -60,13 +56,6 @@ export function pickSugar(rng: Rng, chance: number): number {
   return rng.weighted([1, 2, 3], SUGAR.countWeights)
 }
 
-export function pickGlass(rng: Rng, glasses: GlassProfileId[]): GlassProfileId {
-  return rng.weighted(
-    glasses,
-    glasses.map((g) => GLASS_WEIGHTS[g]),
-  )
-}
-
 export function generateOrder(rng: Rng, ctx: OrderContext): Order {
   const customer = pickCustomer(rng, ctx)
   const def = CUSTOMERS[customer]
@@ -74,9 +63,6 @@ export function generateOrder(rng: Rng, ctx: OrderContext): Order {
   const fillType = pickFillType(rng, customer)
   const [d0, d1] = TEA_TYPES[teaType].dem
   const [f0, f1] = FILL_TYPES[fillType].fill
-  const tray = customer === 'esnaf' && ctx.stage.trayAllowed && rng.chance(TRAY.chance)
-  const trayCount = tray ? rng.int(TRAY.glasses[0], TRAY.glasses[1]) : 1
-  const glass = tray ? 'ince' : pickGlass(rng, ctx.stage.glasses)
   return {
     id: ctx.nextId,
     customer,
@@ -85,8 +71,6 @@ export function generateOrder(rng: Rng, ctx: OrderContext): Order {
     fillType,
     fillTarget: rng.int(f0, f1),
     sugar: pickSugar(rng, ctx.stage.sugarChance),
-    glass,
-    patience: orderPatience(ctx.served, def.patienceFactor, trayCount),
-    trayCount,
+    patience: orderPatience(ctx.served, def.patienceFactor),
   }
 }
