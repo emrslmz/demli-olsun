@@ -26,8 +26,11 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: false,
     },
+    // Android'de durum çubuğu oyunun üstüne binmez (bazı WebView'lar safe-area-inset-top'ı 0 bildirir);
+    // iOS'ta içerik viewport-fit=cover + env(safe-area-inset-top) ile çentiğin altında kalır.
     StatusBar: {
-      overlaysWebView: true,
+      overlaysWebView: false,
+      backgroundColor: '#2A1408',
       style: 'DARK',
     },
     LocalNotifications: {

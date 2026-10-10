@@ -62,9 +62,14 @@ export async function bootstrap(): Promise<void> {
     try {
       const { StatusBar, Style } = await import('@capacitor/status-bar')
       await StatusBar.setStyle({ style: Style.Dark })
-      await StatusBar.setOverlaysWebView({ overlay: true })
+      if (Capacitor.getPlatform() === 'android') {
+        // Bazı Android WebView'ları env(safe-area-inset-top) için 0 döndürür; durum çubuğu oyunun üstüne binerse
+        // HUD ve başlıklar altında kalır. Bu yüzden Android'de oyun durum çubuğunun altından başlar.
+        await StatusBar.setOverlaysWebView({ overlay: false })
+        await StatusBar.setBackgroundColor({ color: '#2A1408' })
+      }
     } catch {
-      /* iOS'ta setOverlaysWebView desteklenmeyebilir */
+      /* setOverlaysWebView / setBackgroundColor yalnızca Android'de */
     }
   }
 }

@@ -1,6 +1,6 @@
 /**
- * Safe area: CSS env(safe-area-inset-*) değerlerini bir ölçüm elemanıyla okur.
- * Aynı değerler Phaser'daki layout.ts'e aktarılır (CSS piksel).
+ * Safe area: CSS'teki --safe-* değişkenlerini (env(safe-area-inset-*) + üstte ek pay) bir ölçüm elemanıyla okur.
+ * Aynı değerler Phaser'daki layout.ts'e aktarılır (CSS piksel); böylece Vue ekranları ve oyun aynı payı kullanır.
  */
 
 import { reactive } from 'vue'
@@ -38,8 +38,8 @@ export function initSafeArea(): void {
   probe.setAttribute('aria-hidden', 'true')
   probe.style.cssText =
     'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;' +
-    'padding-top:env(safe-area-inset-top);padding-right:env(safe-area-inset-right);' +
-    'padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);'
+    'padding-top:var(--safe-top);padding-right:var(--safe-right);' +
+    'padding-bottom:var(--safe-bottom);padding-left:var(--safe-left);'
   document.body.appendChild(probe)
   measure()
   window.addEventListener('resize', () => requestAnimationFrame(measure))
