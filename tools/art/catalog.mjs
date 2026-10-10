@@ -13,7 +13,7 @@ export const PALETTES = {
 export const CUSTOMERS = ['riza', 'muhtar', 'taksici', 'ogrenci', 'esnaf']
 export const EXPRESSIONS = ['neutral', 'happy', 'angry']
 export const POT_MATERIALS = ['celik', 'emaye', 'porselen', 'bakir']
-export const VENUES = ['mahalle', 'sahil', 'rize', 'bogaz']
+export const VENUES = ['mahalle', 'sahil', 'rize', 'bogaz', 'kapadokya', 'galata', 'yayla']
 
 export const ICONS = [
   'icon_coin', 'icon_life', 'icon_life_broken', 'icon_sugar', 'icon_star', 'icon_star_empty', 'icon_fire',

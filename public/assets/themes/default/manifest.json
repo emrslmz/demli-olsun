@@ -58,6 +58,42 @@
       "w": 1536,
       "h": 2048
     },
+    "bg_kapadokya_phone": {
+      "counterY": 0.5,
+      "file": "bg/bg_kapadokya_phone.jpg",
+      "w": 1080,
+      "h": 2340
+    },
+    "bg_kapadokya_tablet": {
+      "counterY": 0.5,
+      "file": "bg/bg_kapadokya_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
+    "bg_galata_phone": {
+      "counterY": 0.5,
+      "file": "bg/bg_galata_phone.jpg",
+      "w": 1080,
+      "h": 2340
+    },
+    "bg_galata_tablet": {
+      "counterY": 0.5,
+      "file": "bg/bg_galata_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
+    "bg_yayla_phone": {
+      "counterY": 0.5,
+      "file": "bg/bg_yayla_phone.jpg",
+      "w": 1080,
+      "h": 2340
+    },
+    "bg_yayla_tablet": {
+      "counterY": 0.5,
+      "file": "bg/bg_yayla_tablet.jpg",
+      "w": 1536,
+      "h": 2048
+    },
     "char_riza_neutral": {
       "file": "char/char_riza_neutral.png",
       "w": 640,

@@ -19,6 +19,10 @@ export interface GlassSkin {
   glassAlpha: number
   /** Ağız kenarı rengi. */
   rim: string
+  /** Biçim (kozmetik, oynanışı değiştirmez): sağda cam kulp, dikey yivler (faset), metal zarf. */
+  handle?: boolean
+  facets?: boolean
+  holder?: 'zarf'
 }
 
 export const GLASS_SKINS: GlassSkin[] = [
@@ -44,6 +48,17 @@ export const GLASS_SKINS: GlassSkin[] = [
     rim: '#FFFFFF',
   },
   {
+    id: 'kulplu',
+    name: 'Kulplu',
+    price: 600,
+    decal: null,
+    outline: '#3B2416',
+    glass: '#EAF6F8',
+    glassAlpha: 0.22,
+    rim: '#FFFFFF',
+    handle: true,
+  },
+  {
     id: 'yaldiz',
     name: 'Altın yaldızlı',
     price: 700,
@@ -54,6 +69,27 @@ export const GLASS_SKINS: GlassSkin[] = [
     rim: '#E3B83F',
   },
   {
+    id: 'firuze',
+    name: 'Firuze cam',
+    price: 900,
+    decal: null,
+    outline: '#1E4E55',
+    glass: '#7FD8D6',
+    glassAlpha: 0.32,
+    rim: '#E2B33C',
+  },
+  {
+    id: 'tirtikli',
+    name: 'Tırtıklı',
+    price: 1100,
+    decal: null,
+    outline: '#3B2416',
+    glass: '#EEF7FB',
+    glassAlpha: 0.26,
+    rim: '#FFFFFF',
+    facets: true,
+  },
+  {
     id: 'kristal',
     name: 'Kristal',
     price: 1500,
@@ -62,6 +98,17 @@ export const GLASS_SKINS: GlassSkin[] = [
     glass: '#F2FBFF',
     glassAlpha: 0.3,
     rim: '#FFFFFF',
+  },
+  {
+    id: 'zarf',
+    name: 'Gümüş zarflı',
+    price: 2200,
+    decal: null,
+    outline: '#3B2416',
+    glass: '#EAF6F8',
+    glassAlpha: 0.22,
+    rim: '#FFFFFF',
+    holder: 'zarf',
   },
   {
     id: 'baslangic',
@@ -98,7 +145,10 @@ export interface Venue {
 
 export const VENUES: Venue[] = [
   { id: 'mahalle', name: 'Mahalle kahvesi', price: 0, entitlement: null },
+  { id: 'yayla', name: 'Karadeniz yaylası', price: 1500, entitlement: null },
+  { id: 'kapadokya', name: 'Kapadokya terası', price: 2000, entitlement: null },
   { id: 'sahil', name: 'Sahil çay bahçesi', price: VENUE_SAHIL_PRICE, entitlement: null },
+  { id: 'galata', name: 'Galata manzarası', price: 2500, entitlement: null },
   { id: 'rize', name: 'Rize çay bahçesi', price: null, entitlement: 'theme_rize' },
   { id: 'bogaz', name: 'Boğaz vapuru', price: null, entitlement: 'theme_bogaz' },
 ]

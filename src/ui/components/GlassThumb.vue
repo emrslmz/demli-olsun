@@ -90,6 +90,46 @@ const surface = { cx, cy: y(FILL), rx: r(FILL), ry: r(FILL) * K }
 const rim = { rx: rTop, ry: rTop * K, lip: rTop - wall * 0.5 }
 const base = `M${n(cx - r0)} ${n(yBot)} A${n(r0)} ${n(r0 * K)} 0 0 0 ${n(cx + r0)} ${n(yBot)} L${n(cx + rBase)} ${n(by)} A${n(rBase)} ${n(rBase * K)} 0 0 1 ${n(cx - rBase)} ${n(by)}Z`
 const sw = 3.2
+
+// Biçim özellikleri (glassArt.ts → drawFacets / drawHandle / drawZarf ile aynı geometri).
+const facets = Array.from({ length: 8 }, (_, i) => 'M' + side(Math.cos(((i + 1) / 9) * Math.PI), -0.05, 0.98, 20, wall).join(' L'))
+const R = (t: number) => cx + r(t) + wall
+const handle = (() => {
+  const out = ih * 0.17
+  return `M${n(R(0.8) - wall)} ${n(y(0.8))} C${n(R(0.8) + out * 0.9)} ${n(y(0.84))} ${n(R(0.55) + out * 1.15)} ${n(y(0.6))} ${n(R(0.42) + out * 0.55)} ${n(y(0.36))} Q${n(R(0.3) + out * 0.25)} ${n(y(0.24))} ${n(R(0.24) - wall)} ${n(y(0.24))}`
+})()
+const zarf = (() => {
+  const top = 0.44
+  const pad = wall * 1.4
+  const rz = (t: number) => r(t) + wall + pad
+  const rFoot = rBase * 1.12
+  const pts: string[] = []
+  const rt = rz(top)
+  for (let i = 0; i <= 56; i++) {
+    const a = Math.PI - (i / 56) * Math.PI
+    const bump = Math.abs(Math.sin((i / 4) * Math.PI)) * ih * 0.035
+    pts.push(`${n(cx + Math.cos(a) * rt)} ${n(y(top) + Math.sin(a) * rt * K - bump)}`)
+  }
+  for (let i = 0; i <= 12; i++) {
+    const t = top - (top * i) / 12
+    pts.push(`${n(cx + rz(t))} ${n(y(t))}`)
+  }
+  pts.push(`${n(cx + rFoot)} ${n(by)}`)
+  let d = 'M' + pts.join(' L') + ` A${n(rFoot)} ${n(rFoot * K)} 0 0 1 ${n(cx - rFoot)} ${n(by)}`
+  for (let i = 0; i <= 12; i++) {
+    const t = (top * i) / 12
+    d += ` L${n(cx - rz(t))} ${n(y(t))}`
+  }
+  const dots: { x: number; y: number }[] = []
+  for (const t of [0.34, 0.08]) {
+    for (let i = 1; i < 12; i++) {
+      const a = Math.PI - (i / 12) * Math.PI
+      dots.push({ x: cx + Math.cos(a) * rz(t) * 0.96, y: y(t) + Math.sin(a) * rz(t) * K })
+    }
+  }
+  const ring = { x: cx + rz(0.22) + ih * 0.07, y: y(0.22), rx: ih * 0.075, ry: ih * 0.1 }
+  return { d: d + 'Z', dots, ring }
+})()
 </script>
 
 <template>
@@ -132,12 +172,36 @@ const sw = 3.2
         opacity=".95"
         preserveAspectRatio="xMidYMid slice"
       />
+      <g v-if="skin.facets">
+        <path v-for="(d, i) in facets" :key="i" :d="d" fill="none" :stroke="skin.outline" stroke-opacity=".25" stroke-width="1.1" />
+      </g>
       <path :d="band(0.62, 1.3, -0.2, 1.05)" fill="#1D4A5C" opacity=".14" />
       <path :d="stripe(-0.66, 0.34, 0.9)" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".95" />
       <path :d="stripe(-0.7, 0.1, 0.22)" stroke="#fff" stroke-width="5.5" fill="none" stroke-linecap="round" opacity=".9" />
       <path :d="stripe(0.74, 0.66, 0.86)" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85" />
     </g>
+    <g v-if="skin.handle" fill="none" stroke-linecap="round">
+      <path :d="handle" :stroke="skin.outline" :stroke-width="ih * 0.06 + sw * 2" />
+      <path :d="handle" :stroke="skin.glass" :stroke-width="ih * 0.06" />
+      <path :d="handle" stroke="#fff" :stroke-width="ih * 0.018" />
+    </g>
     <path :d="outer" fill="none" :stroke="skin.outline" :stroke-width="sw" stroke-linejoin="round" />
+    <g v-if="skin.holder === 'zarf'">
+      <path :d="zarf.d" fill="#C9D1D9" :stroke="skin.outline" :stroke-width="sw" stroke-linejoin="round" />
+      <circle v-for="(p, i) in zarf.dots" :key="i" :cx="p.x" :cy="p.y" r="0.9" fill="rgba(59,36,22,.55)" />
+      <path
+        :d="`M${zarf.ring.x} ${zarf.ring.y - zarf.ring.ry} A${zarf.ring.rx} ${zarf.ring.ry} 0 0 1 ${zarf.ring.x} ${zarf.ring.y + zarf.ring.ry}`"
+        fill="none"
+        :stroke="skin.outline"
+        :stroke-width="ih * 0.035 + sw * 2"
+      />
+      <path
+        :d="`M${zarf.ring.x} ${zarf.ring.y - zarf.ring.ry} A${zarf.ring.rx} ${zarf.ring.ry} 0 0 1 ${zarf.ring.x} ${zarf.ring.y + zarf.ring.ry}`"
+        fill="none"
+        stroke="#C9D1D9"
+        :stroke-width="ih * 0.035"
+      />
+    </g>
     <path
       :d="`M${cx - rim.lip} ${yTop} A${rim.lip} ${rim.lip * K} 0 0 0 ${cx + rim.lip} ${yTop}`"
       fill="none"

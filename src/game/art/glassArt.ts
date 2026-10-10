@@ -40,6 +40,8 @@ export interface GlassGeometry {
 const PAD = 16
 /** Kalın dibin tabana doğru genişlemesi. */
 const BASE_FLARE = 1.1
+/** Dokunun sağında kulp için ek genişlik (iç yükseklik oranı). */
+const HANDLE_PAD = 0.24
 
 export function glassGeometry(id: GlassProfileId): GlassGeometry {
   const model = getGlassModel(id)
@@ -49,7 +51,8 @@ export function glassGeometry(id: GlassProfileId): GlassGeometry {
   const maxR = model.maxRadius * hpx
   const halfW = maxR + wall + PAD
   const cx = halfW + 4
-  const texW = Math.ceil(cx + halfW)
+  // Sağda kulp / zarf halkası için pay.
+  const texW = Math.ceil(cx + halfW + hpx * HANDLE_PAD)
   const rimRy = (model.radiusAt(1) * hpx + wall) * ELLIPSE_K
   const yTop = PAD + rimRy + 4
   const yBot = yTop + hpx
@@ -237,6 +240,142 @@ function darken(hex: string, f: number): string {
   return `rgb(${c((n >> 16) & 255)}, ${c((n >> 8) & 255)}, ${c(n & 255)})`
 }
 
+/** Dikey yivler: bardağın çevresinde eşit açılarla koyu ince çizgi + yanında parlak çizgi. */
+function drawFacets(ctx: CanvasRenderingContext2D, g: GlassGeometry, skin: GlassSkin) {
+  const n = 9
+  for (let i = 1; i < n; i++) {
+    const rel = Math.cos((i / n) * Math.PI)
+    const line = (off: number, color: string, width: number) => {
+      ctx.beginPath()
+      for (let j = 0; j <= 40; j++) {
+        const t = -0.05 + (1.03 * j) / 40
+        const x = g.cx + (g.r(t) + g.wall) * rel + off
+        if (j === 0) ctx.moveTo(x, g.y(t))
+        else ctx.lineTo(x, g.y(t))
+      }
+      ctx.lineWidth = width
+      ctx.strokeStyle = color
+      ctx.stroke()
+    }
+    line(0, rgba(skin.outline, 0.22), g.hpx * 0.012)
+    line(-g.hpx * 0.012, 'rgba(255,255,255,0.55)', g.hpx * 0.009)
+  }
+}
+
+/** Sağda cam kulp: belin üstünden göbeğe inen C kıvrımı. */
+function handlePath(ctx: CanvasRenderingContext2D, g: GlassGeometry) {
+  const R = (t: number) => g.cx + g.r(t) + g.wall
+  const out = g.hpx * 0.17
+  ctx.beginPath()
+  ctx.moveTo(R(0.8) - g.wall, g.y(0.8))
+  ctx.bezierCurveTo(R(0.8) + out * 0.9, g.y(0.84), R(0.55) + out * 1.15, g.y(0.6), R(0.42) + out * 0.55, g.y(0.36))
+  ctx.quadraticCurveTo(R(0.3) + out * 0.25, g.y(0.24), R(0.24) - g.wall, g.y(0.24))
+}
+
+function drawHandle(ctx: CanvasRenderingContext2D, g: GlassGeometry, skin: GlassSkin, lw: number) {
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  handlePath(ctx, g)
+  ctx.lineWidth = g.hpx * 0.06 + lw * 2
+  ctx.strokeStyle = skin.outline
+  ctx.stroke()
+  handlePath(ctx, g)
+  ctx.lineWidth = g.hpx * 0.06
+  ctx.strokeStyle = rgba(skin.glass, 1)
+  ctx.stroke()
+  handlePath(ctx, g)
+  ctx.lineWidth = g.hpx * 0.018
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+  ctx.stroke()
+}
+
+/** Metal zarf (Osmanlı usulü bardak tutacağı): bardağın alt yarısını sarar, tırtıklı üst kenar, işleme, halka kulp. */
+function drawZarf(ctx: CanvasRenderingContext2D, g: GlassGeometry, skin: GlassSkin, lw: number) {
+  const k = ELLIPSE_K
+  const top = 0.44
+  const pad = g.wall * 1.4
+  const R = (t: number) => g.r(t) + g.wall + pad
+  const rFoot = (g.r(0) + g.wall) * BASE_FLARE * 1.12
+  const yFoot = g.yBase
+  const path = () => {
+    ctx.beginPath()
+    // Üst kenar: ön yay boyunca dalgalı (tırtıklı)
+    const rt = R(top)
+    const n = 14
+    for (let i = 0; i <= n * 4; i++) {
+      const a = Math.PI - (i / (n * 4)) * Math.PI
+      const bump = Math.abs(Math.sin((i / 4) * Math.PI)) * g.hpx * 0.035
+      const x = g.cx + Math.cos(a) * rt
+      const y = g.y(top) + Math.sin(a) * rt * k - bump
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    for (let i = 0; i <= 30; i++) {
+      const t = top - (top * i) / 30
+      ctx.lineTo(g.cx + R(t), g.y(t))
+    }
+    ctx.lineTo(g.cx + rFoot, yFoot)
+    ctx.ellipse(g.cx, yFoot, rFoot, rFoot * k, 0, 0, Math.PI, false)
+    for (let i = 0; i <= 30; i++) {
+      const t = (top * i) / 30
+      ctx.lineTo(g.cx - R(t), g.y(t))
+    }
+    ctx.closePath()
+  }
+  ctx.save()
+  path()
+  ctx.fillStyle = '#C9D1D9'
+  ctx.fill()
+  ctx.clip()
+  // Sağ gölge bandı, sol parlama
+  ctx.fillStyle = '#9AA6B2'
+  ctx.fillRect(g.cx + R(0.2) * 0.45, g.y(top) - g.hpx * 0.1, R(0.2) * 1.2, g.hpx)
+  ctx.fillStyle = 'rgba(255,255,255,0.85)'
+  ctx.fillRect(g.cx - R(0.2) * 0.72, g.y(top), R(0.2) * 0.14, g.hpx)
+  // İşleme: iki sıra nokta ve aralarında kıvrım
+  ctx.fillStyle = 'rgba(59,36,22,0.55)'
+  for (const t of [0.34, 0.08]) {
+    const r = R(t)
+    for (let i = 1; i < 16; i++) {
+      const a = Math.PI - (i / 16) * Math.PI
+      ctx.beginPath()
+      ctx.arc(g.cx + Math.cos(a) * r * 0.96, g.y(t) + Math.sin(a) * r * k, g.hpx * 0.009, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  ctx.beginPath()
+  const r2 = R(0.21)
+  for (let i = 0; i <= 60; i++) {
+    const a = Math.PI - (i / 60) * Math.PI
+    const x = g.cx + Math.cos(a) * r2 * 0.96
+    const y = g.y(0.21) + Math.sin(a) * r2 * k + Math.sin(i * 0.9) * g.hpx * 0.022
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.lineWidth = g.hpx * 0.01
+  ctx.strokeStyle = 'rgba(59,36,22,0.5)'
+  ctx.stroke()
+  ctx.restore()
+  path()
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = lw
+  ctx.strokeStyle = skin.outline
+  ctx.stroke()
+  // Halka kulp
+  const hx = g.cx + R(0.22) + g.hpx * 0.07
+  const hy = g.y(0.22)
+  for (const [w, c] of [
+    [g.hpx * 0.035 + lw * 2, skin.outline],
+    [g.hpx * 0.035, '#C9D1D9'],
+  ] as const) {
+    ctx.beginPath()
+    ctx.ellipse(hx, hy, g.hpx * 0.075, g.hpx * 0.1, 0, -Math.PI * 0.6, Math.PI * 0.6)
+    ctx.lineWidth = w
+    ctx.strokeStyle = c
+    ctx.stroke()
+  }
+}
+
 function drawGlassFront(
   ctx: CanvasRenderingContext2D,
   g: GlassGeometry,
@@ -288,6 +427,7 @@ function drawGlassFront(
     wrapDecal(ctx, g, decal.img, decal.w, decal.h)
     ctx.globalAlpha = 1
   }
+  if (skin.facets) drawFacets(ctx, g, skin)
   // Sağda tek ton gölge bandı (cam + çay birlikte)
   ctx.fillStyle = 'rgba(29,74,92,0.14)'
   bandPath(ctx, g, 0.62, 1.3, -0.25, 1.05)
@@ -305,12 +445,14 @@ function drawGlassFront(
   ctx.stroke()
   ctx.restore()
 
+  if (skin.handle) drawHandle(ctx, g, skin, lw)
   // Dış kontur
   ctx.lineJoin = 'round'
   ctx.lineWidth = lw
   ctx.strokeStyle = skin.outline
   outerPath(ctx, g)
   ctx.stroke()
+  if (skin.holder === 'zarf') drawZarf(ctx, g, skin, lw)
   // Ağız: kalın ön dudak + tam elips kontur + parıltı
   const rr = r1 - g.wall * 0.5
   ctx.beginPath()

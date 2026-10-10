@@ -505,7 +505,259 @@ function bogaz(W, H) {
   return s
 }
 
-const VENUE_FN = { mahalle, sahil, rize, bogaz }
+// ---------- Yeni manzaralar ----------
+
+/** Sıcak hava balonu: dilimli zarf, ipler, sepet. */
+function balloon(cx, cy, r, colors) {
+  const env = `M${f(cx - r)} ${f(cy)} A${f(r)} ${f(r)} 0 1 1 ${f(cx + r)} ${f(cy)} Q${f(cx + r * 0.9)} ${f(cy + r * 0.75)} ${f(cx + r * 0.3)} ${f(cy + r * 1.22)} L${f(cx - r * 0.3)} ${f(cy + r * 1.22)} Q${f(cx - r * 0.9)} ${f(cy + r * 0.75)} ${f(cx - r)} ${f(cy)}Z`
+  const gores = [0.82, 0.5, 0.18]
+    .map((k, i) => `<ellipse cx="${f(cx)}" cy="${f(cy + r * 0.12)}" rx="${f(r * k)}" ry="${f(r * 1.25)}" fill="${colors[(i + 1) % colors.length]}"/>`)
+    .join('')
+  let s = toon(env, colors[0], { sw: Math.max(3, r * 0.07), band: [r * 0.12, 0], inner: gores, spec: [[cx - r * 0.45, cy - r * 0.45, r * 0.14, r * 0.24, -20, 0.7]] })
+  const by = cy + r * 1.62
+  s += `<path d="M${f(cx - r * 0.28)} ${f(cy + r * 1.22)} L${f(cx - r * 0.18)} ${f(by)} M${f(cx + r * 0.28)} ${f(cy + r * 1.22)} L${f(cx + r * 0.18)} ${f(by)}" stroke="${OUT}" stroke-width="${f(Math.max(2, r * 0.04))}"/>`
+  s += toon(rrectPath(cx - r * 0.22, by, r * 0.44, r * 0.3, r * 0.05), '#A0683A', { sw: Math.max(3, r * 0.06), band: [r * 0.05, 0], rim: false })
+  return s
+}
+
+/** Peri bacası: konik gövde + koyu şapka. */
+function fairyChimney(cx, baseY, h, w, body = '#EBCB9E') {
+  const d = `M${f(cx - w / 2)} ${f(baseY)} Q${f(cx - w * 0.28)} ${f(baseY - h * 0.55)} ${f(cx - w * 0.12)} ${f(baseY - h)} L${f(cx + w * 0.12)} ${f(baseY - h)} Q${f(cx + w * 0.28)} ${f(baseY - h * 0.55)} ${f(cx + w / 2)} ${f(baseY)}Z`
+  let s = toon(d, body, { sw: 6, band: [w * 0.12, 0], rim: false, inner: `<path d="M${f(cx - w * 0.3)} ${f(baseY - h * 0.35)} h${f(w * 0.6)} M${f(cx - w * 0.22)} ${f(baseY - h * 0.6)} h${f(w * 0.44)}" stroke="${shade(body, 0.85)}" stroke-width="5"/><rect x="${f(cx - w * 0.06)}" y="${f(baseY - h * 0.3)}" width="${f(w * 0.12)}" height="${f(h * 0.12)}" rx="4" fill="#5A3A28"/>` })
+  const cap = `M${f(cx - w * 0.22)} ${f(baseY - h)} Q${f(cx - w * 0.2)} ${f(baseY - h - w * 0.22)} ${f(cx)} ${f(baseY - h - w * 0.26)} Q${f(cx + w * 0.2)} ${f(baseY - h - w * 0.22)} ${f(cx + w * 0.22)} ${f(baseY - h)}Z`
+  s += toon(cap, '#8A6650', { sw: 6, band: [w * 0.05, 0], rim: false })
+  return s
+}
+
+function kapadokya(W, H) {
+  const CY = H * BG_COUNTER
+  const sc = W / 1080
+  const [sg, sgd] = lg([
+    [0, '#F49A7A'],
+    [0.45, '#FBC79A'],
+    [1, '#FFEBC9'],
+  ])
+  // Alt yarı tezgâhın arkasında kalır; yine de doldurulur (çarşı küçük resimleri).
+  let s = `<rect x="0" y="0" width="${W}" height="${H}" fill="#D9A07A"/>`
+  s += sgd + `<rect x="0" y="0" width="${W}" height="${f(CY + 40)}" fill="url(#${sg})"/>`
+  s += `<circle cx="${f(W * 0.74)}" cy="${f(CY - 640 * sc)}" r="${f(150 * sc)}" fill="#FFE6A8" opacity=".6" filter="url(#b24)"/>`
+  s += `<circle cx="${f(W * 0.74)}" cy="${f(CY - 640 * sc)}" r="${f(80 * sc)}" fill="#FFF0C2"/>`
+  // Uzak yayla sırtı ve vadi
+  s += `<path d="M0 ${f(CY - 420 * sc)} L${f(W * 0.12)} ${f(CY - 470 * sc)} L${f(W * 0.3)} ${f(CY - 455 * sc)} L${f(W * 0.42)} ${f(CY - 500 * sc)} L${f(W * 0.66)} ${f(CY - 480 * sc)} L${f(W * 0.82)} ${f(CY - 520 * sc)} L${W} ${f(CY - 470 * sc)} V${CY} H0Z" fill="#E2B28E"/>`
+  s += `<path d="M0 ${f(CY - 330 * sc)} Q${f(W * 0.35)} ${f(CY - 400 * sc)} ${f(W * 0.6)} ${f(CY - 340 * sc)} T${W} ${f(CY - 360 * sc)} V${CY} H0Z" fill="#D9A07A"/>`
+  // Peri bacaları (uzak → yakın)
+  for (const [x, h, w] of [
+    [0.08, 150, 70],
+    [0.2, 210, 90],
+    [0.33, 170, 80],
+    [0.57, 190, 84],
+    [0.7, 240, 100],
+    [0.86, 180, 86],
+    [0.95, 140, 70],
+  ])
+    s += fairyChimney(W * x, CY - 300 * sc, h * sc, w * sc, '#EBCB9E')
+  for (const [x, h, w] of [
+    [0.14, 300, 130],
+    [0.82, 340, 140],
+  ])
+    s += fairyChimney(W * x, CY - 150 * sc, h * sc, w * sc, '#F2D6AE')
+  // Balonlar
+  const bl = [
+    [0.18, 0.2, 80, ['#E8392F', '#F6C445', '#1E9AA8']],
+    [0.42, 0.33, 56, ['#7BC043', '#F6C445', '#E8392F']],
+    [0.6, 0.14, 96, ['#1F4E8C', '#F2F2F2', '#E8392F']],
+    [0.86, 0.3, 50, ['#F07C1E', '#FFE08A', '#8E44AD']],
+    [0.3, 0.08, 38, ['#E05A8A', '#FFFFFF', '#1E9AA8']],
+  ]
+  for (const [x, y, r, cols] of bl) s += balloon(W * x, CY - 1000 * sc + y * 1200 * sc, r * sc, cols)
+  // Taş teras duvarı + kilim minder
+  const wy = CY - 150 * sc
+  s += toon(rrectPath(-10, wy, W + 20, H - wy + 10, 8), '#E6CFA6', {
+    sw: 6,
+    band: [0, 10],
+    inner: [...Array(14)].map((_, i) => `<path d="M${f(i * 90 * sc + ((i % 2) * 45) * sc)} ${f(wy + 10 * sc)} v${f(60 * sc)} M-10 ${f(wy + 70 * sc)} H${W + 10}" stroke="#C8AE84" stroke-width="${f(5 * sc)}"/>`).join(''),
+  })
+  s += toon(rrectPath(-10, wy - 20 * sc, W + 20, 30 * sc, 8), '#F2DDB6', { sw: 6, band: [0, 6] })
+  s += potPlant(W * 0.08, wy - 10 * sc, sc * 0.9, '#E8392F')
+  s += vignette(W, H)
+  return s
+}
+
+/** Kubbe + iki minare (karşı kıyı silueti). */
+function mosque(cx, baseY, sz, color) {
+  let s = `<rect x="${f(cx - sz)}" y="${f(baseY - sz * 0.55)}" width="${f(sz * 2)}" height="${f(sz * 0.55)}" fill="${color}"/>`
+  s += `<path d="M${f(cx - sz * 0.75)} ${f(baseY - sz * 0.55)} A${f(sz * 0.75)} ${f(sz * 0.7)} 0 0 1 ${f(cx + sz * 0.75)} ${f(baseY - sz * 0.55)}Z" fill="${color}"/>`
+  for (const dx of [-0.6, 0.6]) s += `<path d="M${f(cx + dx * sz - sz * 0.3)} ${f(baseY - sz * 0.55)} A${f(sz * 0.3)} ${f(sz * 0.3)} 0 0 1 ${f(cx + dx * sz + sz * 0.3)} ${f(baseY - sz * 0.55)}Z" fill="${color}"/>`
+  for (const dx of [-1.25, 1.25]) {
+    const mx = cx + dx * sz
+    s += `<rect x="${f(mx - sz * 0.06)}" y="${f(baseY - sz * 1.8)}" width="${f(sz * 0.12)}" height="${f(sz * 1.8)}" fill="${color}"/>`
+    s += `<path d="M${f(mx - sz * 0.07)} ${f(baseY - sz * 1.8)} L${f(mx)} ${f(baseY - sz * 2.2)} L${f(mx + sz * 0.07)} ${f(baseY - sz * 1.8)}Z" fill="${color}"/>`
+    s += `<rect x="${f(mx - sz * 0.1)}" y="${f(baseY - sz * 1.35)}" width="${f(sz * 0.2)}" height="${f(sz * 0.05)}" fill="${color}"/>`
+  }
+  return s
+}
+
+function galata(W, H) {
+  const CY = H * BG_COUNTER
+  const sc = W / 1080
+  const horizon = CY - 470 * sc
+  const [sg, sgd] = lg([
+    [0, '#6A6FB8'],
+    [0.4, '#F08A7A'],
+    [0.75, '#FFC28A'],
+    [1, '#FFE2B0'],
+  ])
+  let s = `<rect x="0" y="0" width="${W}" height="${H}" fill="#4E6A9C"/>`
+  s += sgd + `<rect x="0" y="0" width="${W}" height="${f(horizon)}" fill="url(#${sg})"/>`
+  s += `<circle cx="${f(W * 0.2)}" cy="${f(horizon - 90 * sc)}" r="${f(160 * sc)}" fill="#FFD27A" opacity=".55" filter="url(#b24)"/>`
+  s += `<circle cx="${f(W * 0.2)}" cy="${f(horizon - 90 * sc)}" r="${f(78 * sc)}" fill="#FFE7A6"/>`
+  // Tarihi yarımada silueti
+  s += `<path d="M0 ${f(horizon - 40 * sc)} Q${f(W * 0.3)} ${f(horizon - 70 * sc)} ${f(W * 0.55)} ${f(horizon - 50 * sc)} T${W} ${f(horizon - 60 * sc)} V${f(horizon)} H0Z" fill="#B26E86"/>`
+  s += mosque(W * 0.3, horizon - 50 * sc, 80 * sc, '#A35E7A')
+  s += mosque(W * 0.08, horizon - 40 * sc, 50 * sc, '#A35E7A')
+  s += mosque(W * 0.5, horizon - 46 * sc, 56 * sc, '#A35E7A')
+  // Haliç
+  const [wg, wgd] = lg([
+    [0, '#E7A08A'],
+    [0.3, '#7A86B8'],
+    [1, '#4E6A9C'],
+  ])
+  s += wgd + `<rect x="0" y="${f(horizon)}" width="${W}" height="${f(CY - horizon + 40)}" fill="url(#${wg})"/>`
+  const r = rng('halic' + W)
+  for (let i = 0; i < 36; i++) {
+    const y = horizon + 14 * sc + r() * (CY - horizon - 60 * sc)
+    s += `<path d="M${f(r() * W)} ${f(y)} h${f((20 + r() * 40) * sc)}" stroke="${r() > 0.5 ? '#FFD9A0' : '#FFFFFF'}" stroke-width="${f(4 * sc)}" stroke-linecap="round" opacity="${f(0.3 + r() * 0.4)}"/>`
+  }
+  // Vapur
+  const vx = W * 0.3
+  const vy = horizon + 120 * sc
+  s += toon(`M${f(vx - 120 * sc)} ${f(vy)} H${f(vx + 120 * sc)} L${f(vx + 96 * sc)} ${f(vy + 40 * sc)} H${f(vx - 100 * sc)}Z`, '#F4F1EA', { sw: 5, band: [0, 6], rim: false, inner: `<rect x="${f(vx - 120 * sc)}" y="${f(vy + 22 * sc)}" width="${f(240 * sc)}" height="${f(20 * sc)}" fill="#2B2B2B"/>` })
+  s += toon(rrectPath(vx - 80 * sc, vy - 36 * sc, 160 * sc, 38 * sc, 6), '#F4F1EA', { sw: 5, band: [0, 4], rim: false, inner: [...Array(6)].map((_, i) => `<rect x="${f(vx - 70 * sc + i * 24 * sc)}" y="${f(vy - 28 * sc)}" width="${f(14 * sc)}" height="${f(14 * sc)}" rx="3" fill="#5E7A8A"/>`).join('') })
+  s += toon(rrectPath(vx - 10 * sc, vy - 80 * sc, 26 * sc, 46 * sc, 4), '#F4F1EA', { sw: 5, band: [3, 0], rim: false, inner: `<rect x="${f(vx - 10 * sc)}" y="${f(vy - 80 * sc)}" width="${f(26 * sc)}" height="${f(14 * sc)}" fill="#2B2B2B"/>` })
+  // Galata tepesi ve evler
+  const hx = W * 0.66
+  s += `<path d="M${f(W * 0.38)} ${f(CY - 150 * sc)} Q${f(hx)} ${f(CY - 420 * sc)} ${f(W + 20)} ${f(CY - 330 * sc)} V${H} H${f(W * 0.38)}Z" fill="#C78A6A"/>`
+  const houses = ['#F2D16B', '#E8735A', '#F4F1EA', '#8FC1C9', '#E8A15A', '#F4F1EA', '#D96A6A']
+  const rh = rng('galata' + W)
+  for (let i = 0; i < 16; i++) {
+    const x = W * 0.4 + i * (W * 0.62) / 16
+    const t = (x - W * 0.38) / (W * 0.62)
+    const top = CY - 160 * sc - Math.sin(Math.min(1, t * 1.2) * Math.PI * 0.9) * 210 * sc + rh() * 30 * sc
+    const hw = (40 + rh() * 26) * sc
+    s += toon(rrectPath(x, top, hw, CY - top, 3), houses[i % houses.length], { sw: 4, band: [hw * 0.15, 0], rim: false, inner: `<rect x="${f(x + hw * 0.3)}" y="${f(top + 16 * sc)}" width="${f(hw * 0.35)}" height="${f(16 * sc)}" fill="#5A4636" opacity=".7"/>` })
+    s += `<path d="M${f(x - 4 * sc)} ${f(top)} L${f(x + hw / 2)} ${f(top - 18 * sc)} L${f(x + hw + 4 * sc)} ${f(top)}Z" fill="#B0503A" stroke="${OUT}" stroke-width="${f(3 * sc)}"/>`
+  }
+  // Galata Kulesi
+  const tx = hx
+  const tb = CY - 330 * sc
+  const tw = 96 * sc
+  const th = 380 * sc
+  s += toon(`M${f(tx - tw / 2)} ${f(tb)} L${f(tx - tw * 0.44)} ${f(tb - th)} H${f(tx + tw * 0.44)} L${f(tx + tw / 2)} ${f(tb)}Z`, '#E9DCC4', {
+    sw: 6,
+    band: [tw * 0.16, 0],
+    rim: false,
+    inner: [0.25, 0.45, 0.65].map((k) => `<rect x="${f(tx - tw * 0.1)}" y="${f(tb - th * k - 20 * sc)}" width="${f(tw * 0.2)}" height="${f(34 * sc)}" rx="${f(tw * 0.1)}" fill="#5A4636"/>`).join(''),
+  })
+  s += toon(rrectPath(tx - tw * 0.6, tb - th - 10 * sc, tw * 1.2, 22 * sc, 4), '#D8C8AC', { sw: 5, band: [0, 4], rim: false })
+  s += toon(rrectPath(tx - tw * 0.46, tb - th - 70 * sc, tw * 0.92, 60 * sc, 4), '#E9DCC4', {
+    sw: 5,
+    band: [tw * 0.1, 0],
+    rim: false,
+    inner: [-0.3, 0, 0.3].map((k) => `<rect x="${f(tx + k * tw - 8 * sc)}" y="${f(tb - th - 60 * sc)}" width="${f(16 * sc)}" height="${f(36 * sc)}" rx="${f(8 * sc)}" fill="#5A4636"/>`).join(''),
+  })
+  s += toon(`M${f(tx - tw * 0.56)} ${f(tb - th - 70 * sc)} L${f(tx)} ${f(tb - th - 230 * sc)} L${f(tx + tw * 0.56)} ${f(tb - th - 70 * sc)}Z`, '#5E6E7E', { sw: 6, band: [tw * 0.12, 0], rim: false })
+  // Martılar
+  for (const [x, y] of [
+    [0.45, 0.25],
+    [0.52, 0.2],
+    [0.12, 0.35],
+  ])
+    s += `<path d="M${f(W * x)} ${f(horizon * y + 120 * sc)} q${f(16 * sc)} ${f(-16 * sc)} ${f(32 * sc)} 0 q${f(16 * sc)} ${f(-16 * sc)} ${f(32 * sc)} 0" fill="none" stroke="${OUT}" stroke-width="${f(5 * sc)}" stroke-linecap="round"/>`
+  // Balkon: ferforje korkuluk + ışık zinciri
+  const ry = CY - 170 * sc
+  s += toon(rrectPath(-10, ry, W + 20, 22 * sc, 6), '#3A3A3A', { sw: 5, band: [0, 5], rim: false })
+  for (let x = 20 * sc; x < W; x += 60 * sc) s += `<rect x="${f(x)}" y="${f(ry + 20 * sc)}" width="${f(8 * sc)}" height="${f(200 * sc)}" fill="#3A3A3A"/>`
+  for (let x = 50 * sc; x < W; x += 120 * sc) s += `<path d="${ellipsePath(x, ry + 80 * sc, 26 * sc, 26 * sc)}" fill="none" stroke="#3A3A3A" stroke-width="${f(6 * sc)}"/>`
+  s += garland(W, 120 * sc, 110 * sc, '#3B2416')
+  s += vignette(W, H)
+  return s
+}
+
+/** Çam ağacı (üç katlı). */
+function pine(cx, baseY, h, color = '#2F6B3A') {
+  let s = toon(rrectPath(cx - h * 0.04, baseY - h * 0.18, h * 0.08, h * 0.2, 2), '#6E4426', { sw: 4, band: [2, 0], rim: false })
+  for (let i = 0; i < 3; i++) {
+    const y0 = baseY - h * 0.15 - i * h * 0.26
+    const w = h * (0.42 - i * 0.1)
+    s += toon(`M${f(cx - w)} ${f(y0)} L${f(cx)} ${f(y0 - h * 0.42)} L${f(cx + w)} ${f(y0)}Z`, shade(color, 1 + i * 0.06), { sw: 4, band: [w * 0.25, 0], rim: false })
+  }
+  return s
+}
+
+/** Karadeniz yayla evi: taş zemin, ahşap üst kat, kırma çatı. */
+function yaylaHouse(x, baseY, w, h) {
+  let s = toon(rrectPath(x, baseY - h * 0.4, w, h * 0.4, 3), '#9AA0A6', { sw: 5, band: [w * 0.1, 0], rim: false, inner: [...Array(6)].map((_, i) => `<path d="M${f(x)} ${f(baseY - h * 0.4 + (i + 1) * h * 0.06)} H${f(x + w)}" stroke="#7A8086" stroke-width="3"/>`).join('') })
+  s += toon(rrectPath(x - w * 0.04, baseY - h * 0.8, w * 1.08, h * 0.42, 3), '#9A6236', {
+    sw: 5,
+    band: [w * 0.1, 0],
+    rim: false,
+    inner: [...Array(8)].map((_, i) => `<path d="M${f(x + (i + 1) * w * 0.12)} ${f(baseY - h * 0.8)} V${f(baseY - h * 0.38)}" stroke="#7A4A26" stroke-width="3"/>`).join('') + `<rect x="${f(x + w * 0.2)}" y="${f(baseY - h * 0.7)}" width="${f(w * 0.2)}" height="${f(h * 0.18)}" fill="#FFE7A0" stroke="${OUT}" stroke-width="3"/><rect x="${f(x + w * 0.6)}" y="${f(baseY - h * 0.7)}" width="${f(w * 0.2)}" height="${f(h * 0.18)}" fill="#FFE7A0" stroke="${OUT}" stroke-width="3"/>`,
+  })
+  s += toon(`M${f(x - w * 0.14)} ${f(baseY - h * 0.78)} L${f(x + w * 0.5)} ${f(baseY - h * 1.12)} L${f(x + w * 1.14)} ${f(baseY - h * 0.78)}Z`, '#5A6470', { sw: 5, band: [0, h * 0.05], rim: false })
+  return s
+}
+
+function yayla(W, H) {
+  const CY = H * BG_COUNTER
+  const sc = W / 1080
+  const [sg, sgd] = lg([
+    [0, '#8CCBEB'],
+    [1, '#E8F6F8'],
+  ])
+  let s = `<rect x="0" y="0" width="${W}" height="${H}" fill="#7BC043"/>`
+  s += sgd + `<rect x="0" y="0" width="${W}" height="${f(CY + 40)}" fill="url(#${sg})"/>`
+  for (const [x, y, w] of [
+    [0.22, 0.18, 220],
+    [0.7, 0.26, 180],
+  ])
+    s += `<ellipse cx="${f(W * x)}" cy="${f(CY - 1000 * sc + y * 900 * sc)}" rx="${f(w * sc)}" ry="${f(40 * sc)}" fill="#fff" opacity=".9"/>`
+  // Uzak sivri dağlar (karlı)
+  const peaks = `M0 ${f(CY - 560 * sc)} L${f(W * 0.18)} ${f(CY - 820 * sc)} L${f(W * 0.34)} ${f(CY - 620 * sc)} L${f(W * 0.52)} ${f(CY - 880 * sc)} L${f(W * 0.7)} ${f(CY - 640 * sc)} L${f(W * 0.86)} ${f(CY - 800 * sc)} L${W} ${f(CY - 600 * sc)} V${CY} H0Z`
+  s += `<path d="${peaks}" fill="#7C9DA6"/>`
+  for (const [px, py] of [
+    [0.18, 820],
+    [0.52, 880],
+    [0.86, 800],
+  ])
+    s += `<path d="M${f(W * px - 60 * sc)} ${f(CY - (py - 90) * sc)} L${f(W * px)} ${f(CY - py * sc)} L${f(W * px + 60 * sc)} ${f(CY - (py - 90) * sc)} L${f(W * px + 24 * sc)} ${f(CY - (py - 70) * sc)} L${f(W * px)} ${f(CY - (py - 95) * sc)} L${f(W * px - 26 * sc)} ${f(CY - (py - 72) * sc)}Z" fill="#F4F8FA"/>`
+  // Sis bandı
+  s += `<rect x="0" y="${f(CY - 600 * sc)}" width="${W}" height="${f(110 * sc)}" fill="#fff" opacity=".65" filter="url(#b24)"/>`
+  // Orta yeşil tepeler ve çamlar
+  s += `<path d="M0 ${f(CY - 470 * sc)} Q${f(W * 0.3)} ${f(CY - 560 * sc)} ${f(W * 0.6)} ${f(CY - 480 * sc)} T${W} ${f(CY - 500 * sc)} V${CY} H0Z" fill="#4E8A4A"/>`
+  const rp = rng('yayla' + W)
+  for (let i = 0; i < 22; i++) {
+    const x = rp() * W
+    s += pine(x, CY - 430 * sc + rp() * 60 * sc, (110 + rp() * 70) * sc, '#2F6B3A')
+  }
+  s += `<path d="M0 ${f(CY - 330 * sc)} Q${f(W * 0.4)} ${f(CY - 400 * sc)} ${f(W * 0.75)} ${f(CY - 340 * sc)} T${W} ${f(CY - 360 * sc)} V${CY} H0Z" fill="#6BAA4E"/>`
+  // Yayla evleri
+  s += yaylaHouse(W * 0.1, CY - 300 * sc, 170 * sc, 200 * sc)
+  s += yaylaHouse(W * 0.62, CY - 320 * sc, 150 * sc, 180 * sc)
+  s += yaylaHouse(W * 0.82, CY - 290 * sc, 130 * sc, 160 * sc)
+  for (const x of [0.04, 0.34, 0.5, 0.95]) s += pine(W * x, CY - 280 * sc, 200 * sc, '#2A5E33')
+  // Ön çayır, çiçekler ve ahşap çit
+  s += `<path d="M0 ${f(CY - 220 * sc)} Q${f(W * 0.5)} ${f(CY - 260 * sc)} ${W} ${f(CY - 220 * sc)} V${f(CY + 40)} H0Z" fill="#7BC043"/>`
+  const rf = rng('cicek' + W)
+  for (let i = 0; i < 60; i++) s += `<circle cx="${f(rf() * W)}" cy="${f(CY - 210 * sc + rf() * 200 * sc)}" r="${f((5 + rf() * 4) * sc)}" fill="${['#F6C445', '#FFFFFF', '#E8392F', '#B07CD8'][i % 4]}"/>`
+  const fy = CY - 160 * sc
+  s += toon(rrectPath(-10, fy, W + 20, 20 * sc, 4), '#9A6A3A', { sw: 5, band: [0, 4], rim: false })
+  s += toon(rrectPath(-10, fy + 60 * sc, W + 20, 20 * sc, 4), '#9A6A3A', { sw: 5, band: [0, 4], rim: false })
+  for (let x = 30 * sc; x < W; x += 110 * sc) s += toon(rrectPath(x, fy - 30 * sc, 22 * sc, 170 * sc, 4), '#8A5A33', { sw: 5, band: [4, 0], rim: false })
+  s += vignette(W, H)
+  return s
+}
+
+const VENUE_FN = { mahalle, sahil, rize, bogaz, kapadokya, galata, yayla }
 
 register(
   (id) => id.startsWith('bg_'),

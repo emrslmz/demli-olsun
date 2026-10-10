@@ -493,7 +493,8 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 62%;
+  /* Görünen manzara görselin üst yarısında (alt yarı tezgâhın arkasında kalır). */
+  object-position: 50% 30%;
 }
 .badge img {
   width: 14px;
