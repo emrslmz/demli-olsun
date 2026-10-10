@@ -27,6 +27,8 @@ export interface SettingsData {
   theme: ThemeSetting
   /** Düşük kalite (otomatik FPS düşüşü sonrası). */
   lowQuality: boolean
+  /** Arayüz dili; 'auto' cihaz diline göre (Türkçe değilse İngilizce). */
+  language: 'auto' | 'tr' | 'en'
 }
 
 export interface SaveData {
@@ -133,6 +135,7 @@ export function defaultSave(now: number = Date.now()): SaveData {
       notifyHour: 10,
       theme: 'auto',
       lowQuality: false,
+      language: 'auto',
     },
     flags: { onboardingDone: false, tutorialDone: false, consentDone: false, starterOfferAt: null, notifAsked: false },
     purchases: { processedTransactions: [], entitlements: [] },

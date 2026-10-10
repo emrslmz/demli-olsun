@@ -13,7 +13,8 @@ import type { Order } from '@/core/orders'
 import { glassSkin } from '@/data/cosmetics'
 import { customerImageId, type CustomerId, type Expression } from '@/data/customers'
 import { rgbToInt, teaColor } from '@/core/teaColor'
-import { FILL_TYPES, TEA_TYPES } from '@/data/orderTypes'
+import { fillName, teaName } from '@/data/orderTypes'
+import { sugarText } from '@/i18n/tr'
 import type { Layout } from '../layout'
 import { DEPTH } from './Background'
 import { GlassView } from './GlassView'
@@ -165,8 +166,8 @@ export class CustomerView {
     const L = this.L
     const u = L.u
     const b = L.bubble
-    this.title.setText(TEA_TYPES[o.teaType].name).setFontSize(Math.round(46 * u))
-    this.sub.setText(FILL_TYPES[o.fillType].name).setFontSize(Math.round(30 * u))
+    this.title.setText(teaName(o.teaType)).setFontSize(Math.round(46 * u))
+    this.sub.setText(fillName(o.fillType)).setFontSize(Math.round(30 * u))
     const tx = 150 * u
     this.title.setPosition(tx, 52 * u)
     this.sub.setPosition(tx, 98 * u)
@@ -178,7 +179,7 @@ export class CustomerView {
         .setDisplaySize(cs, cs)
         .setPosition(tx + cs * 0.5 + i * cs * 1.05, sy)
     })
-    this.sugarText.setText(o.sugar === 0 ? 'şekersiz' : `${o.sugar} şeker`).setFontSize(Math.round(28 * u))
+    this.sugarText.setText(sugarText(o.sugar)).setFontSize(Math.round(28 * u))
     this.sugarText.setPosition(o.sugar === 0 ? tx : tx + o.sugar * cs * 1.05 + 8 * u, sy)
     // Küçük bardak: istenen renk ve doluluk
     const unit = b.h * 0.46

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { doubleTips, gameOverToMenu, playAgain } from '@/app/flow'
-import { num, pct1, tr } from '@/i18n/tr'
+import { fmt, num, pct, tr } from '@/i18n/tr'
 import { services } from '@/services'
 import { ShareService } from '@/services/share/ShareService'
 import { useAppStore } from '@/stores/app'
@@ -42,9 +42,9 @@ async function onDouble() {
 async function share() {
   const r = info.value?.result
   if (!r) return
-  const text = `Demli Olsun'da mesaiyi ${num(r.score)} puanla kapattım! ☕ ${r.served} servis, ortalama isabet %${pct1(r.avgAccuracy)}.\n${import.meta.env.VITE_STORE_URL ?? ''}`
+  const text = `${fmt(tr.msg.shareShift, { score: num(r.score), served: r.served, acc: pct(r.avgAccuracy) })}\n${import.meta.env.VITE_STORE_URL ?? ''}`
   const out = await ShareService.share(text)
-  if (out === 'copied') app.showToast('Sonuç panoya kopyalandı.')
+  if (out === 'copied') app.showToast(tr.daily.copied)
 }
 
 const rankText = computed(() => {
@@ -69,7 +69,7 @@ const rankText = computed(() => {
           </div>
           <div>
             <span>{{ tr.gameOver.avgAccuracy }}</span
-            ><b>%{{ pct1(info.result.avgAccuracy) }}</b>
+            ><b>{{ pct(info.result.avgAccuracy) }}</b>
           </div>
           <div>
             <span>{{ tr.gameOver.bestCombo }}</span
@@ -85,7 +85,7 @@ const rankText = computed(() => {
           </div>
         </div>
         <p v-if="info.titleUp" class="title-up">
-          Yeni unvan: <b>{{ info.titleUp }}</b> 🎉
+          {{ tr.msg.newTitle }} <b>{{ info.titleUp }}</b> 🎉
         </p>
         <GameButton
           v-if="info.tipsAwarded > 0 && !info.doubled"

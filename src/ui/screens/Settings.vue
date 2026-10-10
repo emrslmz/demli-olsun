@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { restorePurchases, resetSave, startTutorial } from '@/app/flow'
-import { tr } from '@/i18n/tr'
+import { fmt, lang, LANGS, tr, type Lang } from '@/i18n/tr'
 import { services } from '@/services'
 import { useAppStore } from '@/stores/app'
 import { usePlayerStore } from '@/stores/player'
@@ -36,7 +36,11 @@ function onName(name: string) {
   player.setNickname(name)
   editingName.value = false
   void saveNow()
-  app.showToast(`Artık herkes sana "${name}" diyecek.`)
+  app.showToast(fmt(tr.msg.nicknameSet, { name }))
+}
+
+function setLang(l: Lang) {
+  set('language', l)
 }
 
 function privacy() {
@@ -55,7 +59,7 @@ function onHour(e: Event) {
 
 async function notif(v: boolean) {
   const ok = await toggleNotifications(v)
-  if (v && !ok) app.showToast('Bildirim izni verilmedi. Cihaz ayarlarından açabilirsin.')
+  if (v && !ok) app.showToast(tr.msg.notifDeniedDevice)
 }
 </script>
 
@@ -65,6 +69,22 @@ async function notif(v: boolean) {
     <div class="scr__body">
       <Panel>
         <div class="list">
+          <div class="lang" role="radiogroup" :aria-label="tr.settings.language">
+            <span>🌐 {{ tr.settings.language }}</span>
+            <div class="lang__opts">
+              <button
+                v-for="l in LANGS"
+                :key="l.id"
+                type="button"
+                role="radio"
+                :aria-checked="lang === l.id"
+                :class="{ on: lang === l.id }"
+                @click="setLang(l.id)"
+              >
+                {{ l.label }}
+              </button>
+            </div>
+          </div>
           <ToggleRow :label="tr.settings.music" :model-value="s.music" @update:model-value="set('music', $event)" />
           <input
             class="slider"
@@ -120,6 +140,38 @@ async function notif(v: boolean) {
 </template>
 
 <style scoped>
+.lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0 10px;
+  font-weight: 800;
+}
+.lang__opts {
+  display: flex;
+  border: 3px solid var(--c-dark);
+  border-radius: 99px;
+  overflow: hidden;
+  box-shadow: 0 3px 0 var(--c-dark);
+}
+.lang__opts button {
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 14px;
+  border: 0;
+  background: #fff6e6;
+  color: var(--c-ink);
+  cursor: pointer;
+}
+.lang__opts button + button {
+  border-left: 3px solid var(--c-dark);
+}
+.lang__opts button.on {
+  background: linear-gradient(180deg, #ff7a5c, #e8392f);
+  color: #fff;
+  text-shadow: 0 2px 0 var(--c-dark);
+}
 .scr {
   position: absolute;
   inset: 0;

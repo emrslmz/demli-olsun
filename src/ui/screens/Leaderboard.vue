@@ -7,8 +7,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { now as clockNow } from '@/app/clock'
 import { startDaily } from '@/app/flow'
 import { leagueState, resolveLeagueWeek } from '@/app/league'
-import { DEMOTE_COUNT, GROUP_SIZE, PROMOTE_COUNT, tierDef, type DailyRow } from '@/core/league'
-import { duration, fmt, num, pct1, tr } from '@/i18n/tr'
+import { DEMOTE_COUNT, GROUP_SIZE, PROMOTE_COUNT, tierDef, tierName, type DailyRow } from '@/core/league'
+import { titleName } from '@/config/economy'
+import { duration, fmt, num, pct, pct1, tr } from '@/i18n/tr'
 import { LEADERBOARD_MODE, services } from '@/services'
 import type { AllTimeRow, WeeklyBoard } from '@/services/leaderboard/LeaderboardService'
 import { ThemeService } from '@/services/theme/ThemeService'
@@ -60,7 +61,7 @@ async function load(t: Tab) {
 
 /** Oyuncu satırında unvan da görünür. */
 function label(r: { name: string; isPlayer: boolean }): string {
-  return r.isPlayer ? `${r.name} · ${progress.title.name}` : r.name
+  return r.isPlayer ? `${r.name} · ${titleName(progress.title.id)}` : r.name
 }
 
 /** Uzun tablolarda ilk 10 + oyuncunun çevresi. */
@@ -116,7 +117,7 @@ onBeforeUnmount(() => {
         <header v-if="weekly" class="league">
           <img :src="ThemeService.url(tier.badge)" alt="" />
           <div class="league__txt">
-            <b>{{ fmt(tr.leaderboard.league, { name: tier.name }) }}</b>
+            <b>{{ fmt(tr.leaderboard.league, { name: tierName(tier.id) }) }}</b>
             <small>{{ fmt(tr.leaderboard.endsIn, { time: duration(msLeft) }) }}</small>
             <small class="gap">
               {{ weekly.gapToNext === null ? tr.leaderboard.first : fmt(tr.leaderboard.gap, { n: num(weekly.gapToNext) }) }}
@@ -152,8 +153,8 @@ onBeforeUnmount(() => {
             <div v-else class="row" :class="{ me: r.isPlayer, gold: r.rank <= 3 }">
               <span class="rank">{{ r.rank }}</span>
               <span class="name">{{ label(r) }}</span>
-              <small class="time">{{ pct1(r.timeSec) }} sn</small>
-              <b class="score">%{{ pct1(r.accuracy) }}</b>
+              <small class="time">{{ fmt(tr.leaderboard.seconds, { n: pct1(r.timeSec) }) }}</small>
+              <b class="score">{{ pct(r.accuracy) }}</b>
             </div>
           </template>
         </div>

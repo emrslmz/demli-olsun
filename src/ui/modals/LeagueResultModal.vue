@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Geçen haftanın lig sonucu. Ödül ve kademe değişimi zaten uygulandı; burada kutlanır. */
 import { computed, onMounted } from 'vue'
-import { tierDef } from '@/core/league'
+import { tierDef, tierName } from '@/core/league'
 import { fmt, num, tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
@@ -17,7 +17,7 @@ const res = session.leagueResult
 
 const title = computed(() => {
   if (!res) return ''
-  const name = tierDef(res.newTier).name
+  const name = tierName(res.newTier)
   if (res.outcome === 'promoted') return fmt(tr.leagueResult.promoted, { name })
   if (res.outcome === 'demoted') return fmt(tr.leagueResult.demoted, { name })
   return fmt(tr.leagueResult.stayed, { name })

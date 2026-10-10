@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import type { MarketTab } from '@/app/market'
 import type { EntitlementId } from '@/config/products'
 import { defaultSave, type SaveData } from '@/services/save/schema'
+import { tr } from '@/i18n/tr'
 
 export type Screen = 'splash' | 'onboarding' | 'menu' | 'market' | 'leaderboard' | 'settings' | 'game' | 'gameover' | 'dailyResult'
 
@@ -59,7 +60,7 @@ export const useAppStore = defineStore('app', () => {
     }, 2600)
   }
 
-  function confirm(text: string, onYes: () => void, yes = 'Evet', no = 'Vazgeç') {
+  function confirm(text: string, onYes: () => void, yes = tr.common.yes, no = tr.common.cancel) {
     confirmState.value = { text, yes, no, onYes }
     modal.value = 'confirm'
   }

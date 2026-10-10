@@ -6,6 +6,7 @@
 import { Capacitor } from '@capacitor/core'
 import { useSettingsStore } from '@/stores/settings'
 import { saveNow } from '@/stores/persist'
+import { tr } from '@/i18n/tr'
 
 const NOTIF_ID = 4242
 
@@ -35,8 +36,8 @@ export async function toggleNotifications(on: boolean): Promise<boolean> {
     notifications: [
       {
         id: NOTIF_ID,
-        title: 'Günün siparişi geldi ☕',
-        body: 'Mahalle seni bekliyor. Bugünün siparişini tutturabilecek misin?',
+        title: tr.notification.title,
+        body: tr.notification.body,
         schedule: { on: { hour: settings.data.notifyHour, minute: 0 }, allowWhileIdle: false },
       },
     ],

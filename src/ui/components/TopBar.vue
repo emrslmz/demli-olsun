@@ -2,6 +2,7 @@
 /** Alt ekranların üst çubuğu: geri, başlık, bahşiş. */
 import { onBeforeUnmount, onMounted } from 'vue'
 import { pushBackHandler } from '@/services/platform/backButton'
+import { tr } from '@/i18n/tr'
 import { useEconomyStore } from '@/stores/economy'
 import CoinCounter from './CoinCounter.vue'
 import GameButton from './GameButton.vue'
@@ -16,7 +17,7 @@ onBeforeUnmount(() => off?.())
 
 <template>
   <header class="topbar">
-    <GameButton size="icon" icon="icon_back" aria-label="Geri" @click="emit('back')" />
+    <GameButton size="icon" icon="icon_back" :aria-label="tr.common.back" @click="emit('back')" />
     <h1 class="topbar__title">{{ title }}</h1>
     <CoinCounter :value="econ.tips" />
   </header>

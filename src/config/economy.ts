@@ -1,5 +1,7 @@
 /** Ekonomi ayarları: bahşiş, fiyatlar, ödüller. */
 
+import { tr } from '@/i18n/tr'
+
 export const STARTING_TIPS = 100
 
 /** Müşteri bahşişinin yıldıza göre çarpanı. Reddedilen sipariş 0. */
@@ -37,13 +39,21 @@ export const CONTINUE_COST = 150
 /** Premium olmayan ikinci mekanın bahşiş fiyatı. */
 export const VENUE_SAHIL_PRICE = 2500
 
+/** Unvanlar (adları dil dosyasında: tr.titles). */
 export const TITLES = [
-  { id: 'cirak', name: 'Çırak', minServed: 0 },
-  { id: 'kalfa', name: 'Kalfa', minServed: 50 },
-  { id: 'usta', name: 'Usta', minServed: 200 },
-  { id: 'caybasi', name: 'Çaybaşı', minServed: 500 },
-  { id: 'ocakAgasi', name: 'Ocak Ağası', minServed: 1500 },
+  { id: 'cirak', minServed: 0 },
+  { id: 'kalfa', minServed: 50 },
+  { id: 'usta', minServed: 200 },
+  { id: 'caybasi', minServed: 500 },
+  { id: 'ocakAgasi', minServed: 1500 },
 ] as const
+
+export type TitleId = (typeof TITLES)[number]['id']
+
+/** Unvanın aktif dildeki adı. */
+export function titleName(id: TitleId): string {
+  return tr.titles[id]
+}
 
 /** Haftalık lig sonunda sıraya göre ödül (kademe çarpanıyla). */
 export const LEAGUE_REWARDS = {

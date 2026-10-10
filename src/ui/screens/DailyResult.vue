@@ -5,8 +5,8 @@ import { now as clockNow } from '@/app/clock'
 import { maybeAskNotifications, quitToMenu, shareDaily } from '@/app/flow'
 import { useAppStore } from '@/stores/app'
 import { metricSquares, msUntilNextIstanbulMidnight } from '@/core/daily'
-import { CUSTOMERS, customerImageId } from '@/data/customers'
-import { duration, fmt, num, pct1, possessiveAblative, tr } from '@/i18n/tr'
+import { customerImageId, customerName } from '@/data/customers'
+import { duration, fmt, num, pct, pctInt, possessiveAblative, tr } from '@/i18n/tr'
 import { ThemeService } from '@/services/theme/ThemeService'
 import { useDailyStore } from '@/stores/daily'
 import { useEconomyStore } from '@/stores/economy'
@@ -86,13 +86,13 @@ async function share() {
         <div class="who">
           <img :src="ThemeService.url(customerImageId(r.customer, expr))" alt="" />
           <div class="quote">
-            <small>{{ CUSTOMERS[r.customer].name }}</small>
+            <small>{{ customerName(r.customer) }}</small>
             <span>“{{ r.line }}”</span>
           </div>
         </div>
         <div class="acc">
           <span>{{ tr.daily.accuracy }}</span>
-          <b>%{{ pct1(shown) }}</b>
+          <b>{{ pct(shown) }}</b>
           <div class="stars">
             <img
               v-for="i in 3"
@@ -107,15 +107,15 @@ async function share() {
           <div>
             <span>{{ tr.daily.color }}</span>
             <i>{{ metricSquares(r.demScore) }}</i>
-            <small>%{{ pct1(r.demPct) }} / %{{ r.targetDem }}</small>
+            <small>{{ pct(r.demPct) }} / {{ pctInt(r.targetDem) }}</small>
           </div>
           <div>
             <span>{{ tr.daily.fill }}</span>
             <i>{{ metricSquares(r.fillScore) }}</i>
-            <small>%{{ pct1(r.fillPct) }} / %{{ r.targetFill }}</small>
+            <small>{{ pct(r.fillPct) }} / {{ pctInt(r.targetFill) }}</small>
           </div>
           <div v-if="sugarRow">
-            <span>Şeker</span>
+            <span>{{ tr.daily.sugar }}</span>
             <i>{{ sugarRow.sugarGiven === sugarRow.sugarTarget ? '🟩' : '🟥' }}</i>
             <small>{{ sugarRow.sugarGiven }} / {{ sugarRow.sugarTarget }}</small>
           </div>

@@ -1,6 +1,7 @@
 /** Metin ve görsel paylaşımı. Cihazda Filesystem cache + Share; tarayıcıda Web Share ya da indirme + pano. */
 
 import { Capacitor } from '@capacitor/core'
+import { tr } from '@/i18n/tr'
 
 export type ShareOutcome = 'shared' | 'copied' | 'cancelled' | 'failed'
 
@@ -39,7 +40,7 @@ export const ShareService = {
           })
           files = [res.uri]
         }
-        await Share.share({ text, files, dialogTitle: 'Paylaş' })
+        await Share.share({ text, files, dialogTitle: tr.share.dialogTitle })
         return 'shared'
       } catch (err) {
         const msg = String((err as Error)?.message ?? err)

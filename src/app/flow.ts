@@ -4,11 +4,11 @@
 
 import { Capacitor } from '@capacitor/core'
 import { bus, type ContinueOffer, type DailyResultData, type ShiftResult } from '@/bus'
-import { CONTINUE_COST, STARTER_OFFER, type BoosterId } from '@/config/economy'
+import { CONTINUE_COST, STARTER_OFFER, titleName, type BoosterId } from '@/config/economy'
 import { productDef, type EntitlementId, type ProductId } from '@/config/products'
 import { canShowInterstitial } from '@/core/adPolicy'
 import { buildShareText, dailyChallenge } from '@/core/daily'
-import { CUSTOMERS } from '@/data/customers'
+import { customerName } from '@/data/customers'
 import { tr } from '@/i18n/tr'
 import { now as clockNow } from './clock'
 import { leagueState, resolveLeagueWeek } from './league'
@@ -108,7 +108,7 @@ export async function continueWithAd(): Promise<boolean> {
     bus.emit('game:continue', { granted: true, viaAd: true })
     return true
   }
-  if (outcome === 'unavailable' || outcome === 'failed') app.showToast('Reklam şu an yok. Biraz sonra tekrar dene.')
+  if (outcome === 'unavailable' || outcome === 'failed') app.showToast(tr.msg.adRetry)
   return false
 }
 
@@ -135,7 +135,7 @@ export async function onGameOver(result: ShiftResult): Promise<void> {
   const league = useLeagueStore()
   const session = useSessionStore()
 
-  const prevTitle = progress.title.name
+  const prevTitle = progress.title.id
   const newRecord = result.score > progress.bestScore && result.score > 0
   econ.add(result.tipsEarned)
   progress.totalTipsEarned += result.tipsEarned
@@ -166,7 +166,7 @@ export async function onGameOver(result: ShiftResult): Promise<void> {
     shiftsSinceInterstitial: app.ads.shiftsSinceInterstitial + 1,
   }
 
-  const titleUp = progress.title.name !== prevTitle ? progress.title.name : null
+  const titleUp = progress.title.id !== prevTitle ? titleName(progress.title.id) : null
   session.gameOver = { result, newRecord, tipsAwarded: result.tipsEarned, doubled: false, rankBefore, rankAfter, titleUp }
   if (newRecord) {
     AudioService.play('leagueUp')
@@ -191,7 +191,7 @@ export async function doubleTips(): Promise<boolean> {
   if (!info || info.doubled || info.tipsAwarded <= 0) return false
   const outcome = await services.ads.showRewarded('doubleTips')
   if (outcome !== 'rewarded') {
-    if (outcome === 'unavailable' || outcome === 'failed') app.showToast('Reklam şu an yok. Biraz sonra tekrar dene.')
+    if (outcome === 'unavailable' || outcome === 'failed') app.showToast(tr.msg.adRetry)
     return false
   }
   useEconomyStore().add(info.tipsAwarded)
@@ -429,7 +429,7 @@ export async function onDailyFinished(r: DailyResultData): Promise<void> {
 export function dailyShareText(r: DailyResultData): string {
   return buildShareText({
     dayNumber: r.dayNumber,
-    customerName: CUSTOMERS[r.customer].name,
+    customerName: customerName(r.customer),
     line: r.line,
     demScore: r.demScore,
     fillScore: r.fillScore,
@@ -461,14 +461,14 @@ export function maybeAskNotifications(): void {
   app.flags = { ...app.flags, notifAsked: true }
   void saveNow()
   app.confirm(
-    'Her gün yeni sipariş gelince haber verelim mi? ☕',
+    tr.msg.notifAsk,
     () => {
       void import('./notifications').then(async ({ toggleNotifications }) => {
         const ok = await toggleNotifications(true)
-        app.showToast(ok ? 'Tamam! Her gün haber vereceğiz.' : 'Bildirim izni verilmedi. Ayarlar’dan açabilirsin.')
+        app.showToast(ok ? tr.msg.notifOk : tr.msg.notifDenied)
       })
     },
-    'Haber ver',
-    'Şimdi değil',
+    tr.msg.notifYes,
+    tr.msg.notNow,
   )
 }

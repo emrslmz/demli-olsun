@@ -25,7 +25,7 @@ async function watch() {
 function goShop() {
   session.pendingShop = true
   declineContinue()
-  app.showToast('Mesai bitti. Menü’ye dönünce Kese açılacak.')
+  app.showToast(tr.msg.shopAfterShift)
 }
 </script>
 

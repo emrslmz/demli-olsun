@@ -4,6 +4,7 @@
  */
 
 import { weekId } from '@/core/league'
+import { tr } from '@/i18n/tr'
 import { services } from '@/services'
 import type { PlayerLeagueState, WeekResolution } from '@/services/leaderboard/LeaderboardService'
 import { useEconomyStore } from '@/stores/economy'
@@ -17,7 +18,7 @@ import { now } from './clock'
 export function leagueState(): PlayerLeagueState {
   const league = useLeagueStore()
   return {
-    name: usePlayerStore().nickname || 'Sen',
+    name: usePlayerStore().nickname || tr.leaderboard.you,
     weekId: league.weekId,
     tier: league.tier,
     weeklyScore: league.weeklyScore,

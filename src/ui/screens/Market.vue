@@ -21,7 +21,7 @@ import {
 import { now as clockNow } from '@/app/clock'
 import { BOOSTERS, type BoosterId } from '@/config/economy'
 import type { ProductId } from '@/config/products'
-import { GLASS_SKINS, POT_SKINS, VENUES, type CosmeticKind } from '@/data/cosmetics'
+import { cosmeticName, GLASS_SKINS, POT_SKINS, VENUES, type CosmeticKind } from '@/data/cosmetics'
 import { duration, fmt, num, tr } from '@/i18n/tr'
 import { services } from '@/services'
 import type { StoreProduct } from '@/services/iap/PurchaseService'
@@ -67,11 +67,13 @@ const cards = computed<Card[]>(() => {
   void inv.owned
   void app.entitlements
   if (tab.value === 'glasses') {
-    return GLASS_SKINS.filter((g) => g.price !== null || inv.isOwned('glass', g.id)).map((g) => card('glass', g.id, g.name, null))
+    return GLASS_SKINS.filter((g) => g.price !== null || inv.isOwned('glass', g.id)).map((g) =>
+      card('glass', g.id, cosmeticName('glass', g.id), null),
+    )
   }
-  if (tab.value === 'pots') return POT_SKINS.map((p) => card('pot', p.id, p.name, null))
+  if (tab.value === 'pots') return POT_SKINS.map((p) => card('pot', p.id, cosmeticName('pot', p.id), null))
   if (tab.value === 'venues') {
-    return VENUES.map((v) => card('venue', v.id, v.name, v.entitlement ? (v.entitlement as ProductId) : null))
+    return VENUES.map((v) => card('venue', v.id, cosmeticName('venue', v.id), v.entitlement ? (v.entitlement as ProductId) : null))
   }
   return []
 })
@@ -116,7 +118,7 @@ function act(c: Card) {
   }
   if (c.price === null) return
   if (!econ.canAfford(c.price)) {
-    app.showToast(`${tr.common.notEnoughTips}. Mesaide biraz daha bahşiş topla ya da Kese'ye bak.`)
+    app.showToast(tr.msg.notEnoughTips)
     return
   }
   if (buyCosmetic(c.kind, c.id)) app.showToast(`${c.name}: ${tr.market.bought}`)
@@ -187,17 +189,13 @@ const shopRows = computed<ShopRow[]>(() => {
   if (starterActive.value) {
     rows.push({ id: 'starter_pack', name: tr.market.starterPack, desc: tr.market.starterDesc, icon: 'icon_gift', owned: false })
   }
-  rows.push({ id: 'bahsis_s', name: 'Küçük kese', desc: '500 bahşiş', icon: 'icon_coin', owned: false })
-  rows.push({ id: 'bahsis_m', name: 'Orta kese', desc: '1.500 bahşiş', icon: 'icon_coin', owned: false })
-  rows.push({ id: 'bahsis_l', name: 'Büyük kese', desc: '4.000 bahşiş', icon: 'icon_coin', owned: false })
-  rows.push({
-    id: 'theme_rize',
-    name: 'Rize çay bahçesi',
-    desc: 'Premium mekan',
-    icon: 'icon_shop',
-    owned: app.hasEntitlement('theme_rize'),
-  })
-  rows.push({ id: 'theme_bogaz', name: 'Boğaz vapuru', desc: 'Premium mekan', icon: 'icon_shop', owned: app.hasEntitlement('theme_bogaz') })
+  const tips = (n: number) => fmt(tr.shop.tips, { n: num(n) })
+  rows.push({ id: 'bahsis_s', name: tr.shop.small, desc: tips(500), icon: 'icon_coin', owned: false })
+  rows.push({ id: 'bahsis_m', name: tr.shop.medium, desc: tips(1500), icon: 'icon_coin', owned: false })
+  rows.push({ id: 'bahsis_l', name: tr.shop.large, desc: tips(4000), icon: 'icon_coin', owned: false })
+  const premium = { desc: tr.shop.premiumVenue, icon: 'icon_shop' }
+  rows.push({ id: 'theme_rize', name: tr.venues.rize, ...premium, owned: app.hasEntitlement('theme_rize') })
+  rows.push({ id: 'theme_bogaz', name: tr.venues.bogaz, ...premium, owned: app.hasEntitlement('theme_bogaz') })
   return rows
 })
 
@@ -340,10 +338,10 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <p v-if="app.online && (productsFailed || (products && !products.length))" class="warn">
-            Mağaza fiyatlarına ulaşılamadı. İnternet bağlantını kontrol et.
-            <GameButton size="small" @click="loadProducts">Tekrar dene</GameButton>
+            {{ tr.shop.storeFailed }}
+            <GameButton size="small" @click="loadProducts">{{ tr.shop.retry }}</GameButton>
           </p>
-          <p class="fine">Fiyatlar mağazadan, yerel para biriminle gelir.</p>
+          <p class="fine">{{ tr.shop.pricesNote }}</p>
           <GameButton size="small" variant="ghost" class="restore" :disabled="!app.online || app.purchaseBusy" @click="restorePurchases">
             {{ tr.market.restore }}
           </GameButton>

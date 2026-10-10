@@ -5,6 +5,7 @@ import { CUSTOMERS, type CustomerId } from '@/data/customers'
 import { FILL_TYPES, TEA_TYPES } from '@/data/orderTypes'
 import { pickFillType, pickSugar, pickTeaType, type Order } from './orders'
 import { Rng } from './rng'
+import { fmt, tr } from '@/i18n/tr'
 
 const TZ = 'Europe/Istanbul'
 
@@ -143,11 +144,11 @@ export interface ShareInput {
 export function buildShareText(s: ShareInput): string {
   return [
     `Demli Olsun #${s.dayNumber} 🫖`,
-    `Müşteri: ${s.customerName}`,
+    fmt(tr.share.customer, { name: s.customerName }),
     `"${s.line}"`,
-    `Renk    ${metricSquares(s.demScore)}`,
-    `Doluluk ${metricSquares(s.fillScore)}`,
-    `Seri 🔥${s.streak}`,
+    `${tr.share.color} ${metricSquares(s.demScore)}`,
+    `${tr.share.fill} ${metricSquares(s.fillScore)}`,
+    `${tr.share.streak} 🔥${s.streak}`,
     s.storeUrl,
   ].join('\n')
 }

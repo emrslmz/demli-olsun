@@ -9,7 +9,7 @@ import { FONTS } from '@/config/theme'
 import type { Order } from '@/core/orders'
 import { evaluateServe, round1 } from '@/core/scoring'
 import { bucketFor } from '@/data/lines'
-import { pct1, tr } from '@/i18n/tr'
+import { fmt, pct, tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import type { Layout } from '../layout'
 import { PlayScene } from './PlayScene'
@@ -181,7 +181,7 @@ export class TutorialScene extends PlayScene {
         this.floats.float(
           this.L.col.cx,
           st.glass.topWorldY - 30 * this.L.u,
-          `Artık akış: +%${pct1(extra)}`,
+          fmt(tr.msg.residualFlow, { n: pct(extra) }),
           40 * this.L.u,
           '#9FE3B0',
           60 * this.L.u,
@@ -215,7 +215,7 @@ export class TutorialScene extends PlayScene {
     this.say(order.customer, bucketFor(ev.accuracy, ev.accepted))
     const L = this.L
     const top = st.glass.topWorldY
-    this.floats.float(L.col.cx, top - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 56 * L.u)
+    this.floats.float(L.col.cx, top - 40 * L.u, pct(round1(ev.accuracy)), 56 * L.u)
     this.starsPop.show(L.col.cx, top - 120 * L.u, ev.stars, 70 * L.u, (i) => AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }))
     AudioService.play(ev.accepted ? 'serve' : 'reject')
     await this.wait(1100)
@@ -245,7 +245,7 @@ export class TutorialScene extends PlayScene {
     this.sub = 'busy'
     this.station.spill()
     AudioService.play('overflow')
-    this.floats.burst(this.L.col.cx, this.station.glass.topWorldY - 80 * this.L.u, 'Taştı! Bir daha dene.', 46 * this.L.u, '#FF8A7A')
+    this.floats.burst(this.L.col.cx, this.station.glass.topWorldY - 80 * this.L.u, tr.msg.overflowRetry, 46 * this.L.u, '#FF8A7A')
     await this.wait(1100)
     if (!this.alive(g)) return
     await this.station.slideOut()

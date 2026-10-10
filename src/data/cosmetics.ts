@@ -1,13 +1,13 @@
-/** Kozmetikler: bardak skinleri, demlik takımları, mekanlar. Oynanışa dokunmazlar. */
+/** Kozmetikler: bardak skinleri, demlik takımları, mekanlar. Oynanışa dokunmazlar. Adlar dil dosyasında. */
 
 import type { EntitlementId } from '@/config/products'
 import { VENUE_SAHIL_PRICE } from '@/config/economy'
+import { tr } from '@/i18n/tr'
 
 export type CosmeticKind = 'glass' | 'pot' | 'venue'
 
 export interface GlassSkin {
   id: string
-  name: string
   /** null: çarşıda satılmaz (ör. Başlangıç Paketi bardağı). */
   price: number | null
   /** Bardağa sarılan desen görseli. */
@@ -26,10 +26,9 @@ export interface GlassSkin {
 }
 
 export const GLASS_SKINS: GlassSkin[] = [
-  { id: 'klasik', name: 'Klasik', price: 0, decal: null, outline: '#3B2416', glass: '#EAF6F8', glassAlpha: 0.22, rim: '#FFFFFF' },
+  { id: 'klasik', price: 0, decal: null, outline: '#3B2416', glass: '#EAF6F8', glassAlpha: 0.22, rim: '#FFFFFF' },
   {
     id: 'nazar',
-    name: 'Nazar boncuklu',
     price: 300,
     decal: 'decal_nazar',
     outline: '#3B2416',
@@ -39,7 +38,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'lale',
-    name: 'Lale desenli',
     price: 450,
     decal: 'decal_lale',
     outline: '#3B2416',
@@ -49,7 +47,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'kulplu',
-    name: 'Kulplu',
     price: 600,
     decal: null,
     outline: '#3B2416',
@@ -60,7 +57,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'yaldiz',
-    name: 'Altın yaldızlı',
     price: 700,
     decal: 'decal_yaldiz',
     outline: '#3B2416',
@@ -70,7 +66,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'firuze',
-    name: 'Firuze cam',
     price: 900,
     decal: null,
     outline: '#1E4E55',
@@ -80,7 +75,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'tirtikli',
-    name: 'Tırtıklı',
     price: 1100,
     decal: null,
     outline: '#3B2416',
@@ -91,7 +85,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'kristal',
-    name: 'Kristal',
     price: 1500,
     decal: 'decal_kristal',
     outline: '#2B3A4A',
@@ -101,7 +94,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'zarf',
-    name: 'Gümüş zarflı',
     price: 2200,
     decal: null,
     outline: '#3B2416',
@@ -112,7 +104,6 @@ export const GLASS_SKINS: GlassSkin[] = [
   },
   {
     id: 'baslangic',
-    name: 'Başlangıç',
     price: null,
     decal: 'decal_baslangic',
     outline: '#3B2416',
@@ -124,33 +115,31 @@ export const GLASS_SKINS: GlassSkin[] = [
 
 export interface PotSkin {
   id: string
-  name: string
   price: number
 }
 
 export const POT_SKINS: PotSkin[] = [
-  { id: 'celik', name: 'Çelik', price: 0 },
-  { id: 'emaye', name: 'Emaye çiçekli', price: 400 },
-  { id: 'porselen', name: 'Porselen', price: 900 },
-  { id: 'bakir', name: 'Bakır', price: 2000 },
+  { id: 'celik', price: 0 },
+  { id: 'emaye', price: 400 },
+  { id: 'porselen', price: 900 },
+  { id: 'bakir', price: 2000 },
 ]
 
 export interface Venue {
   id: string
-  name: string
   /** Bahşiş fiyatı; premium mekanlarda null. */
   price: number | null
   entitlement: EntitlementId | null
 }
 
 export const VENUES: Venue[] = [
-  { id: 'mahalle', name: 'Mahalle kahvesi', price: 0, entitlement: null },
-  { id: 'yayla', name: 'Karadeniz yaylası', price: 1500, entitlement: null },
-  { id: 'kapadokya', name: 'Kapadokya terası', price: 2000, entitlement: null },
-  { id: 'sahil', name: 'Sahil çay bahçesi', price: VENUE_SAHIL_PRICE, entitlement: null },
-  { id: 'galata', name: 'Galata manzarası', price: 2500, entitlement: null },
-  { id: 'rize', name: 'Rize çay bahçesi', price: null, entitlement: 'theme_rize' },
-  { id: 'bogaz', name: 'Boğaz vapuru', price: null, entitlement: 'theme_bogaz' },
+  { id: 'mahalle', price: 0, entitlement: null },
+  { id: 'yayla', price: 1500, entitlement: null },
+  { id: 'kapadokya', price: 2000, entitlement: null },
+  { id: 'sahil', price: VENUE_SAHIL_PRICE, entitlement: null },
+  { id: 'galata', price: 2500, entitlement: null },
+  { id: 'rize', price: null, entitlement: 'theme_rize' },
+  { id: 'bogaz', price: null, entitlement: 'theme_bogaz' },
 ]
 
 export function glassSkin(id: string): GlassSkin {
@@ -163,4 +152,10 @@ export function potSkin(id: string): PotSkin {
 
 export function venue(id: string): Venue {
   return VENUES.find((v) => v.id === id) ?? (VENUES[0] as Venue)
+}
+
+/** Kozmetiğin aktif dildeki adı. */
+export function cosmeticName(kind: CosmeticKind, id: string): string {
+  const table: Record<string, string> = kind === 'glass' ? tr.glasses : kind === 'pot' ? tr.pots : tr.venues
+  return table[id] ?? id
 }

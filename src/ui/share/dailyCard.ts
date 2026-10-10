@@ -3,8 +3,8 @@
  */
 
 import type { DailyResultData } from '@/bus'
-import { CUSTOMERS, customerImageId } from '@/data/customers'
-import { pct1 } from '@/i18n/tr'
+import { customerImageId, customerName } from '@/data/customers'
+import { fmt, pct, tr } from '@/i18n/tr'
 import { ThemeService } from '@/services/theme/ThemeService'
 
 const W = 1080
@@ -100,7 +100,7 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   ctx.fillText('Demli Olsun', 266, 136)
   ctx.font = '800 54px "Baloo 2", sans-serif'
   ctx.fillStyle = '#8B1E0F'
-  ctx.fillText(`Günün Siparişi #${r.dayNumber}`, 270, 206)
+  ctx.fillText(fmt(tr.share.dailyTitle, { n: r.dayNumber }), 270, 206)
 
   // Müşteri + replik
   const fy = 290
@@ -114,7 +114,7 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   ctx.fillStyle = INK
   ctx.font = '800 34px "Baloo 2", sans-serif'
   ctx.globalAlpha = 0.7
-  ctx.fillText(CUSTOMERS[r.customer].name, 380, fy + 50)
+  ctx.fillText(customerName(r.customer), 380, fy + 50)
   ctx.globalAlpha = 1
   ctx.font = '800 40px "Baloo 2", sans-serif'
   wrap(ctx, `“${r.line}”`, 580)
@@ -125,10 +125,10 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   ctx.textAlign = 'center'
   ctx.font = '800 44px "Baloo 2", sans-serif'
   ctx.globalAlpha = 0.75
-  ctx.fillText('İsabet', W / 2, 600)
+  ctx.fillText(tr.share.accuracy, W / 2, 600)
   ctx.globalAlpha = 1
   ctx.font = '800 150px "Baloo 2", sans-serif'
-  ctx.fillText(`%${pct1(r.accuracy)}`, W / 2, 700)
+  ctx.fillText(pct(r.accuracy), W / 2, 700)
   // Yıldızlar
   for (let i = 0; i < 3; i++) {
     const cx = W / 2 + (i - 1) * 110
@@ -151,8 +151,8 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   ctx.textAlign = 'left'
   ctx.font = '800 46px "Baloo 2", sans-serif'
   const rows: [string, number][] = [
-    ['Renk', r.demScore],
-    ['Doluluk', r.fillScore],
+    [tr.daily.color, r.demScore],
+    [tr.daily.fill, r.fillScore],
   ]
   rows.forEach(([label, score], i) => {
     const y = 920 + i * 110
@@ -165,11 +165,11 @@ export async function renderDailyCard(r: DailyResultData, streak: number): Promi
   ctx.textAlign = 'center'
   ctx.fillStyle = '#8B1E0F'
   ctx.font = '800 56px "Baloo 2", sans-serif'
-  ctx.fillText(`Seri: ${streak} gün`, W / 2, 1190)
+  ctx.fillText(fmt(tr.share.streakDays, { n: streak }), W / 2, 1190)
   ctx.fillStyle = INK
   ctx.globalAlpha = 0.6
   ctx.font = '800 36px "Baloo 2", sans-serif'
-  ctx.fillText('Mahallenin çaycısı sensin.', W / 2, 1262)
+  ctx.fillText(tr.splash.tagline, W / 2, 1262)
   ctx.globalAlpha = 1
 
   return canvas.toDataURL('image/png')

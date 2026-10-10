@@ -13,8 +13,8 @@ import { generateOrder, type Order } from '@/core/orders'
 import { Rng } from '@/core/rng'
 import { comboMultiplier, evaluateServe, nextStreak, round1, servePoints, tipFor } from '@/core/scoring'
 import { CUSTOMERS, CUSTOMER_IDS, customerImageId, type CustomerId } from '@/data/customers'
-import { bucketFor, COMBO_TEXTS } from '@/data/lines'
-import { pct1, tr } from '@/i18n/tr'
+import { bucketFor } from '@/data/lines'
+import { dec, pct, tr } from '@/i18n/tr'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
@@ -35,11 +35,10 @@ interface ActiveOrder {
   arrived: boolean
 }
 
-const STAGE_NOTES: Record<number, string> = {
-  2: 'Şeker isteyenler geldi!',
-  3: 'Renk işaretin artık yok: rengine bak!',
-  4: 'Müşteriler acele ediyor',
-  5: 'Göz kararı! Renk çubuğu da yok',
+/** Aşama geçiş notu (aktif dilde). */
+function stageNote(stage: number): string | undefined {
+  const n = tr.stageNotes
+  return ({ 2: n.s2, 3: n.s3, 4: n.s4, 5: n.s5 } as Record<number, string>)[stage]
 }
 
 export class ShiftScene extends PlayScene {
@@ -130,7 +129,11 @@ export class ShiftScene extends PlayScene {
   }
 
   private showBoosterNote(): void {
-    const names: Record<BoosterId, string> = { ustaGozu: 'Usta Gözü', sabirTasi: 'Sabır Taşı', yedekBardak: 'Yedek Bardak' }
+    const names: Record<BoosterId, string> = {
+      ustaGozu: tr.boosters.ustaGozu,
+      sabirTasi: tr.boosters.sabirTasi,
+      yedekBardak: tr.boosters.yedekBardak,
+    }
     const text = [...this.boosters].map((b) => names[b]).join(' · ')
     this.floats.burst(this.L.col.cx, this.L.counterY - 60 * this.L.u, text, 44 * this.L.u, '#9FE3B0')
   }
@@ -156,7 +159,7 @@ export class ShiftScene extends PlayScene {
     if (s.stage === this.stage.stage) return
     this.stage = s
     this.applyGauge()
-    const note = STAGE_NOTES[s.stage]
+    const note = stageNote(s.stage)
     if (announce && note) {
       this.floats.burst(this.L.col.cx, this.L.counterY - 40 * this.L.u, note, 40 * this.L.u, '#FFF6E6')
       AudioService.play('pop')
@@ -280,7 +283,7 @@ export class ShiftScene extends PlayScene {
       bus.emit('shift:served', { accuracy: ev.accuracy, stars: ev.stars, tips })
       AudioService.play(ev.stars === 3 ? 'star' : 'serve')
       if (ev.stars === 3) HapticsService.trigger('stars3')
-      this.floats.float(L.col.cx, glassTop - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 60 * L.u, '#FFF6E6', 70 * L.u, 1100)
+      this.floats.float(L.col.cx, glassTop - 40 * L.u, pct(round1(ev.accuracy)), 60 * L.u, '#FFF6E6', 70 * L.u, 1100)
       this.starsPop.show(L.col.cx, glassTop - 130 * L.u, ev.stars, 76 * L.u, (i) =>
         AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }),
       )
@@ -312,7 +315,8 @@ export class ShiftScene extends PlayScene {
         this.hud.setTips(econ.tips + this.tipsEarned)
       }
       if (this.streak >= 2) {
-        const text = `${COMBO_TEXTS[(this.streak - 2) % COMBO_TEXTS.length]} ×${combo.toFixed(1).replace('.', ',')}`
+        const combos = tr.combos
+        const text = `${combos[(this.streak - 2) % combos.length]} ×${dec(combo)}`
         this.floats.burst(L.col.cx, glassTop - 230 * L.u, text, 54 * L.u)
         AudioService.play('combo', { rate: 1 + Math.min(0.5, this.streak * 0.04) })
         HapticsService.trigger('combo')
@@ -491,7 +495,7 @@ export class ShiftScene extends PlayScene {
   private startRush(): void {
     this.rush.active = true
     this.rush.left = RUSH.duration
-    this.rush.name = this.rng.pick(RUSH.names)
+    this.rush.name = this.rng.pick(tr.rushNames)
     this.hud.showRush(this.rush.name)
     AudioService.play('whoosh')
     this.showCrowd(true)

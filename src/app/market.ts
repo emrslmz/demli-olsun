@@ -6,6 +6,7 @@
 import { bus } from '@/bus'
 import { BOOSTERS, FREE_BOOSTER_ADS_PER_DAY, STARTER_OFFER, type BoosterId } from '@/config/economy'
 import { istanbulDateKey } from '@/core/daily'
+import { tr } from '@/i18n/tr'
 import { GLASS_SKINS, POT_SKINS, VENUES, type CosmeticKind } from '@/data/cosmetics'
 import { services } from '@/services'
 import { AudioService } from '@/services/audio/AudioService'
@@ -80,7 +81,7 @@ export async function freeBoosterViaAd(id: BoosterId): Promise<boolean> {
   if (freeBoostersLeft() <= 0) return false
   const outcome = await services.ads.showRewarded('freeBooster')
   if (outcome !== 'rewarded') {
-    if (outcome === 'unavailable' || outcome === 'failed') app.showToast('Reklam şu an yok. Biraz sonra tekrar dene.')
+    if (outcome === 'unavailable' || outcome === 'failed') app.showToast(tr.msg.adRetry)
     return false
   }
   const today = istanbulDateKey(now())

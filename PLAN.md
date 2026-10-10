@@ -100,6 +100,19 @@ Geri bildirim: bardaklar daha "cartoon vektör" olsun; görselleri kullanıcı d
   → döküm açık kalır, aynı kaynağa ikinci dokunuş durdurur (ilk iki seferde "Durdurmak için tekrar dokun" ipucu).
   Aynı kural DEM/SU butonlarında da geçerli. Eğitimdeki el artık potu gösterir.
 
+## v4: dil, sipariş rehberi, çevrimdışı, yeni içerik
+
+- **Dil desteği (Türkçe + İngilizce):** metinler `src/i18n/locales/{tr,en}.ts` (aynı yapı tiple zorunlu, testle de
+  denetlenir: anahtarlar, yer tutucular, her müşteri/durum için ≥4 replik). `tr` aktif dildeki reaktif metinlerdir;
+  Ayarlar'dan değişince açık ekranlar anında güncellenir. Varsayılan: cihaz dili Türkçe ise Türkçe, değilse İngilizce
+  (`settings.language = 'auto'`). Sayılar, yüzde (%35 / 35%), süre ve tekil/çoğul dile göre biçimlenir. Müşteri
+  replikleri, çay/doluluk/bardak/mekân/unvan/lig adları da dil dosyasında. Yeni dil: aynı yapıda bir dosya + `LANGS`.
+- **Sipariş rehberi:** bardakta çizgi yok; balonda örnek bardak + renk çubuğu (▼ istenen, ▲ anlık renk). Doluluk
+  tipleri sabit seviye (yarım %50, normal %84, ağzına kadar %95).
+- **Servis kaşığı:** yalnızca şekerli çayda karıştırılır (şekeri eritmek için); kaşık tabakta durur, bardakla gider.
+- **Çevrimdışı:** liderlik, lig sonucu, günlük yüzdelik ve satın almalar gizli/kapalı; bağlantı gelince geri gelir.
+- **Yeni içerik:** bardaklar (kulplu, firuze, tırtıklı, gümüş zarflı), manzaralar (yayla, Kapadokya, Galata).
+
 ## Kabul kriterleri
 
 | Kriter | Durum |

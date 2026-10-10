@@ -48,17 +48,17 @@ async function buy() {
       <div class="it">
         <img :src="ThemeService.url('icon_coin')" alt="" />
         <b>{{ num(STARTER_OFFER.tips) }}</b>
-        <small>bahşiş</small>
+        <small>{{ tr.starterItems.tips }}</small>
       </div>
       <div class="it">
         <div class="glass"><GlassThumb :id="STARTER_OFFER.glassId" /></div>
-        <b>Başlangıç</b>
-        <small>bardağı</small>
+        <b>{{ tr.starterItems.glassTop }}</b>
+        <small>{{ tr.starterItems.glassBottom }}</small>
       </div>
       <div class="it">
         <img :src="ThemeService.url('icon_gift')" alt="" />
         <b>3 × 3</b>
-        <small>güçlendirici</small>
+        <small>{{ tr.starterItems.boosters }}</small>
       </div>
     </div>
     <p v-if="left" class="timer">{{ fmt(tr.market.starterEnds, { time: left }) }}</p>

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bus } from '@/bus'
 import { AudioService } from '@/services/audio/AudioService'
+import { detectLanguage, lang, setLanguage } from '@/i18n/tr'
 import { HapticsService } from '@/services/haptics/HapticsService'
 import { defaultSave, type SettingsData } from '@/services/save/schema'
 
@@ -14,6 +15,8 @@ export const useSettingsStore = defineStore('settings', () => {
     AudioService.setSettings({ music: s.music, musicVolume: s.musicVolume, sfx: s.sfx, sfxVolume: s.sfxVolume })
     HapticsService.enabled = s.haptics
     document.documentElement.classList.toggle('reduced-motion', s.reducedMotion)
+    const l = s.language === 'auto' ? detectLanguage() : s.language
+    if (l !== lang.value || document.documentElement.lang !== l) setLanguage(l)
     bus.emit('settings:changed')
   }
 

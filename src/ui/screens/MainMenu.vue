@@ -6,6 +6,7 @@ import { bus } from '@/bus'
 import { startShift } from '@/app/flow'
 import { msUntilNextIstanbulMidnight } from '@/core/daily'
 import { duration, fmt, num, tr } from '@/i18n/tr'
+import { titleName } from '@/config/economy'
 import { services } from '@/services'
 import { exitApp, pushBackHandler } from '@/services/platform/backButton'
 import { ThemeService } from '@/services/theme/ThemeService'
@@ -69,7 +70,7 @@ const titlePct = computed(() => {
 })
 const nextTitleText = computed(() =>
   progress.nextTitle
-    ? fmt(tr.menu.nextTitle, { title: progress.nextTitle.name, n: progress.nextTitle.minServed - progress.totalServed })
+    ? fmt(tr.menu.nextTitle, { title: titleName(progress.nextTitle.id), n: progress.nextTitle.minServed - progress.totalServed })
     : '',
 )
 
@@ -99,8 +100,8 @@ function logoTap() {
       <div class="who">
         <img class="who__icon" :src="ThemeService.url('icon_life')" alt="" />
         <div class="who__txt">
-          <span class="who__name">{{ player.nickname || 'Çırak' }}</span>
-          <span class="who__title">{{ progress.title.name }}</span>
+          <span class="who__name">{{ player.nickname || tr.titles.cirak }}</span>
+          <span class="who__title">{{ titleName(progress.title.id) }}</span>
           <div v-if="progress.nextTitle" class="who__bar" :title="nextTitleText">
             <i :style="{ width: `${titlePct}%` }" />
           </div>

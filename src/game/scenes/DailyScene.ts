@@ -12,7 +12,7 @@ import { effectiveGauge } from '@/core/difficulty'
 import { Rng } from '@/core/rng'
 import { evaluateServe, round1, type ServeEvaluation } from '@/core/scoring'
 import { bucketFor, type LineBucket } from '@/data/lines'
-import { fmt, pct1, tr } from '@/i18n/tr'
+import { fmt, pct, tr } from '@/i18n/tr'
 import { AudioService } from '@/services/audio/AudioService'
 import { HapticsService } from '@/services/haptics/HapticsService'
 import { useEconomyStore } from '@/stores/economy'
@@ -185,7 +185,7 @@ export class DailyScene extends PlayScene {
       HapticsService.trigger('error')
       this.shakeCamera()
     }
-    this.floats.float(L.col.cx, top - 40 * L.u, `%${pct1(round1(ev.accuracy))}`, 64 * L.u, '#FFF6E6', 80 * L.u, 1600)
+    this.floats.float(L.col.cx, top - 40 * L.u, pct(round1(ev.accuracy)), 64 * L.u, '#FFF6E6', 80 * L.u, 1600)
     this.starsPop.show(L.col.cx, top - 130 * L.u, ev.stars, 76 * L.u, (i) => AudioService.play('star', { rate: 1 + i * 0.12, volume: 0.6 }))
     const tips = ev.accepted ? DAILY_REWARD.base + DAILY_REWARD.perStar * ev.stars : DAILY_REWARD.rejected
     // Sonuç ekranı gelmeden: kabul edilen bardak müşteriye gider, beğenilmeyen geri çekilir.

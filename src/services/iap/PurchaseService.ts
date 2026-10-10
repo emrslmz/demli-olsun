@@ -1,6 +1,7 @@
 /** Satın alma servisi arayüzü. Tarayıcıda mock, cihazda RevenueCat. */
 
 import type { EntitlementId, ProductId } from '@/config/products'
+import { tr } from '@/i18n/tr'
 
 export interface StoreProduct {
   id: ProductId
@@ -34,10 +35,10 @@ export const ENTITLEMENT_IDS: EntitlementId[] = ['no_ads', 'theme_rize', 'theme_
 /** Kullanıcıya düz bir cümleyle hata anlatımı. */
 export function purchaseErrorText(message: string): string {
   if (/network|internet|offline/i.test(message)) {
-    return 'İnternet bağlantısı yok gibi görünüyor. Bağlantını kontrol edip tekrar dene.'
+    return tr.msg.purchaseNetwork
   }
   if (/not allowed|payment.*not/i.test(message)) {
-    return 'Bu cihazda satın alma kapalı. Cihaz ayarlarından satın almaya izin verip tekrar dene.'
+    return tr.msg.purchaseDisabled
   }
-  return 'Satın alma tamamlanamadı. Hesabından ücret alınmadı; biraz sonra tekrar dene.'
+  return tr.msg.purchaseFailed
 }

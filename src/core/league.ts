@@ -6,24 +6,24 @@
 import { LEAGUE_REWARDS } from '@/config/economy'
 import { BOT_NAMES } from '@/data/botNames'
 import { addDays, istanbulDateKey } from './daily'
+import { tr } from '@/i18n/tr'
 import { Rng } from './rng'
 
 export type TierId = 'mahalle' | 'ilce' | 'sehir' | 'bolge' | 'turkiye'
 
 export interface TierDef {
   id: TierId
-  name: string
   badge: string
   /** Bu kademedeki botların tam aktiflikteki medyan haftalık puanı. */
   botMedian: number
 }
 
 export const TIERS: TierDef[] = [
-  { id: 'mahalle', name: 'Mahalle', badge: 'badge_mahalle', botMedian: 9000 },
-  { id: 'ilce', name: 'İlçe', badge: 'badge_ilce', botMedian: 20000 },
-  { id: 'sehir', name: 'Şehir', badge: 'badge_sehir', botMedian: 38000 },
-  { id: 'bolge', name: 'Bölge', badge: 'badge_bolge', botMedian: 65000 },
-  { id: 'turkiye', name: 'Türkiye', badge: 'badge_turkiye', botMedian: 110000 },
+  { id: 'mahalle', badge: 'badge_mahalle', botMedian: 9000 },
+  { id: 'ilce', badge: 'badge_ilce', botMedian: 20000 },
+  { id: 'sehir', badge: 'badge_sehir', botMedian: 38000 },
+  { id: 'bolge', badge: 'badge_bolge', botMedian: 65000 },
+  { id: 'turkiye', badge: 'badge_turkiye', botMedian: 110000 },
 ]
 
 export const GROUP_SIZE = 30
@@ -32,6 +32,11 @@ export const DEMOTE_COUNT = 5
 
 export function tierIndex(id: TierId): number {
   return TIERS.findIndex((t) => t.id === id)
+}
+
+/** Kademenin aktif dildeki adı. */
+export function tierName(id: TierId): string {
+  return tr.tiers[id]
 }
 
 export function tierDef(id: TierId): TierDef {

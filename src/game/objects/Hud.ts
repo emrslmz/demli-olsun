@@ -2,7 +2,7 @@
 
 import * as Phaser from 'phaser'
 import { FONTS } from '@/config/theme'
-import { num, tr } from '@/i18n/tr'
+import { dec, num, tr } from '@/i18n/tr'
 import type { Layout } from '../layout'
 
 const DARK = 0x3b2416
@@ -47,7 +47,7 @@ export class Hud {
     this.pauseIcon = scene.add.image(0, 0, 'icon_pause').setDepth(61)
     this.pauseZone = scene.add.zone(0, 0, 10, 10).setOrigin(0.5).setInteractive().setDepth(62)
     this.pauseZone.on(Phaser.Input.Events.POINTER_DOWN, () => this.onPause?.())
-    this.scoreLabel = scene.add.text(0, 0, 'Puan', style(20)).setOrigin(0, 1).setDepth(60)
+    this.scoreLabel = scene.add.text(0, 0, tr.hud.score, style(20)).setOrigin(0, 1).setDepth(60)
     this.scoreText = scene.add.text(0, 0, '0', style(40)).setOrigin(0, 0.5).setDepth(60)
     this.comboText = scene.add.text(0, 0, '', style(30, '#F6C445')).setOrigin(0, 0.5).setDepth(60)
     this.coin = scene.add.image(0, 0, 'icon_coin').setDepth(60)
@@ -204,7 +204,7 @@ export class Hud {
   }
 
   setCombo(mult: number): void {
-    const text = mult > 1.001 ? `×${mult.toFixed(1).replace('.', ',')}` : ''
+    const text = mult > 1.001 ? `×${dec(mult)}` : ''
     if (text === this.comboText.text) return
     this.comboText.setText(text)
     this.placeCombo()

@@ -117,7 +117,6 @@ export const RUSH = {
   everyServes: [9, 14] as [number, number],
   /** Yoğun saat bu aşamadan önce başlamaz. */
   minStage: 2,
-  names: ['Öğle arası', 'Maç akşamı', 'Pazar kalabalığı', 'İkindi çayı'],
 }
 
 export const ANIM = {
